@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent Frontend-Backend Mismatches (Deployment Skew Protection)
+  deploymentId: process.env.VERCEL_DEPLOYMENT_ID || undefined,
+  reactStrictMode: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -12,7 +16,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts"],
+    optimizePackageImports: ["lucide-react", "recharts", "@tanstack/react-query"],
   },
 };
 
