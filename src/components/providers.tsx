@@ -13,8 +13,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
-            retry: 1,
+            staleTime: 5 * 60 * 1000,
+            gcTime: 10 * 60 * 1000,
+            retry: 0, // No retry delay on failed/demo network
             refetchOnWindowFocus: false,
           },
         },
@@ -27,11 +28,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange={false}
+        disableTransitionOnChange={true}
       >
         <TooltipProvider>
           {children}
-          <Toaster position="top-right" richColors closeButton duration={4000} />
+          <Toaster position="top-right" richColors closeButton duration={3000} />
           <ReactQueryDevtools initialIsOpen={false} />
         </TooltipProvider>
       </ThemeProvider>
