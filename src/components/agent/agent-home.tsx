@@ -4,14 +4,72 @@ import { useState, useEffect } from 'react';
 import { 
   TrendingUp, ShoppingBag, Store, Users, 
   Phone, ChevronRight, CheckCircle, Clock, 
-  Truck, Package, CircleDollarSign, Plus, MapPin 
+  Truck, Package, CircleDollarSign, 
+  Star, Zap, MessageCircle, BarChart3,
+  Eye, EyeOff, Sparkles, ArrowUp, ArrowDown, Plus, MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
-import { INITIAL_ORDERS, INITIAL_STORES } from '@/lib/mock-data';
+import { INITIAL_STORES } from '@/lib/mock-data';
 
+interface StatCardProps {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  subtext?: string;
+  color: string;
+  onClick: () => void;
+  isActive: boolean;
+}
+
+// ============================================================
+// KOMPONENT: Interaktiv statistika kartochkasi
+// ============================================================
+function StatCard({ icon: Icon, label, value, subtext, color, onClick, isActive }: StatCardProps) {
+  return (
+    <div 
+      onClick={onClick}
+      className={`
+        relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl p-4 border-2 transition-all duration-300
+        touch-press cursor-pointer
+        ${isActive 
+          ? 'border-amber-500 shadow-lg shadow-amber-500/10 scale-[1.02]' 
+          : 'border-gray-100 dark:border-gray-800 hover:border-amber-200 dark:hover:border-amber-900 hover:shadow-md'
+        }
+      `}
+    >
+      <div className="flex items-start gap-3 relative">
+        <div className={`p-2.5 rounded-xl transition-colors ${isActive ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300' : color}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{value}</p>
+          <p className="text-xs text-gray-400">{label}</p>
+          {subtext && (
+            <p className={`text-[11px] mt-1 flex items-center gap-1 truncate ${isActive ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+              {subtext}
+            </p>
+          )}
+        </div>
+        {isActive && (
+          <div className="absolute top-0 right-0">
+            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ASOSIY KOMPONENT: AgentHome
+// ============================================================
 export function AgentHome() {
   const [userName, setUserName] = useState<string>('Sardor');
+  const [activeStat, setActiveStat] = useState<string | null>('orders');
+  const [selectedOrder, setSelectedOrder] = useState<string | null>('HLV-2026-00104');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(true);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
@@ -30,6 +88,25 @@ export function AgentHome() {
     commission: 4725000,
     commissionPaid: 3500000,
     commissionRemaining: 1225000,
+    // Top-mahsulotlar
+    topProducts: [
+      { name: 'Kunjutli Premium Holva', sales: 142, revenue: 28400000, growth: 12 },
+      { name: 'Shokoladli Yong\'oqli Holva', sales: 98, revenue: 19600000, growth: 8 },
+      { name: 'Pista Mag\'izli Samarqand', sales: 76, revenue: 15200000, growth: 15 },
+      { name: 'Kungaboqar Klassik Holvasi', sales: 54, revenue: 10800000, growth: 5 },
+    ],
+    // Magazinlarga AI tavsiyalari
+    recommendations: [
+      { store: 'Korzinka — Chilonzor', suggestion: 'Shokoladli Yong\'oqli Holvadan ko\'proq buyurtma qiling — talab 15% ga oshdi' },
+      { store: 'Makro Supermarket — Sergeli', suggestion: 'Kichik qadoqli holvalardan qo\'shing — kassa zonasida tez sotiladi' },
+      { store: 'Havas Diskaunter — Qo\'yliq', suggestion: 'Klassik holva zaxirasini oshiring — xaridorlar talabi yuqori' },
+    ],
+    // Savdo grafigi dinamikasi
+    salesChart: {
+      days: ['Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak'],
+      values: [2.8, 3.2, 2.5, 4.1, 3.8, 5.2, 4.5]
+    },
+    // Buyurtmalar ro'yxati
     ordersList: [
       { id: 'HLV-2026-00104', client: 'Korzinka — Chilonzor', time: '05:21', phone: '+998 71 140 14 14', amount: 14800000, status: 'delivered' },
       { id: 'HLV-2026-00105', client: 'Makro Supermarket — Sergeli', time: '00:21', phone: '+998 71 205 12 22', amount: 9200000, status: 'accepted' },
@@ -38,7 +115,6 @@ export function AgentHome() {
     ]
   };
 
-  // Status konfiguratsiyalari
   const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
     delivered: { label: 'Yetkazib berildi', icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
     accepted: { label: 'Qabul qilindi', icon: Clock, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
@@ -47,9 +123,9 @@ export function AgentHome() {
   };
 
   return (
-    <div className="space-y-5 pb-24 animate-fade-in-up max-w-lg mx-auto p-4">
+    <div className="space-y-5 pb-28 animate-fade-in-up max-w-lg mx-auto p-4 relative">
       
-      {/* 1. Salomlashuv qismi */}
+      {/* 1. Salomlashuv va Bildirishnomalar */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -59,11 +135,21 @@ export function AgentHome() {
             {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <Link href="/agent/profile">
-          <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 rounded-2xl hover:bg-amber-100 dark:hover:bg-amber-900/50 transition touch-press cursor-pointer border border-amber-200/50">
-            <Users className="w-5 h-5" />
-          </div>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/notifications">
+            <div className="relative p-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl hover:shadow-md transition touch-press cursor-pointer">
+              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                3
+              </span>
+            </div>
+          </Link>
+          <Link href="/agent/profile">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 rounded-2xl hover:bg-amber-100 dark:hover:bg-amber-900/50 transition touch-press cursor-pointer border border-amber-200/50">
+              <Users className="w-5 h-5" />
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Tezkor tugmalar */}
@@ -80,11 +166,14 @@ export function AgentHome() {
         </Link>
       </div>
 
-      {/* 2. Asosiy karta - Bugungi Savdo */}
-      <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-950/30 dark:to-orange-950/20 rounded-3xl p-6 border border-amber-200/60 dark:border-amber-800/40 shadow-xs">
+      {/* 2. Asosiy karta - Bugungi Savdo (Grafik bilan ochiluvchi) */}
+      <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-950/30 dark:to-orange-950/20 rounded-3xl p-6 border border-amber-200/60 dark:border-amber-800/40 shadow-xs hover:shadow-md transition">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Bugungi Savdo</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+              Bugungi Savdo
+            </p>
             <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
               {formatCurrency(agentData.todayRevenue)}
             </p>
@@ -93,19 +182,51 @@ export function AgentHome() {
                 <TrendingUp className="w-3.5 h-3.5" />
                 Rejadan {agentData.revenuePercent}% ortiq
               </span>
+              <button 
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                {showAnalytics ? 'Yashirish' : 'Batafsil'}
+              </button>
             </div>
           </div>
           <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/50 rounded-2xl flex items-center justify-center border border-amber-200/50">
             <CircleDollarSign className="w-8 h-8 text-amber-600 dark:text-amber-400" />
           </div>
         </div>
+
+        {/* Haftalik savdo grafigi (Ochiluvchi) */}
+        {showAnalytics && (
+          <div className="mt-4 pt-4 border-t border-amber-200/40 dark:border-amber-800/40 animate-fade-in-up">
+            <p className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2.5">Haftalik savdo dinamikasi (mln so&apos;mda)</p>
+            <div className="flex items-end gap-1.5 h-24 pt-2">
+              {agentData.salesChart.days.map((day, i) => {
+                const height = (agentData.salesChart.values[i] / 6) * 100;
+                return (
+                  <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                    <div 
+                      className="w-full max-w-8 bg-amber-500 rounded-t-lg transition-all duration-700 hover:bg-amber-600 shadow-xs"
+                      style={{ height: `${height}%`, minHeight: '6px' }}
+                      title={`${agentData.salesChart.values[i]} mln so'm`}
+                    />
+                    <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 3. Komissiya va progress bar */}
+      {/* 3. Oylik Komissiya va Progress bar */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Oylik Komissiya & Bonus</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Oylik Komissiya & Bonus
+            </p>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
               {formatCurrency(agentData.commission)}
             </p>
@@ -131,40 +252,112 @@ export function AgentHome() {
         </div>
       </div>
 
-      {/* 4. Metrikalar tarmog'i (2 ustun) */}
+      {/* 4. Interaktiv Statistika Kartochkalari (Aktiv yoritish bilan) */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/50 rounded-xl">
-              <ShoppingBag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{agentData.orders} ta</p>
-              <p className="text-xs text-gray-400">Buyurtmalar</p>
-            </div>
-          </div>
-          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-2.5 flex items-center gap-1">
-            <CheckCircle className="w-3.5 h-3.5" /> Barchasi qabul qilindi
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 rounded-xl">
-              <Store className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{agentData.visits} ta</p>
-              <p className="text-xs text-gray-400">Tashriflar</p>
-            </div>
-          </div>
-          <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-2.5 flex items-center gap-1">
-            {agentData.visits} / {agentData.visitPlan} reja bajarildi
-          </p>
+        <StatCard 
+          icon={ShoppingBag}
+          label="Buyurtmalar"
+          value={`${agentData.orders} ta`}
+          subtext="✅ Barchasi qabul qilindi"
+          color="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400"
+          isActive={activeStat === 'orders'}
+          onClick={() => setActiveStat(activeStat === 'orders' ? null : 'orders')}
+        />
+        <StatCard 
+          icon={Store}
+          label="Tashriflar"
+          value={`${agentData.visits} ta`}
+          subtext={`${agentData.visits} / ${agentData.visitPlan} reja`}
+          color="bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400"
+          isActive={activeStat === 'visits'}
+          onClick={() => setActiveStat(activeStat === 'visits' ? null : 'visits')}
+        />
+        <div className="col-span-2">
+          <StatCard 
+            icon={Users}
+            label="Biriktirilgan Do'konlar"
+            value={`${agentData.stores} ta faol savdo nuqtasi`}
+            subtext="Muntazam xarid qiluvchi mijozlar"
+            color="bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400"
+            isActive={activeStat === 'stores'}
+            onClick={() => setActiveStat(activeStat === 'stores' ? null : 'stores')}
+          />
         </div>
       </div>
 
-      {/* 5. Buyurtmalar ro'yxati (Messenger uslubida) */}
+      {/* 5. Eng ko'p sotilgan mahsulotlar (Top-Tovarlar) */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs">
+        <div className="flex items-center justify-between mb-3.5">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+              Eng Ko&apos;p Sotilgan Mahsulotlar
+            </h2>
+            <p className="text-xs text-gray-400">Oxirgi 30 kunlik natijalar</p>
+          </div>
+          <Link href="/products" className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">
+            Barchasi →
+          </Link>
+        </div>
+        <div className="space-y-2.5">
+          {agentData.topProducts.map((product, index) => (
+            <div key={index} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                ${index === 0 ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 
+                  index === 1 ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300' : 
+                  'bg-gray-50 dark:bg-gray-800/40 text-gray-400'}
+              `}>
+                #{index + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{product.name}</p>
+                <p className="text-xs text-gray-400">{product.sales} dona · {formatCurrency(product.revenue)}</p>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-1 rounded-full border border-emerald-100 dark:border-emerald-900/40">
+                <ArrowUp className="w-3 h-3" />
+                +{product.growth}%
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 6. AI Magazinlarga Maslahatlar (Tavsiyalar) */}
+      <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/40">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              Magazinlarga AI Maslahatlar
+            </h2>
+            <p className="text-xs text-blue-600 dark:text-blue-400">Savdoni oshirish uchun aqlli tavsiyalar</p>
+          </div>
+          <button 
+            onClick={() => setShowRecommendations(!showRecommendations)}
+            className="p-1.5 hover:bg-white/60 dark:hover:bg-gray-800 rounded-lg transition cursor-pointer text-gray-500"
+            aria-label="Tavsiyalarni ko'rish/yashirish"
+          >
+            {showRecommendations ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+        
+        {showRecommendations && (
+          <div className="space-y-2.5 animate-fade-in-up">
+            {agentData.recommendations.map((rec, index) => (
+              <div key={index} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xs rounded-xl p-3 border border-white/60 dark:border-gray-800 shadow-xs">
+                <p className="text-xs font-bold text-gray-900 dark:text-white">{rec.store}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 flex items-start gap-1.5">
+                  <span className="text-blue-500">💡</span>
+                  <span>{rec.suggestion}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 7. Oxirgi Buyurtmalar (Interaktiv ochiluvchi harakatlar bilan) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalarim</h2>
@@ -177,53 +370,98 @@ export function AgentHome() {
           {agentData.ordersList.map((order) => {
             const status = statusConfig[order.status] || statusConfig.delivered;
             const StatusIcon = status.icon;
+            const isSelected = selectedOrder === order.id;
             
             return (
               <div 
                 key={order.id} 
-                className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all touch-press active:scale-[0.98]"
+                className={`
+                  bg-white dark:bg-gray-900 rounded-2xl border-2 transition-all duration-300 touch-press
+                  ${isSelected 
+                    ? 'border-amber-400 shadow-lg shadow-amber-500/10' 
+                    : 'border-gray-100 dark:border-gray-800 hover:border-amber-200 dark:hover:border-amber-900/60 hover:shadow-md'
+                  }
+                `}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {order.client}
+                <div 
+                  className="p-4 cursor-pointer"
+                  onClick={() => setSelectedOrder(isSelected ? null : order.id)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                          {order.client}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-mono text-gray-400">{order.id}</span>
+                        <span className="text-xs text-gray-300 dark:text-gray-700">•</span>
+                        <span className="text-xs text-gray-400">{order.time}</span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-3 flex-shrink-0">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{formatCurrency(order.amount)}</p>
+                      <span className={`
+                        inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border mt-1
+                        ${status.color}
+                      `}>
+                        <StatusIcon className="w-3 h-3" />
+                        {status.label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-mono text-gray-400">{order.id}</span>
-                      <span className="text-xs text-gray-300 dark:text-gray-700">•</span>
-                      <span className="text-xs text-gray-400">{order.time}</span>
-                    </div>
-                  </div>
-                  <div className="text-right ml-3 flex-shrink-0">
-                    <p className="font-bold text-gray-900 dark:text-white text-sm">{formatCurrency(order.amount)}</p>
-                    <span className={`
-                      inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border mt-1
-                      ${status.color}
-                    `}>
-                      <StatusIcon className="w-3 h-3" />
-                      {status.label}
-                    </span>
                   </div>
                 </div>
                 
-                {/* Tezkor qo'ng'iroq / Bog'lanish tugmasi */}
-                <div className="mt-3 pt-2.5 border-t border-gray-50 dark:border-gray-800 flex justify-end">
-                  <a
-                    href={`tel:${order.phone}`}
-                    className="flex items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition px-3 py-1.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/40 touch-friendly"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                    Bog&apos;lanish
-                  </a>
-                </div>
+                {/* Tanlangan buyurtma uchun ochiluvchi harakatlar paneli */}
+                {isSelected && (
+                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-800 animate-fade-in-up">
+                    <div className="flex gap-2">
+                      <a
+                        href={`tel:${order.phone}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 py-2.5 rounded-xl transition touch-press"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        Bog&apos;lanish
+                      </a>
+                      <a
+                        href={`https://t.me/share/url?url=Buyurtma%20№${order.id}&text=Salom,%20buyurtmangiz%20qabul%20qilindi`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 py-2.5 rounded-xl transition touch-press"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        Telegram
+                      </a>
+                      <Link
+                        href={`/agent/orders`}
+                        className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 py-2.5 rounded-xl transition touch-press"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Batafsil
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
-      
+
+      {/* 8. Admin bilan tezkor bog'lanish (Floating Action Button) */}
+      <div className="fixed bottom-20 right-4 z-30">
+        <a
+          href="https://t.me/admin"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition touch-press active:scale-95"
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-xs sm:text-sm font-bold">Admin bilan bog&apos;lanish</span>
+        </a>
+      </div>
+
     </div>
   );
 }
