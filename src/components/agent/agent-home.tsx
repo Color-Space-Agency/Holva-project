@@ -502,17 +502,17 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMessages(getStoredChatMessages());
+    setMessages(getStoredChatMessages('sardor'));
 
-    const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[] }>) => {
+    const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[]; agentId?: string }>) => {
       if (e.detail && Array.isArray(e.detail.messages)) {
-        setMessages(e.detail.messages);
+        setMessages(e.detail.messages.filter((m) => (m.agentId || 'sardor') === 'sardor'));
       }
     };
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'holva_crm_chat_messages') {
-        setMessages(getStoredChatMessages());
+        setMessages(getStoredChatMessages('sardor'));
       }
     };
 
@@ -535,9 +535,9 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
   const handleSend = () => {
     if (!message.trim()) return;
-    const agentName = localStorage.getItem('user_name') || 'Sardor (Sotuv Agenti)';
-    const updated = sendStoredChatMessage('agent', agentName, message.trim());
-    setMessages(updated);
+    const agentName = localStorage.getItem('user_name') || 'Sardor Rahimov';
+    const updated = sendStoredChatMessage('sardor', 'agent', agentName, message.trim());
+    setMessages(updated.filter((m) => (m.agentId || 'sardor') === 'sardor'));
     setMessage('');
 
     setTimeout(() => {

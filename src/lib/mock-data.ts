@@ -685,10 +685,11 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
 }
 
 // ==========================================
-// SINXRONLASHGAN REAL-TIME CHAT TIZIMI
+// SINXRONLASHGAN REAL-TIME CHAT TIZIMI (HAR BIR AGENT UCHUN ALOHIDA)
 // ==========================================
 export interface RealtimeChatMessage {
   id: string
+  agentId: string
   sender: "agent" | "admin"
   senderName: string
   text: string
@@ -699,8 +700,10 @@ export interface RealtimeChatMessage {
 const STORAGE_KEY_CHAT = "holva_crm_chat_messages"
 
 export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
+  // 1. Sardor Rahimov bilan chat
   {
-    id: "msg-1",
+    id: "msg-s1",
+    agentId: "sardor",
     sender: "admin",
     senderName: "Super Admin",
     text: "Assalomu alaykum Sardor! Bugungi buyurtmalar va do'konlar rejasi qanday ketyapti?",
@@ -708,30 +711,76 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
     timestamp: Date.now() - 3600000 * 3,
   },
   {
-    id: "msg-2",
+    id: "msg-s2",
+    agentId: "sardor",
     sender: "agent",
-    senderName: "Sardor (Sotuv Agenti)",
+    senderName: "Sardor Rahimov",
     text: "Va alaykum assalom! Hammasi a'lo, Korzinka va Makroga yangi partiya yetkazildi, to'lovlar ham qabul qilinmoqda.",
     time: "08:35",
     timestamp: Date.now() - 3600000 * 2.8,
   },
   {
-    id: "msg-3",
+    id: "msg-s3",
+    agentId: "sardor",
     sender: "admin",
     senderName: "Super Admin",
     text: "Barakalla! Pista mag'izli va kunjutli holvalardan zaxira tayyorlab qo'ydik, xaridorlarga taklif qilsangiz bo'ladi.",
     time: "09:00",
     timestamp: Date.now() - 3600000 * 2,
   },
+
+  // 2. Jasur Qodirov bilan chat
+  {
+    id: "msg-j1",
+    agentId: "jasur",
+    sender: "admin",
+    senderName: "Super Admin",
+    text: "Salom Jasur! Sergeli va Chilonzor hududidagi do'konlarda talab qanday?",
+    time: "09:15",
+    timestamp: Date.now() - 3600000 * 2.5,
+  },
+  {
+    id: "msg-j2",
+    agentId: "jasur",
+    sender: "agent",
+    senderName: "Jasur Qodirov",
+    text: "Assalomu alaykum! Sergeli bo'yicha 5 ta yangi buyurtma oldim, shokoladli holvaga talab juda yuqori.",
+    time: "09:20",
+    timestamp: Date.now() - 3600000 * 2.2,
+  },
+
+  // 3. Alisher Vohidov bilan chat
+  {
+    id: "msg-a1",
+    agentId: "alisher",
+    sender: "admin",
+    senderName: "Super Admin",
+    text: "Assalomu alaykum Alisher! Viloyat yo'nalishidagi do'konlarga mahsulot yetkazish rejasini tasdiqlaymiz.",
+    time: "10:00",
+    timestamp: Date.now() - 3600000 * 1.5,
+  },
+  {
+    id: "msg-a2",
+    agentId: "alisher",
+    sender: "agent",
+    senderName: "Alisher Vohidov",
+    text: "Rahmat! Samarqand va Jizzax yo'nalishida 10 ta do'kondan buyurtma shakllantirdim.",
+    time: "10:05",
+    timestamp: Date.now() - 3600000 * 1.2,
+  },
 ]
 
-export function getStoredChatMessages(): RealtimeChatMessage[] {
-  if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
+export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
+  if (typeof window === "undefined") {
+    return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => m.agentId === agentId) : INITIAL_CHAT_MESSAGES
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CHAT)
     if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      const parsed: RealtimeChatMessage[] = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return agentId ? parsed.filter((m) => m.agentId === agentId) : parsed
+      }
     }
   } catch (e) {
     console.error("Error reading stored chat messages:", e)
@@ -739,17 +788,23 @@ export function getStoredChatMessages(): RealtimeChatMessage[] {
   try {
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(INITIAL_CHAT_MESSAGES))
   } catch {}
-  return INITIAL_CHAT_MESSAGES
+  return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => m.agentId === agentId) : INITIAL_CHAT_MESSAGES
 }
 
-export function sendStoredChatMessage(sender: "agent" | "admin", senderName: string, text: string): RealtimeChatMessage[] {
+export function sendStoredChatMessage(
+  agentId: string,
+  sender: "agent" | "admin",
+  senderName: string,
+  text: string
+): RealtimeChatMessage[] {
   if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
-  const current = getStoredChatMessages()
+  const allMessages = getStoredChatMessages() // barcha agentlar xabarlari
   const now = new Date()
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
   
   const newMsg: RealtimeChatMessage = {
     id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    agentId,
     sender,
     senderName,
     text: text.trim(),
@@ -757,10 +812,10 @@ export function sendStoredChatMessage(sender: "agent" | "admin", senderName: str
     timestamp: Date.now(),
   }
 
-  const updated = [...current, newMsg]
+  const updated = [...allMessages, newMsg]
   try {
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated } }))
+    window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated, agentId } }))
   } catch {}
   return updated
 }
