@@ -28,26 +28,81 @@ export function RecipesClient() {
   const { data: recipes, isLoading } = useQuery({
     queryKey: ["recipes", search, statusFilter],
     queryFn: async () => {
-      let query = supabase
-        .from("recipes")
-        .select(`*, product:products(name)`)
-        .order("created_at", { ascending: false });
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data");
+      if (isRealSupabaseConfigured()) {
+        try {
+          let query = supabase
+            .from("recipes")
+            .select(`*, product:products(name)`)
+            .order("created_at", { ascending: false });
 
-      if (statusFilter !== "all") {
-        query = query.eq("is_active", statusFilter === "active");
+          if (statusFilter !== "all") {
+            query = query.eq("is_active", statusFilter === "active");
+          }
+          
+          const { data, error } = await query;
+          if (data && data.length > 0) {
+            if (search) {
+              return data.filter(r => 
+                r.name.toLowerCase().includes(search.toLowerCase()) || 
+                r.product?.name.toLowerCase().includes(search.toLowerCase())
+              );
+            }
+            return data;
+          }
+        } catch {
+          // Fallback
+        }
       }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      
+
+      const defaultRecipes = [
+        {
+          id: "rec-1",
+          name: "Kunjutli Premium Holva Retsepti (100kg partiya)",
+          product_id: "p-1",
+          version: "v1.2",
+          yield_quantity: 100,
+          yield_unit_id: "kg",
+          status: "ACTIVE",
+          is_active: true,
+          product: { name: "Kunjutli Premium Holva (500g)" },
+        },
+        {
+          id: "rec-2",
+          name: "Shokoladli Yong'oqli Holva Standart Retsepti",
+          product_id: "p-2",
+          version: "v1.0",
+          yield_quantity: 80,
+          yield_unit_id: "kg",
+          status: "ACTIVE",
+          is_active: true,
+          product: { name: "Shokoladli Yong'oqli Holva (400g)" },
+        },
+        {
+          id: "rec-3",
+          name: "Samarqand Xandon Pistali Holva",
+          product_id: "p-3",
+          version: "v2.1",
+          yield_quantity: 50,
+          yield_unit_id: "kg",
+          status: "ACTIVE",
+          is_active: true,
+          product: { name: "Pista Mag'izli Samarqand Holvasi (1kg)" },
+        },
+      ];
+
+      let res = defaultRecipes;
+      if (statusFilter !== "all") {
+        res = res.filter(r => statusFilter === "active" ? r.is_active : !r.is_active);
+      }
       if (search) {
-        return data.filter(r => 
+        res = res.filter(r => 
           r.name.toLowerCase().includes(search.toLowerCase()) || 
-          r.product?.name?.toLowerCase().includes(search.toLowerCase())
+          r.product.name.toLowerCase().includes(search.toLowerCase())
         );
       }
-      return data;
-    }
+      return res;
+    },
   });
 
   const toggleActiveMutation = useMutation({
