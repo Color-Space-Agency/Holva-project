@@ -684,3 +684,84 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   return updatedList
 }
 
+// ==========================================
+// SINXRONLASHGAN REAL-TIME CHAT TIZIMI
+// ==========================================
+export interface RealtimeChatMessage {
+  id: string
+  sender: "agent" | "admin"
+  senderName: string
+  text: string
+  time: string
+  timestamp: number
+}
+
+const STORAGE_KEY_CHAT = "holva_crm_chat_messages"
+
+export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
+  {
+    id: "msg-1",
+    sender: "admin",
+    senderName: "Super Admin",
+    text: "Assalomu alaykum Sardor! Bugungi buyurtmalar va do'konlar rejasi qanday ketyapti?",
+    time: "08:30",
+    timestamp: Date.now() - 3600000 * 3,
+  },
+  {
+    id: "msg-2",
+    sender: "agent",
+    senderName: "Sardor (Sotuv Agenti)",
+    text: "Va alaykum assalom! Hammasi a'lo, Korzinka va Makroga yangi partiya yetkazildi, to'lovlar ham qabul qilinmoqda.",
+    time: "08:35",
+    timestamp: Date.now() - 3600000 * 2.8,
+  },
+  {
+    id: "msg-3",
+    sender: "admin",
+    senderName: "Super Admin",
+    text: "Barakalla! Pista mag'izli va kunjutli holvalardan zaxira tayyorlab qo'ydik, xaridorlarga taklif qilsangiz bo'ladi.",
+    time: "09:00",
+    timestamp: Date.now() - 3600000 * 2,
+  },
+]
+
+export function getStoredChatMessages(): RealtimeChatMessage[] {
+  if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CHAT)
+    if (raw !== null) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored chat messages:", e)
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(INITIAL_CHAT_MESSAGES))
+  } catch {}
+  return INITIAL_CHAT_MESSAGES
+}
+
+export function sendStoredChatMessage(sender: "agent" | "admin", senderName: string, text: string): RealtimeChatMessage[] {
+  if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
+  const current = getStoredChatMessages()
+  const now = new Date()
+  const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+  
+  const newMsg: RealtimeChatMessage = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    sender,
+    senderName,
+    text: text.trim(),
+    time: timeStr,
+    timestamp: Date.now(),
+  }
+
+  const updated = [...current, newMsg]
+  try {
+    localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(updated))
+    window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated } }))
+  } catch {}
+  return updated
+}
+

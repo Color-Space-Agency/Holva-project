@@ -14,9 +14,11 @@ import {
   LogOut,
   Sparkles,
   X,
+  MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LogoutDialog } from "@/components/shared/logout-dialog"
+import { AdminChatModal } from "@/components/admin/admin-chat-modal"
 import type { Database } from "@/types/database"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -41,6 +43,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
   const [mounted, setMounted] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const pathname = usePathname()
   const searchRef = useRef<HTMLDivElement>(null)
 
@@ -164,6 +167,17 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
             <Search size={18} />
           </button>
 
+          {/* Agentlar bilan Real-time Chat */}
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(true)}
+            className="relative p-2 rounded-xl text-gray-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 transition-colors touch-friendly cursor-pointer"
+            title="Agentlar bilan aloqa (Chat)"
+          >
+            <MessageCircle size={18} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </button>
+
           {/* Bildirishnomalar */}
           <Link
             href="/notifications"
@@ -233,6 +247,9 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
       )}
 
       <LogoutDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
+      
+      {/* Super Admin Agent Chat Modali */}
+      <AdminChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </header>
   )
 }

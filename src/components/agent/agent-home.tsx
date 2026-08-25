@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   TrendingUp, ShoppingBag, Store, Users, 
   Phone, ChevronRight, CheckCircle, Clock, 
@@ -21,7 +21,10 @@ import {
   completeStoredVisit,
   getStoredOrders,
   recordStoredOrderPayment,
-  MockOrder
+  MockOrder,
+  getStoredChatMessages,
+  sendStoredChatMessage,
+  RealtimeChatMessage
 } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
@@ -493,47 +496,53 @@ function AnalyticsModal({
 // ============================================================
 // KOMPONENT: Jonli Chat Modali
 // ============================================================
-interface ChatMessage {
-  id: string;
-  sender: 'admin' | 'agent';
-  text: string;
-  time: string;
-}
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  { id: '1', sender: 'admin', text: 'Assalomu alaykum! Bugungi savdo ajoyib ketmoqda 🔥', time: '10:30' },
-  { id: '2', sender: 'agent', text: 'Rahmat! Kunjutli va Yong\'oqli holvalar tez ketyapti 🚀', time: '10:32' },
-  { id: '3', sender: 'admin', text: 'Yaxshi, bugungi natijangiz bo\'yicha bonus hisoblaymiz 💰', time: '10:35' },
-];
-
 function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<RealtimeChatMessage[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages(getStoredChatMessages());
+
+    const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[] }>) => {
+      if (e.detail && Array.isArray(e.detail.messages)) {
+        setMessages(e.detail.messages);
+      }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'holva_crm_chat_messages') {
+        setMessages(getStoredChatMessages());
+      }
+    };
+
+    window.addEventListener('holva-chat-updated' as any, handleChatUpdated);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('holva-chat-updated' as any, handleChatUpdated);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    }
+  }, [isOpen, messages]);
 
   const handleSend = () => {
     if (!message.trim()) return;
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const newMsg: ChatMessage = {
-      id: String(Date.now()),
-      sender: 'agent',
-      text: message.trim(),
-      time: timeStr,
-    };
-    setMessages((prev) => [...prev, newMsg]);
+    const agentName = localStorage.getItem('user_name') || 'Sardor (Sotuv Agenti)';
+    const updated = sendStoredChatMessage('agent', agentName, message.trim());
+    setMessages(updated);
     setMessage('');
 
     setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now() + 1),
-          sender: 'admin',
-          text: 'Qabul qilindi! Buyurtmalar omborga topshirilmoqda 👍',
-          time: timeStr,
-        },
-      ]);
-    }, 1000);
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
   };
 
   if (!isOpen) return null;
@@ -542,16 +551,17 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:p-4 animate-fade-in">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[85vh] overflow-hidden shadow-2xl z-10 border border-gray-100 dark:border-gray-800 slide-up flex flex-col">
+        {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-2xl flex items-center justify-center font-bold">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-bold text-gray-900 dark:text-white text-sm">Super Admin</p>
+              <p className="font-bold text-gray-900 dark:text-white text-sm">Super Admin Bilan Aloqa</p>
               <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full inline-block animate-pulse" />
-                Online
+                Online · Jonli sinxron
               </p>
             </div>
           </div>
@@ -560,33 +570,39 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           </button>
         </div>
         
-        <div className="p-4 space-y-3 h-72 overflow-y-auto mobile-scroll">
+        {/* Messages Body */}
+        <div className="p-4 space-y-3 h-80 overflow-y-auto mobile-scroll bg-gray-50/40 dark:bg-gray-950/40">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
               <div
-                className={`rounded-2xl px-4 py-2.5 max-w-[82%] text-xs sm:text-sm shadow-xs ${
+                className={`rounded-2xl px-4 py-2.5 max-w-[85%] text-xs sm:text-sm shadow-xs ${
                   msg.sender === 'agent'
                     ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-tr-none'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-none'
+                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-none border border-gray-100 dark:border-gray-700'
                 }`}
               >
-                <p className="leading-relaxed">{msg.text}</p>
+                <p className={`text-[10px] font-bold mb-0.5 ${msg.sender === 'agent' ? 'text-amber-100' : 'text-amber-600 dark:text-amber-400'}`}>
+                  {msg.senderName}
+                </p>
+                <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                 <p className={`text-[10px] mt-1 text-right ${msg.sender === 'agent' ? 'text-amber-100' : 'text-gray-400'}`}>
                   {msg.time}
                 </p>
               </div>
             </div>
           ))}
+          <div ref={chatEndRef} />
         </div>
         
-        <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+        {/* Input Bar */}
+        <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Admin bilan bog'lanish..."
-              className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white placeholder-gray-400"
+              className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white placeholder-gray-400"
               autoFocus
             />
             <button

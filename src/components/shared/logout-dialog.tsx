@@ -32,9 +32,12 @@ export function LogoutDialog({ open, onOpenChange }: LogoutDialogProps) {
     document.cookie = "sb-access-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     document.cookie = "sb-refresh-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     
-    // LocalStorage tozalash
+    // Faqat auth va sessiya kalitlarini tozalash (CRM ma'lumotlarini saqlab qolish)
     try {
-      localStorage.clear()
+      localStorage.removeItem("user_role")
+      localStorage.removeItem("user_name")
+      localStorage.removeItem("user_id")
+      localStorage.removeItem("holva_user")
       sessionStorage.clear()
     } catch {
       // Ignore
