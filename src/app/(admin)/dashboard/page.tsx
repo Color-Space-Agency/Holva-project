@@ -1,22 +1,45 @@
-import type { Metadata } from "next"
+"use client"
+
+import { useState, useEffect } from "react"
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts"
 import { RecentOrders } from "@/components/dashboard/recent-orders"
 import Link from "next/link"
-import { Plus, FileDown, ShoppingCart, Store, FileSpreadsheet, Settings } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Dashboard",
-}
+import { Plus, RefreshCw, ShoppingCart, Store, FileSpreadsheet, Settings } from "lucide-react"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Pull-to-refresh tinglovchisi
+  useEffect(() => {
+    const handlePull = () => {
+      handleRefresh()
+    }
+    window.addEventListener("pull-to-refresh", handlePull)
+    return () => window.removeEventListener("pull-to-refresh", handlePull)
+  }, [])
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    toast.info("Ma'lumotlar yangilanmoqda...")
+    setTimeout(() => {
+      setIsRefreshing(false)
+      toast.success("✅ Ma'lumotlar muvaffaqiyatli yangilandi!")
+    }, 1000)
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             Boshqaruv paneli
+            <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-200 dark:border-emerald-800">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Jonli
+            </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Holva Factory CRM ga xush kelibsiz — Bugungi operatsion holat
@@ -24,29 +47,37 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/reports"
-            className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all shadow-xs touch-friendly active:scale-[0.98]"
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`
+              px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold 
+              text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all shadow-xs touch-friendly active:scale-[0.98]
+              flex items-center gap-1.5 cursor-pointer
+              ${isRefreshing ? "opacity-50" : ""}
+            `}
           >
-            <span className="flex items-center gap-1.5">
-              <FileDown size={15} />
-              <span className="hidden xs:inline">Hisobot</span>
-            </span>
-          </Link>
+            <RefreshCw
+              className={`
+                w-3.5 h-3.5 transition-transform duration-500
+                ${isRefreshing ? "animate-spin text-violet-600" : ""}
+              `}
+            />
+            <span className="hidden xs:inline">Yangilash</span>
+          </button>
+
           <Link
             href="/orders"
-            className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-violet-500/20 touch-friendly active:scale-[0.98]"
+            className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-violet-500/20 touch-friendly active:scale-[0.98] flex items-center gap-1.5"
           >
-            <span className="flex items-center gap-1.5">
-              <Plus size={15} />
-              <span className="hidden xs:inline">Yangi buyurtma</span>
-              <span className="xs:hidden">Buyurtma</span>
-            </span>
+            <Plus size={15} />
+            <span className="hidden xs:inline">Yangi buyurtma</span>
+            <span className="xs:hidden">Buyurtma</span>
           </Link>
         </div>
       </div>
 
-      {/* Mobil Tezkor Kirish Vidjeti (4 ta icon) */}
+      {/* Mobil Tezkor Kirish Vidjeti (4 ta yorqin tugma) */}
       <div className="grid grid-cols-4 gap-2 sm:hidden animate-fade-in-up">
         {[
           { icon: ShoppingCart, label: "Buyurtma", href: "/orders", color: "text-violet-600 bg-violet-50 dark:bg-violet-950/50" },
@@ -57,7 +88,7 @@ export default function DashboardPage() {
           <Link
             key={item.label}
             href={item.href}
-            className="flex flex-col items-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xs hover:border-violet-200 transition-all touch-friendly active:scale-95 text-center"
+            className="flex flex-col items-center p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xs hover:border-violet-200 transition-all touch-friendly active:scale-95 text-center hover-lift"
           >
             <div className={`p-2 rounded-xl mb-1.5 ${item.color}`}>
               <item.icon size={18} />

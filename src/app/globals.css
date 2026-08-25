@@ -276,3 +276,88 @@
 .animate-count-up {
   animation: countUp 0.4s ease-out forwards;
 }
+
+/* ============================================================
+   УЛУЧШЕННЫЙ MOBILE UI/UX
+   ============================================================ */
+
+/* Анимация нажатия для кнопок */
+.touch-press {
+  transition: transform 0.1s ease;
+}
+.touch-press:active {
+  transform: scale(0.95);
+}
+
+/* Карточки с тенью при наведении */
+.card-shadow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-shadow:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Toast анимация */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.toast-enter {
+  animation: slideDown 0.3s ease-out;
+}
+.toast-exit {
+  animation: slideDown 0.3s ease-in reverse;
+}
+
+/* Мобильный Bottom Nav с тенью */
+.bottom-nav-shadow {
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+}
+
+/* Улучшенный скролл для мобильных */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Улучшенные интерактивные элементы */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:active {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Мобильные карточки с анимацией */
+.card-enter {
+  animation: cardEnter 0.3s ease-out;
+}
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Пульсация для индикаторов */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+.pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Стили для pull-to-refresh */
+.pull-indicator {
+  transition: opacity 0.2s ease;
+}
+

@@ -5,6 +5,7 @@ import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
 import { BottomNav } from "./bottom-nav"
 import type { Database } from "@/types/database"
+import { RefreshCw } from "lucide-react"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
@@ -17,6 +18,8 @@ export function AdminShell({ profile, children }: AdminShellProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [touchStartX, setTouchStartX] = useState(0)
+  const [isPulling, setIsPulling] = useState(false)
+  const [pullProgress, setPullProgress] = useState(0)
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -28,17 +31,35 @@ export function AdminShell({ profile, children }: AdminShellProps) {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  // Mobil ekranlarda svayp orqali menyuni ochish / yopish
+  // Mobil ekranlarda Svayp va Pull-To-Refresh hodisalari
   useEffect(() => {
+    let startY = 0
+    let pulling = false
+
     const handleTouchStart = (e: TouchEvent) => {
+      const mainElement = mainRef.current
+      if (mainElement && mainElement.scrollTop === 0) {
+        startY = e.touches[0].clientY
+        pulling = true
+      }
       setTouchStartX(e.touches[0].clientX)
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndX = e.changedTouches[0].clientX
-      const swipeDistance = touchStartX - touchEndX
+    const handleTouchMove = (e: TouchEvent) => {
+      if (pulling) {
+        const pullDistance = e.touches[0].clientY - startY
+        if (pullDistance > 20) {
+          const progress = Math.min(1, pullDistance / 100)
+          setPullProgress(progress)
+          setIsPulling(true)
+        }
+      }
+    }
 
-      // Chap qirradan o'ngga surilsa menyuni ochish (start < 50px va swipe right > 50px)
+    const handleTouchEnd = (e: TouchEvent) => {
+      const swipeDistance = touchStartX - e.changedTouches[0].clientX
+
+      // Chap qirradan o'ngga surilsa menyuni ochish
       if (touchStartX < 50 && swipeDistance < -50) {
         setMobileSidebarOpen(true)
       }
@@ -46,17 +67,30 @@ export function AdminShell({ profile, children }: AdminShellProps) {
       if (swipeDistance > 60 && mobileSidebarOpen) {
         setMobileSidebarOpen(false)
       }
+
+      // Pull-to-refresh
+      if (pulling) {
+        const pullDistance = e.changedTouches[0].clientY - startY
+        if (pullDistance > 80) {
+          window.dispatchEvent(new CustomEvent("pull-to-refresh"))
+        }
+        setIsPulling(false)
+        setPullProgress(0)
+        pulling = false
+      }
     }
 
     const mainElement = mainRef.current
     if (mainElement && isMobile) {
       mainElement.addEventListener("touchstart", handleTouchStart, { passive: true })
+      mainElement.addEventListener("touchmove", handleTouchMove, { passive: true })
       mainElement.addEventListener("touchend", handleTouchEnd, { passive: true })
     }
 
     return () => {
       if (mainElement) {
         mainElement.removeEventListener("touchstart", handleTouchStart)
+        mainElement.removeEventListener("touchmove", handleTouchMove)
         mainElement.removeEventListener("touchend", handleTouchEnd)
       }
     }
@@ -72,7 +106,20 @@ export function AdminShell({ profile, children }: AdminShellProps) {
       />
 
       {/* Asosiy kontent maydoni */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Pull-to-refresh vizual indikatori */}
+        {isPulling && (
+          <div
+            className="fixed top-16 left-0 right-0 z-40 flex items-center justify-center py-2 text-xs font-semibold text-violet-600 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xs transition-opacity shadow-sm"
+            style={{ opacity: pullProgress }}
+          >
+            <span className="flex items-center gap-2">
+              <RefreshCw className="animate-spin h-3.5 w-3.5" />
+              Ma&apos;lumotlar yangilanmoqda...
+            </span>
+          </div>
+        )}
+
         {/* Header with hamburger toggle */}
         <AdminHeader
           profile={profile}
@@ -82,7 +129,7 @@ export function AdminShell({ profile, children }: AdminShellProps) {
         {/* Sahifa ichki kontenti */}
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 bg-gray-50/50 dark:bg-gray-950 pb-24 lg:pb-8 swipeable"
+          className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 bg-gray-50/50 dark:bg-gray-950 pb-24 lg:pb-8 swipeable mobile-scroll"
         >
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">{children}</div>
         </main>
