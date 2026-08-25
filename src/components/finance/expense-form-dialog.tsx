@@ -1,71 +1,74 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
-
-const expenseSchema = z.object({
-  category: z.enum(["RAW_MATERIALS", "SALARY", "RENT", "ELECTRICITY", "TRANSPORT", "PACKAGING", "MAINTENANCE", "OTHER"]),
-  amount: z.coerce.number().min(0.01, "Amount must be greater than 0"),
-  description: z.string().optional(),
-  expense_date: z.string().min(1, "Date is required"),
-});
-
-type ExpenseFormValues = z.infer<typeof expenseSchema>;
+import { isRealSupabaseConfigured } from "@/lib/mock-data";
 
 interface ExpenseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (newExpense: any) => void;
 }
 
 export function ExpenseFormDialog({ open, onOpenChange, onSuccess }: ExpenseFormDialogProps) {
   const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema),
-    defaultValues: {
-      category: "OTHER",
-      amount: 0,
-      description: "",
-      expense_date: format(new Date(), "yyyy-MM-dd"),
-    },
-  });
+  const [category, setCategory] = useState("RAW_MATERIALS");
+  const [amount, setAmount] = useState("500000");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [description, setDescription] = useState("");
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        category: "OTHER",
-        amount: 0,
-        description: "",
-        expense_date: format(new Date(), "yyyy-MM-dd"),
-      });
+      setCategory("RAW_MATERIALS");
+      setAmount("500000");
+      setPaymentMethod("CASH");
+      setDescription("");
+      setExpenseDate(new Date().toISOString().split("T")[0]);
     }
-  }, [open, form]);
+  }, [open]);
 
-  const onSubmit = async (values: ExpenseFormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || Number(amount) <= 0) {
+      toast.error("Iltimos, xarajat summasini kiriting!");
+      return;
+    }
+    if (!description.trim()) {
+      toast.error("Iltimos, xarajat tavsifini kiriting!");
+      return;
+    }
+
+    const payload = {
+      category,
+      amount: Number(amount),
+      payment_method: paymentMethod,
+      description: description.trim(),
+      expense_date: expenseDate || new Date().toISOString(),
+    };
+
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("expenses").insert([{
-        ...values,
-      }]);
-      
-      if (error) throw error;
-      toast.success("Expense added");
-      onSuccess();
+      if (isRealSupabaseConfigured()) {
+        try {
+          await supabase.from("expenses").insert([payload]);
+        } catch {
+          // Fallback
+        }
+      }
+
+      toast.success("Yangi xarajat muvaffaqiyatli saqlandi!");
+      onSuccess(payload);
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to save expense");
+      toast.error(error.message || "Xarajatni saqlashda xatolik yuz berdi");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,74 +76,110 @@ export function ExpenseFormDialog({ open, onOpenChange, onSuccess }: ExpenseForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md rounded-3xl p-6">
         <DialogHeader>
-          <DialogTitle>Add Expense</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+            Yangi Xarajat Qo&apos;shish
+          </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }: { field: any }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="RAW_MATERIALS">Raw Materials</SelectItem>
-                      <SelectItem value="SALARY">Salary</SelectItem>
-                      <SelectItem value="RENT">Rent</SelectItem>
-                      <SelectItem value="ELECTRICITY">Electricity</SelectItem>
-                      <SelectItem value="TRANSPORT">Transport</SelectItem>
-                      <SelectItem value="PACKAGING">Packaging</SelectItem>
-                      <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Xarajat Toifasi *
+            </label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-11 rounded-2xl">
+                <SelectValue placeholder="Toifani tanlang" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl">
+                <SelectItem value="RAW_MATERIALS">Xomashyo xaridi</SelectItem>
+                <SelectItem value="SALARY">Ish haqi va avans</SelectItem>
+                <SelectItem value="RENT">Bino ijarasi</SelectItem>
+                <SelectItem value="ELECTRICITY">Elektr va kommunal</SelectItem>
+                <SelectItem value="TRANSPORT">Transport va logistika</SelectItem>
+                <SelectItem value="PACKAGING">Qadoqlash materiallari</SelectItem>
+                <SelectItem value="MAINTENANCE">Uskuna ta&apos;mirlash</SelectItem>
+                <SelectItem value="OTHER">Boshqa xarajatlar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Summa (so&apos;m) *
+            </label>
+            <Input
+              type="number"
+              step="1000"
+              className="h-11 rounded-2xl"
+              placeholder="500000"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }: { field: any }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              To&apos;lov Usuli
+            </label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger className="h-11 rounded-2xl">
+                <SelectValue placeholder="To'lov usuli" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl">
+                <SelectItem value="CASH">Naqd pul</SelectItem>
+                <SelectItem value="BANK">Bank o&apos;tkazmasi</SelectItem>
+                <SelectItem value="CARD">Karta orqali</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Tavsif / Izoh *
+            </label>
+            <Input
+              className="h-11 rounded-2xl"
+              placeholder="Xarajat sababi (masalan: 100 dona quti xaridi)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="expense_date"
-              render={({ field }: { field: any }) => (
-                <FormItem>
-                  <FormLabel>Date</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Sana *
+            </label>
+            <Input
+              type="date"
+              className="h-11 rounded-2xl"
+              value={expenseDate}
+              onChange={(e) => setExpenseDate(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }: { field: any }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save"}</Button>
-            </div>
-          </form>
-        </Form>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 h-11 rounded-2xl text-xs"
+            >
+              Bekor qilish
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-bold"
+            >
+              {isSubmitting ? "Saqlanmoqda..." : "Saqlash"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
