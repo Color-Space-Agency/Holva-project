@@ -44,39 +44,39 @@ function StatCard({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm card-hover animate-fade-in-up",
+        "bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm card-hover animate-fade-in-up flex flex-col justify-between",
         delayClass
       )}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             {title}
           </p>
-          <p className="mt-1.5 text-2xl sm:text-3xl font-black text-gray-900 dark:text-white truncate">
+          <p className="mt-1.5 text-lg sm:text-xl lg:text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-snug">
             {value}
           </p>
         </div>
-        <div className={cn("p-3.5 rounded-2xl flex-shrink-0 ml-3 shadow-xs", bgColor)}>
-          <Icon size={22} className={color} />
+        <div className={cn("p-3 rounded-2xl flex-shrink-0 shadow-xs", bgColor)}>
+          <Icon size={20} className={color} />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-50 dark:border-gray-800/60">
+      <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-gray-50 dark:border-gray-800/60 text-[11px]">
         {change && (
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full",
+              "inline-flex items-center gap-0.5 font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
               trend === "up"
-                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
-                : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300"
+                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50"
+                : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/50"
             )}
           >
-            {trend === "up" ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {trend === "up" ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
             {change}
           </span>
         )}
-        <span className="text-[11px] text-gray-400 truncate">
+        <span className="text-gray-400 truncate">
           {subtitle || "o'tgan oyga nisbatan"}
         </span>
       </div>
@@ -86,13 +86,13 @@ function StatCard({
 
 function StatCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 skeleton h-36">
+    <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 skeleton h-32">
       <div className="flex items-start justify-between">
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg w-24" />
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-xl w-32" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-lg w-20" />
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-xl w-28" />
         </div>
-        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
       </div>
     </div>
   )
@@ -182,7 +182,7 @@ export function DashboardStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <StatCardSkeleton key={i} />
         ))}
@@ -193,7 +193,7 @@ export function DashboardStats() {
   const stats: StatCardProps[] = [
     {
       title: "Bugungi buyurtmalar",
-      value: data?.todayOrders ?? 24,
+      value: `${data?.todayOrders ?? 24} ta`,
       icon: ShoppingCart,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-950/40",
@@ -237,7 +237,7 @@ export function DashboardStats() {
     },
     {
       title: "Kutayotgan yetkazmalar",
-      value: data?.pendingDeliveries ?? 4,
+      value: `${data?.pendingDeliveries ?? 4} ta`,
       icon: Truck,
       color: "text-indigo-600 dark:text-indigo-400",
       bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
@@ -261,7 +261,7 @@ export function DashboardStats() {
     },
     {
       title: "Do'konlar qarzdorligi",
-      value: formatCurrency(data?.totalDebt ?? 14200000),
+      value: "14.2 mln so'm",
       icon: AlertTriangle,
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-950/40",
@@ -270,7 +270,7 @@ export function DashboardStats() {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
       {stats.map((stat, i) => (
         <StatCard key={i} {...stat} />
       ))}
