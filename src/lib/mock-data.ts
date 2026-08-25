@@ -400,9 +400,9 @@ export function getStoredProducts(): MockProduct[] {
   if (typeof window === "undefined") return INITIAL_PRODUCTS
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored products:", e)
@@ -456,9 +456,9 @@ export function getStoredEmployees(): MockEmployee[] {
   if (typeof window === "undefined") return INITIAL_EMPLOYEES
   try {
     const raw = localStorage.getItem(STORAGE_KEY_EMPLOYEES)
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored employees:", e)

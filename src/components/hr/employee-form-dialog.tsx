@@ -257,8 +257,8 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSuccess }: 
             {photoPreview && (
               <button
                 type="button"
-                onClick={() => setPhotoPreview(null)}
-                className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:underline pt-0.5"
+                onClick={() => setPhotoPreview("")}
+                className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:underline pt-0.5 cursor-pointer"
               >
                 <Trash2 size={12} />
                 Rasmni olib tashlash

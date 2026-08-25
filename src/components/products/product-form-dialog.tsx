@@ -175,7 +175,16 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       return
     }
     setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview("")
   }
 
   const onSubmit = async (formData: FormData) => {
@@ -183,6 +192,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     try {
       const catName = categories.find((c: any) => c.id === formData.category_id)?.name || "Klassik Holvalar"
       const uName = units.find((u: any) => u.id === formData.unit_id)?.name || "dona"
+      const finalImageUrl = imagePreview !== null ? imagePreview : (product?.image_url || "")
 
       if (product) {
         // Update in localStorage
@@ -196,7 +206,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
           cost_price: formData.cost_price,
           unit: uName,
           status: formData.status as any,
-          image_url: imagePreview || product.image_url || "",
+          image_url: finalImageUrl,
           description: formData.description || undefined,
         })
       } else {
@@ -212,7 +222,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
           stock: 50,
           min_stock: 10,
           status: formData.status as any,
-          image_url: imagePreview || "",
+          image_url: finalImageUrl,
           description: formData.description || undefined,
         })
       }
@@ -296,8 +306,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
               {imagePreview && (
                 <button
                   type="button"
-                  onClick={() => { setImagePreview(null); setImageFile(null) }}
-                  className="text-[11px] text-red-500 hover:underline block pt-0.5"
+                  onClick={handleRemoveImage}
+                  className="text-[11px] text-red-500 hover:underline block pt-0.5 cursor-pointer"
                 >
                   Rasmni olib tashlash
                 </button>
