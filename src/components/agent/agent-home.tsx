@@ -7,7 +7,8 @@ import {
   Truck, Package, CircleDollarSign, 
   Star, Zap, MessageCircle, BarChart3,
   Eye, EyeOff, Sparkles, ArrowUp, ArrowDown,
-  X, Calendar, RefreshCw, Send, Plus, MapPin
+  X, Calendar, RefreshCw, Send, Plus, MapPin,
+  Flame, Award, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
@@ -25,6 +26,7 @@ import { toast } from 'sonner';
 // ============================================================
 interface ChartItem {
   day: string;
+  fullDate?: string;
   value: number; // so'm miqdorida
 }
 
@@ -100,7 +102,7 @@ function AnalyticsModal({
             <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Kunlik aniq summalar:</p>
             <div className="grid grid-cols-2 gap-2">
               {data.map((item, idx) => (
-                <div key={idx} className="bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl text-xs flex justify-between items-center">
+                <div key={idx} className="bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-xl text-xs flex justify-between items-center border border-gray-100 dark:border-gray-700/50">
                   <span className="font-semibold text-gray-600 dark:text-gray-300">{item.day}:</span>
                   <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(item.value)}</span>
                 </div>
@@ -363,6 +365,7 @@ export function AgentHome() {
   
   // Savdo dinamikasi tablari: 'week' | 'month' | 'custom'
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'custom'>('week');
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const [fromDate, setFromDate] = useState<string>('2026-08-20');
   const [toDate, setToDate] = useState<string>('2026-08-26');
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
@@ -413,30 +416,30 @@ export function AgentHome() {
     ],
     // Haftalik ma'lumotlar (so'mda)
     weeklyData: [
-      { day: 'Dush', value: 2800000 },
-      { day: 'Sesh', value: 3200000 },
-      { day: 'Chor', value: 2500000 },
-      { day: 'Pay', value: 4100000 },
-      { day: 'Jum', value: 3800000 },
-      { day: 'Shan', value: 5200000 },
-      { day: 'Yak', value: 4500000 }
+      { day: 'Dush', fullDate: '20-Avgust, Dushanba', value: 2800000 },
+      { day: 'Sesh', fullDate: '21-Avgust, Seshanba', value: 3200000 },
+      { day: 'Chor', fullDate: '22-Avgust, Chorshanba', value: 2500000 },
+      { day: 'Pay', fullDate: '23-Avgust, Payshanba', value: 4100000 },
+      { day: 'Jum', fullDate: '24-Avgust, Juma', value: 3800000 },
+      { day: 'Shan', fullDate: '25-Avgust, Shanba', value: 5200000 },
+      { day: 'Yak', fullDate: '26-Avgust, Yakshanba', value: 4500000 }
     ],
     // Oylik ma'lumotlar (so'mda)
     monthlyData: [
-      { day: '1-hafta', value: 12500000 },
-      { day: '2-hafta', value: 15200000 },
-      { day: '3-hafta', value: 14800000 },
-      { day: '4-hafta', value: 18300000 }
+      { day: '1-hafta', fullDate: '1 — 7 Avgust haftaligi', value: 12500000 },
+      { day: '2-hafta', fullDate: '8 — 14 Avgust haftaligi', value: 15200000 },
+      { day: '3-hafta', fullDate: '15 — 21 Avgust haftaligi', value: 14800000 },
+      { day: '4-hafta', fullDate: '22 — 28 Avgust haftaligi', value: 18300000 }
     ],
     // Sanadan-sanagacha ma'lumotlar (so'mda)
     customData: [
-      { day: '20-Avg', value: 3100000 },
-      { day: '21-Avg', value: 4200000 },
-      { day: '22-Avg', value: 2900000 },
-      { day: '23-Avg', value: 4600000 },
-      { day: '24-Avg', value: 3800000 },
-      { day: '25-Avg', value: 5400000 },
-      { day: '26-Avg', value: 4800000 },
+      { day: '20-Avg', fullDate: '20-Avgust, 2026', value: 3100000 },
+      { day: '21-Avg', fullDate: '21-Avgust, 2026', value: 4200000 },
+      { day: '22-Avg', fullDate: '22-Avgust, 2026', value: 2900000 },
+      { day: '23-Avg', fullDate: '23-Avgust, 2026', value: 4600000 },
+      { day: '24-Avg', fullDate: '24-Avgust, 2026', value: 3800000 },
+      { day: '25-Avg', fullDate: '25-Avgust, 2026', value: 5400000 },
+      { day: '26-Avg', fullDate: '26-Avgust, 2026', value: 4800000 },
     ]
   };
 
@@ -480,6 +483,10 @@ export function AgentHome() {
 
   const currentChartData = getChartData();
   const totalPeriodRevenue = currentChartData.reduce((acc, curr) => acc + curr.value, 0);
+
+  // Tanlangan kun yoki default jami summa ko'rsatkichi
+  const activeItem = selectedDayIndex !== null ? currentChartData[selectedDayIndex] : null;
+  const bestDay = [...currentChartData].sort((a, b) => b.value - a.value)[0];
 
   return (
     <div className="space-y-5 pb-28 animate-fade-in-up max-w-lg mx-auto p-4 relative">
@@ -527,117 +534,182 @@ export function AgentHome() {
         </Link>
       </div>
 
-      {/* 2. Asosiy karta - Bugungi Savdo va Moslashuvchan Savdo Dinamikasi */}
-      <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-950/30 dark:to-orange-950/20 rounded-3xl p-6 border border-amber-200/60 dark:border-amber-800/40 shadow-xs">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-              Bugungi Savdo
-            </p>
-            <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
-              {formatCurrency(agentData.todayRevenue)}
-            </p>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                <TrendingUp className="w-3.5 h-3.5" />
-                Rejadan {agentData.revenuePercent}% ortiq
-              </span>
-              <button 
-                onClick={() => setIsAnalyticsModalOpen(true)}
-                className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-bold flex items-center gap-1 cursor-pointer touch-press"
-              >
-                <BarChart3 className="w-3.5 h-3.5" />
-                Batafsil hisobot
-              </button>
+      {/* 2. YANGILANGAN SAVDO DINAMIKASI (PREMIUM FINTECH UI/UX) */}
+      <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
+        
+        {/* Yuqori qism: Segmented Control & Analitika tugmasi */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+            <button 
+              onClick={() => { setActiveTab('week'); setSelectedDayIndex(null); }}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                activeTab === 'week' 
+                  ? 'bg-white dark:bg-gray-900 text-amber-600 dark:text-amber-400 shadow-sm' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800'
+              }`}
+            >
+              Hafta
+            </button>
+            <button 
+              onClick={() => { setActiveTab('month'); setSelectedDayIndex(null); }}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                activeTab === 'month' 
+                  ? 'bg-white dark:bg-gray-900 text-amber-600 dark:text-amber-400 shadow-sm' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800'
+              }`}
+            >
+              Oy
+            </button>
+            <button 
+              onClick={() => { setActiveTab('custom'); setSelectedDayIndex(null); }}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 ${
+                activeTab === 'custom' 
+                  ? 'bg-white dark:bg-gray-900 text-amber-600 dark:text-amber-400 shadow-sm' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              Sana
+            </button>
+          </div>
+
+          <button 
+            onClick={() => setIsAnalyticsModalOpen(true)}
+            className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-200/50 dark:border-amber-900/40 cursor-pointer touch-press"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Batafsil</span>
+          </button>
+        </div>
+
+        {/* Sana tanlash (Agar custom tanlansa) */}
+        {activeTab === 'custom' && (
+          <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/60 animate-fade-in text-xs">
+            <div>
+              <label className="text-[10px] text-gray-400 font-bold block mb-1">Boshlanish sanasi:</label>
+              <input 
+                type="date" 
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-400 font-bold block mb-1">Tugash sanasi:</label>
+              <input 
+                type="date" 
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
+              />
             </div>
           </div>
-          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/50 rounded-2xl flex items-center justify-center border border-amber-200/50">
-            <CircleDollarSign className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+        )}
+
+        {/* Jonli tanlangan kun / Umumiy davr ma'lumoti */}
+        <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-950/40 dark:to-orange-950/20 p-4 rounded-2xl border border-amber-200/60 dark:border-amber-900/40 transition-all">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+                {activeItem ? activeItem.fullDate || activeItem.day : 'Tanlangan Davr Tushumi'}
+              </p>
+              <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
+                {formatCurrency(activeItem ? activeItem.value : totalPeriodRevenue)}
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                {activeItem ? (
+                  <>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                      {((activeItem.value / totalPeriodRevenue) * 100).toFixed(0)}%
+                    </span> 
+                    umumiy savdo ulushi
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                      <TrendingUp className="w-3 h-3 inline" /> +18%
+                    </span>
+                    o&apos;tgan davrga nisbatan o&apos;sish
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="p-2.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-2xl border border-amber-200/50">
+              <CircleDollarSign className="w-6 h-6" />
+            </div>
           </div>
         </div>
 
-        {/* Dinamik Savdo Grafigi (Hafta | Oy | Sana oralig'i va Summalar) */}
-        <div className="mt-4 pt-4 border-t border-amber-200/40 dark:border-amber-800/40 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                Savdo dinamikasi ({formatCurrency(totalPeriodRevenue)})
-              </p>
-            </div>
-            
-            {/* Tablar */}
-            <div className="flex gap-1 bg-amber-100/60 dark:bg-amber-950/60 p-0.5 rounded-xl self-start sm:self-auto">
-              <button 
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${activeTab === 'week' ? 'bg-amber-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
-                onClick={() => setActiveTab('week')}
-              >
-                Hafta
-              </button>
-              <button 
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${activeTab === 'month' ? 'bg-amber-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
-                onClick={() => setActiveTab('month')}
-              >
-                Oy
-              </button>
-              <button 
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition flex items-center gap-1 ${activeTab === 'custom' ? 'bg-amber-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
-                onClick={() => setActiveTab('custom')}
-              >
-                <Calendar className="w-3 h-3" />
-                Sana tanlash
-              </button>
-            </div>
-          </div>
-
-          {/* Sana oralig'ini tanlash maydonlari */}
-          {activeTab === 'custom' && (
-            <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-amber-200/60 dark:border-amber-900/40 text-xs animate-fade-in">
-              <div className="flex-1">
-                <label className="text-[10px] text-gray-400 block mb-0.5 font-semibold">Dan:</label>
-                <input 
-                  type="date" 
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg px-2 py-1 text-xs font-bold text-gray-800 dark:text-white outline-none"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-[10px] text-gray-400 block mb-0.5 font-semibold">Gacha:</label>
-                <input 
-                  type="date" 
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg px-2 py-1 text-xs font-bold text-gray-800 dark:text-white outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Ustunli grafik ustida aniq summalar bilan */}
-          <div className="flex items-end gap-1.5 h-24 pt-4">
+        {/* Katta, qulay, interaktiv ustunlar (Interactive Chart Bars) */}
+        <div className="pt-2">
+          <div className="flex items-end gap-2 h-36 pt-6 pb-2 px-1 border-b border-gray-100 dark:border-gray-800">
             {currentChartData.map((item, i) => {
               const maxVal = Math.max(...currentChartData.map(d => d.value), 1000000);
               const height = (item.value / maxVal) * 100;
+              const isSelected = selectedDayIndex === i;
+
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group relative">
-                  {/* Tooltip & Summa ko'rsatkichi */}
-                  <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                <div 
+                  key={i} 
+                  onClick={() => setSelectedDayIndex(isSelected ? null : i)}
+                  className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer relative touch-friendly"
+                >
+                  {/* Floating tooltip summa */}
+                  <span className={`
+                    text-[10px] font-black transition-all whitespace-nowrap
+                    ${isSelected 
+                      ? 'text-amber-600 dark:text-amber-400 scale-110 -translate-y-1' 
+                      : 'text-gray-400 dark:text-gray-500 group-hover:text-amber-600'
+                    }
+                  `}>
                     {(item.value / 1000000).toFixed(1)}M
                   </span>
+
+                  {/* Bar */}
                   <div 
-                    className="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-md transition-all duration-500 hover:bg-amber-600 shadow-xs cursor-pointer"
-                    style={{ height: `${height}%`, minHeight: '6px' }}
-                    title={`${item.day}: ${formatCurrency(item.value)}`}
-                  />
-                  <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 truncate max-w-full text-center">
+                    className={`
+                      w-full rounded-t-xl transition-all duration-300 relative
+                      ${isSelected 
+                        ? 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-md shadow-amber-500/30 scale-x-105' 
+                        : 'bg-gradient-to-t from-amber-400/70 to-amber-300/70 dark:from-amber-600/50 dark:to-amber-500/50 group-hover:from-amber-500 group-hover:to-amber-400'
+                      }
+                    `}
+                    style={{ height: `${height}%`, minHeight: '12px' }}
+                  >
+                    {isSelected && (
+                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white dark:ring-gray-900 animate-pulse" />
+                    )}
+                  </div>
+
+                  {/* Day label */}
+                  <span className={`
+                    text-[11px] transition-all font-bold mt-1 truncate max-w-full text-center
+                    ${isSelected 
+                      ? 'text-amber-600 dark:text-amber-400 scale-110 font-black' 
+                      : 'text-gray-600 dark:text-gray-400'
+                    }
+                  `}>
                     {item.day}
                   </span>
                 </div>
               );
             })}
           </div>
+
+          {/* Mini yordamchi ko'rsatkichlar (KPI Footers) */}
+          <div className="flex items-center justify-between pt-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>Eng yaxshi kun: <strong className="text-gray-900 dark:text-white font-bold">{bestDay?.day} ({formatCurrency(bestDay?.value || 0)})</strong></span>
+            </div>
+            <div className="font-semibold text-[11px] text-gray-400">
+              Barmoq bilan bosing
+            </div>
+          </div>
         </div>
+
       </div>
 
       {/* 3. Oylik Komissiya va Progress bar */}
