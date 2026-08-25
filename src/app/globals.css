@@ -158,6 +158,121 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* ============================================================
+   МОБИЛЬНАЯ АДАПТАЦИЯ (MOBILE OPTIMIZATIONS)
+   ============================================================ */
+
+/* Мобильные отступы */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  button, 
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .card-mobile {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+  
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .show-mobile {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.touch-friendly {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .swipeable {
+    touch-action: pan-y;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 16px);
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Адаптивные карточки статистики */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .stats-grid .stat-card {
+    padding: 12px !important;
+  }
+  .stats-grid .stat-value {
+    font-size: 18px !important;
+  }
+  .stats-grid .stat-label {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Анимация для мобильного меню */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes slideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.slide-in { animation: slideIn 0.3s ease-out; }
+.slide-out { animation: slideOut 0.3s ease-in; }
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
 .animate-count-up {
   animation: countUp 0.4s ease-out forwards;
 }
