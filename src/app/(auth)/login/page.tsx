@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Eye, EyeOff, LogIn, Loader2, ShieldCheck, Smartphone, KeyRound, User } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 
 export default function LoginPage() {
   const router = useRouter()
+  const passwordInputRef = useRef<HTMLInputElement>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -67,19 +68,16 @@ export default function LoginPage() {
     }
 
     setIsLoading(false)
-    toast.error("Login yoki parol noto'g'ri! Iltimos qaytadan tekshirib kiring.")
+    toast.error("Login yoki parol noto'g'ri! Iltimos, qaytadan tekshiring.")
   }
 
-  const handleQuickFill = (role: "SUPER_ADMIN" | "SALES_AGENT") => {
-    if (role === "SUPER_ADMIN") {
-      setUsername("SUPER ADMIN")
-      setPassword("0321")
-      toast.info("Super Admin ma'lumotlari kiritildi (0321)")
-    } else {
-      setUsername("Sotuv agent")
-      setPassword("0123")
-      toast.info("Sotuv agenti ma'lumotlari kiritildi (0123)")
-    }
+  const handleSelectRole = (roleName: string) => {
+    setUsername(roleName)
+    setPassword("")
+    toast.info(`${roleName} tanlandi. Parolingizni kiriting.`)
+    setTimeout(() => {
+      passwordInputRef.current?.focus()
+    }, 100)
   }
 
   return (
@@ -93,30 +91,36 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Tezkor tanlash tugmalari */}
+      {/* Profilni tanlash tugmalari (parolsiz) */}
       <div className="mb-6 space-y-2">
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block text-center">
-          Tezkor profilni tanlash:
+          Profilni tanlash:
         </span>
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
-            onClick={() => handleQuickFill("SUPER_ADMIN")}
-            className="flex flex-col items-center justify-center p-3 bg-violet-50 hover:bg-violet-100/80 dark:bg-violet-950/40 dark:hover:bg-violet-900/40 text-violet-800 dark:text-violet-200 rounded-2xl border border-violet-200/60 dark:border-violet-800/50 transition-all text-left group cursor-pointer"
+            onClick={() => handleSelectRole("SUPER ADMIN")}
+            className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border transition-all text-center group cursor-pointer ${
+              username === "SUPER ADMIN"
+                ? "bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-500/20"
+                : "bg-violet-50 hover:bg-violet-100/80 dark:bg-violet-950/40 dark:hover:bg-violet-900/40 text-violet-800 dark:text-violet-200 border-violet-200/60 dark:border-violet-800/50"
+            }`}
           >
-            <ShieldCheck className="h-5 w-5 text-violet-600 dark:text-violet-400 mb-1" />
+            <ShieldCheck className={`h-5 w-5 mb-1 ${username === "SUPER ADMIN" ? "text-white" : "text-violet-600 dark:text-violet-400"}`} />
             <span className="text-xs font-bold">SUPER ADMIN</span>
-            <span className="text-[10px] text-violet-500 font-mono mt-0.5">Parol: 0321</span>
           </button>
 
           <button
             type="button"
-            onClick={() => handleQuickFill("SALES_AGENT")}
-            className="flex flex-col items-center justify-center p-3 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/50 transition-all text-left group cursor-pointer"
+            onClick={() => handleSelectRole("Sotuv agent")}
+            className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border transition-all text-center group cursor-pointer ${
+              username === "Sotuv agent"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
+                : "bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border-emerald-200/60 dark:border-emerald-800/50"
+            }`}
           >
-            <Smartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mb-1" />
+            <Smartphone className={`h-5 w-5 mb-1 ${username === "Sotuv agent" ? "text-white" : "text-emerald-600 dark:text-emerald-400"}`} />
             <span className="text-xs font-bold">Sotuv agent</span>
-            <span className="text-[10px] text-emerald-500 font-mono mt-0.5">Parol: 0123</span>
           </button>
         </div>
       </div>
@@ -143,10 +147,11 @@ export default function LoginPage() {
           </label>
           <div className="relative">
             <Input
+              ref={passwordInputRef}
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••"
+              placeholder="Parolni kiriting..."
               required
               className="h-11 rounded-xl pr-10 text-sm border-gray-200 dark:border-gray-700"
             />
@@ -163,7 +168,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold gap-2 shadow-lg shadow-violet-500/20 cursor-pointer"
+          className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold gap-2 shadow-lg shadow-violet-500/20 cursor-pointer mt-2"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

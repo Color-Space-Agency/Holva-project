@@ -1,27 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { formatCurrency } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
-import { AgentOrderForm } from './agent-order-form';
 import { useSearchParams } from 'next/navigation';
+import { formatCurrency } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, ShoppingCart, Search, CheckCircle2, Clock, Truck, Store } from 'lucide-react';
+import { INITIAL_ORDERS, INITIAL_PRODUCTS, INITIAL_STORES } from '@/lib/mock-data';
+import { AgentOrderForm } from './agent-order-form';
 
 export function AgentOrders() {
-  const supabase = createClient();
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
-    });
-  }, [supabase]);
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
@@ -29,80 +23,130 @@ export function AgentOrders() {
     }
   }, [searchParams]);
 
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['agent-orders', userId, filter],
-    enabled: !!userId,
-    queryFn: async () => {
-      let query = supabase
-        .from('orders')
-        .select('id, order_number, total_amount, status, created_at, stores (name)')
-        .eq('created_by', userId)
-        .order('created_at', { ascending: false });
-
-      if (filter !== 'ALL') {
-        query = query.eq('status', filter);
-      }
-
-      const { data } = await query;
-      return data || [];
-    }
+  const filteredOrders = orders.filter((o) => {
+    const matchesFilter = filter === 'ALL' || o.status === filter;
+    const matchesSearch =
+      o.order_number.toLowerCase().includes(search.toLowerCase()) ||
+      o.store_name.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
+  const handleOrderCreated = (newOrder: any) => {
+    setOrders([newOrder, ...orders]);
+    setIsFormOpen(false);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'DELIVERED':
+        return (
+          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" /> Yetkazildi
+          </span>
+        );
+      case 'DELIVERING':
+        return (
+          <span className="text-[11px] font-semibold text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
+            <Truck className="h-3 w-3" /> Yetkazilmoqda
+          </span>
+        );
+      case 'CONFIRMED':
+        return (
+          <span className="text-[11px] font-semibold text-violet-700 bg-violet-100 dark:bg-violet-950 dark:text-violet-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <Clock className="h-3 w-3" /> Qabul qilindi
+          </span>
+        );
+      default:
+        return (
+          <span className="text-[11px] font-semibold text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <Clock className="h-3 w-3" /> {status}
+          </span>
+        );
+    }
+  };
+
   return (
-    <div className="p-4 space-y-4">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur py-2">
-        <h1 className="text-xl font-bold mb-4">Buyurtmalarim</h1>
-        
-        <Tabs value={filter} onValueChange={setFilter} className="w-full overflow-x-auto">
-          <TabsList className="w-max inline-flex">
-            <TabsTrigger value="ALL">Barchasi</TabsTrigger>
-            <TabsTrigger value="DRAFT">Qoralama</TabsTrigger>
-            <TabsTrigger value="CONFIRMED">Tasdiqlangan</TabsTrigger>
-            <TabsTrigger value="DELIVERED">Yetkazilgan</TabsTrigger>
+    <div className="p-4 space-y-4 pb-24 max-w-lg mx-auto">
+      <div className="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur py-2 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Buyurtmalarim</h1>
+            <p className="text-xs text-gray-400">Jami {filteredOrders.length} ta buyurtma</p>
+          </div>
+          <Button
+            onClick={() => setIsFormOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold gap-1.5 h-10 shadow-md shadow-emerald-500/20"
+          >
+            <Plus className="h-4 w-4" /> Yangi olish
+          </Button>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buyurtma # yoki do'kon nomi..."
+            className="pl-10 h-11 rounded-2xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <Tabs value={filter} onValueChange={setFilter} className="w-full">
+          <TabsList className="w-full grid grid-cols-4 bg-gray-200/60 dark:bg-gray-800/60 rounded-2xl p-1 h-10">
+            <TabsTrigger value="ALL" className="text-xs rounded-xl">Barchasi</TabsTrigger>
+            <TabsTrigger value="CONFIRMED" className="text-xs rounded-xl">Yangi</TabsTrigger>
+            <TabsTrigger value="DELIVERING" className="text-xs rounded-xl">Yo&apos;lda</TabsTrigger>
+            <TabsTrigger value="DELIVERED" className="text-xs rounded-xl">Yetkazildi</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       <div className="space-y-3">
-        {isLoading ? (
-          [1,2,3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />)
-        ) : orders?.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground">Buyurtmalar topilmadi</div>
-        ) : (
-          orders?.map(order => (
-            <Card key={order.id}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-semibold">{(order.stores as any)?.name}</div>
-                    <div className="text-sm text-muted-foreground">{order.order_number}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold">{formatCurrency(Number(order.total_amount))}</div>
-                    <div className="text-xs bg-muted px-2 py-0.5 rounded-full inline-block mt-1">{order.status}</div>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(order.created_at).toLocaleString('uz-UZ')}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+        {filteredOrders.map((order) => (
+          <div
+            key={order.id}
+            className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-4.5 space-y-3 shadow-sm hover:shadow-md transition-all"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="font-mono text-xs font-bold text-violet-600 dark:text-violet-400">
+                  {order.order_number}
+                </span>
+                <h3 className="font-bold text-gray-900 dark:text-white text-base mt-0.5 flex items-center gap-1.5">
+                  <Store className="h-4 w-4 text-gray-400" />
+                  {order.store_name}
+                </h3>
+              </div>
+              <div>{getStatusBadge(order.status)}</div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 text-xs">
+              <span className="text-gray-400">
+                {new Date(order.created_at).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <div className="text-right">
+                <span className="text-gray-400 mr-1.5">Summa:</span>
+                <span className="font-bold text-sm text-gray-900 dark:text-white">
+                  {formatCurrency(order.total_amount)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {filteredOrders.length === 0 && (
+          <div className="text-center py-12 text-gray-400 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
+            Buyurtmalar topilmadi
+          </div>
         )}
       </div>
 
-      <AgentOrderForm 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
-        userId={userId || ''} 
+      {/* Buyurtma Yaratish Modali */}
+      <AgentOrderForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={handleOrderCreated}
       />
-
-      <button 
-        onClick={() => setIsFormOpen(true)}
-        className="fixed bottom-20 right-4 h-14 w-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center z-40"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
     </div>
   );
 }

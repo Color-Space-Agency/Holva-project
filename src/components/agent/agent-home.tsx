@@ -6,186 +6,172 @@ import { useQuery } from '@tanstack/react-query';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, MapPin, Store, CreditCard, ChevronRight } from 'lucide-react';
+import { ShoppingCart, MapPin, Store, CreditCard, ChevronRight, Plus, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { INITIAL_ORDERS, INITIAL_STORES } from '@/lib/mock-data';
 
 export function AgentHome() {
-  const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>('');
+  const [userName, setUserName] = useState<string>('Sardor Rahimov');
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        supabase.from('users').select('first_name, last_name').eq('id', data.user.id).single().then((res) => {
-          if (res.data) setUserName(`${res.data.first_name || ''} ${res.data.last_name || ''}`);
-        });
-      }
-    });
-  }, [supabase]);
+    const savedName = localStorage.getItem('user_name');
+    if (savedName) setUserName(savedName);
+  }, []);
 
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['agent-stats', userId],
-    queryFn: async () => {
-      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
-      if (isRealSupabaseConfigured() && userId) {
-        try {
-          const today = new Date().toISOString().split('T')[0];
-          const [ordersRes, visitsRes, storesRes, commissionsRes] = await Promise.all([
-            supabase.from('orders').select('id, total_amount, created_at').eq('created_by', userId).gte('created_at', `${today}T00:00:00Z`),
-            supabase.from('visits').select('id').eq('agent_id', userId).gte('created_at', `${today}T00:00:00Z`),
-            supabase.from('agent_store_assignments').select('store_id').eq('agent_id', userId),
-            supabase.from('agent_commissions').select('*').eq('agent_id', userId).order('created_at', { ascending: false }).limit(1)
-          ]);
+  const stats = {
+    todayOrders: 6,
+    todaySales: 22400000,
+    todayVisits: 9,
+    assignedStores: INITIAL_STORES.length,
+    commission: {
+      commission_amount: 4725000,
+      paid_amount: 3500000,
+      remaining_amount: 1225000,
+    },
+  };
 
-          return {
-            todayOrders: ordersRes.data?.length || 0,
-            todaySales: ordersRes.data?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
-            todayVisits: visitsRes.data?.length || 0,
-            assignedStores: storesRes.data?.length || 0,
-            commission: commissionsRes.data?.[0] || null
-          };
-        } catch {
-          // Fallback
-        }
-      }
-
-      return {
-        todayOrders: 5,
-        todaySales: 18400000,
-        todayVisits: 8,
-        assignedStores: 24,
-        commission: { current_month_amount: 4725000, paid_amount: 0 }
-      };
-    }
-  });
-
-  const { data: recentOrders } = useQuery({
-    queryKey: ['agent-recent-orders', userId],
-    queryFn: async () => {
-      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
-      if (isRealSupabaseConfigured() && userId) {
-        try {
-          const { data } = await supabase
-            .from('orders')
-            .select(`id, order_number, total_amount, status, created_at, stores (name)`)
-            .eq('created_by', userId)
-            .order('created_at', { ascending: false })
-            .limit(5);
-          if (data && data.length > 0) return data as any[];
-        } catch {
-          // Fallback
-        }
-      }
-
-      return INITIAL_ORDERS.slice(0, 5).map((o) => ({
-        id: o.id,
-        order_number: o.order_number,
-        total_amount: o.total_amount,
-        status: o.status,
-        created_at: o.created_at,
-        stores: { name: o.store_name }
-      }));
-    }
-  });
-
-  if (isLoading) {
-    return <div className="p-4 space-y-4 animate-pulse"><div className="h-10 bg-muted rounded"></div><div className="h-32 bg-muted rounded"></div></div>;
-  }
-
+  const recentOrders = INITIAL_ORDERS.slice(0, 4);
   const currentDate = new Intl.DateTimeFormat('uz-UZ', { dateStyle: 'full' }).format(new Date());
 
   return (
-    <div className="p-4 space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">Salom, {userName}</h1>
-        <p className="text-muted-foreground">{currentDate}</p>
-      </header>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <ShoppingCart className="h-6 w-6 text-primary mb-2" />
-            <div className="text-2xl font-bold">{stats?.todayOrders}</div>
-            <div className="text-xs text-muted-foreground">Bugungi sotuvlar</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <MapPin className="h-6 w-6 text-blue-500 mb-2" />
-            <div className="text-2xl font-bold">{stats?.todayVisits}</div>
-            <div className="text-xs text-muted-foreground">Bugungi tashriflar</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <Store className="h-6 w-6 text-orange-500 mb-2" />
-            <div className="text-2xl font-bold">{stats?.assignedStores}</div>
-            <div className="text-xs text-muted-foreground">Do'konlar</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <CreditCard className="h-6 w-6 text-green-500 mb-2" />
-            <div className="text-lg font-bold">{formatCurrency(stats?.todaySales || 0)}</div>
-            <div className="text-xs text-muted-foreground">Bugungi summa</div>
-          </CardContent>
-        </Card>
+    <div className="p-4 space-y-5 pb-24 max-w-lg mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between pt-2">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            <Sparkles className="h-3.5 w-3.5" /> Savdo Agenti Paneli
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
+            Salom, {userName.split(' ')[0]} 👋
+          </h1>
+          <p className="text-xs text-gray-400 capitalize">{currentDate}</p>
+        </div>
+        <div className="w-11 h-11 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 rounded-2xl flex items-center justify-center font-bold text-base border border-emerald-200/50">
+          SR
+        </div>
       </div>
 
-      <Card className="bg-primary/5 border-primary/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Bu oydagi komissiya</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-end">
-            <div>
-              <div className="text-2xl font-bold">{formatCurrency(stats?.commission?.commission_amount || 0)}</div>
-              <div className="text-xs text-muted-foreground mt-1">To'langan: {formatCurrency(stats?.commission?.paid_amount || 0)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-destructive">Qoldiq: {formatCurrency(stats?.commission?.remaining_amount || 0)}</div>
+      {/* Tezkor harakat tugmalari */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/agent/orders?new=true" className="w-full">
+          <Button className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl text-xs font-bold gap-2 shadow-md shadow-emerald-500/20 cursor-pointer">
+            <Plus className="h-4 w-4" /> Yangi Buyurtma
+          </Button>
+        </Link>
+        <Link href="/agent/visits" className="w-full">
+          <Button variant="outline" className="w-full h-12 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-2xl text-xs font-bold gap-2 cursor-pointer">
+            <MapPin className="h-4 w-4 text-emerald-600" /> Tashrif Qayd Etish
+          </Button>
+        </Link>
+      </div>
+
+      {/* Kunlik KPI Ko'rsatkichlari */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 space-y-1">
+          <div className="flex items-center justify-between text-gray-400">
+            <span className="text-[11px] font-semibold uppercase">Bugungi Savdo</span>
+            <CreditCard className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {formatCurrency(stats.todaySales)}
+          </div>
+          <span className="text-[10px] text-emerald-600 font-medium">Rejadan 118% ortiq</span>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 space-y-1">
+          <div className="flex items-center justify-between text-gray-400">
+            <span className="text-[11px] font-semibold uppercase">Buyurtmalar</span>
+            <ShoppingCart className="h-4 w-4 text-violet-500" />
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {stats.todayOrders} ta
+          </div>
+          <span className="text-[10px] text-gray-400">Barchasi qabul qilindi</span>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 space-y-1">
+          <div className="flex items-center justify-between text-gray-400">
+            <span className="text-[11px] font-semibold uppercase">Tashriflar</span>
+            <MapPin className="h-4 w-4 text-blue-500" />
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {stats.todayVisits} ta do&apos;kon
+          </div>
+          <span className="text-[10px] text-blue-600 font-medium">9 / 12 reja bajarildi</span>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 space-y-1">
+          <div className="flex items-center justify-between text-gray-400">
+            <span className="text-[11px] font-semibold uppercase">Do&apos;konlarim</span>
+            <Store className="h-4 w-4 text-amber-500" />
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {stats.assignedStores} ta
+          </div>
+          <span className="text-[10px] text-gray-400">Biriktirilgan nuqtalar</span>
+        </div>
+      </div>
+
+      {/* Oylik Komissiya Bloki */}
+      <div className="bg-gradient-to-br from-violet-600 to-indigo-700 text-white rounded-3xl p-5 shadow-lg shadow-violet-500/20 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-violet-200 uppercase tracking-wider">
+            Oylik Komissiya & Bonus
+          </span>
+          <TrendingUp className="h-4 w-4 text-emerald-300" />
+        </div>
+        <div className="flex justify-between items-end">
+          <div>
+            <div className="text-2xl font-bold">{formatCurrency(stats.commission.commission_amount)}</div>
+            <div className="text-xs text-violet-200 mt-0.5">
+              To&apos;langan: {formatCurrency(stats.commission.paid_amount)}
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex gap-4">
-        <Button className="flex-1" asChild>
-          <Link href="/orders?new=true">Yangi buyurtma</Link>
-        </Button>
-        <Button variant="outline" className="flex-1" asChild>
-          <Link href="/visits?new=true">Tashrif boshlash</Link>
-        </Button>
+          <div className="text-right">
+            <span className="text-[11px] text-violet-200">Qoldiq olishingiz kerak:</span>
+            <div className="text-sm font-bold text-emerald-300">
+              {formatCurrency(stats.commission.remaining_amount)}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-lg">So'nggi buyurtmalar</h3>
-          <Link href="/orders" className="text-sm text-primary flex items-center">Barchasi <ChevronRight className="h-4 w-4" /></Link>
+      {/* Oxirgi Buyurtmalar */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalarim</h2>
+          <Link href="/agent/orders" className="text-xs text-emerald-600 font-semibold flex items-center gap-0.5 hover:underline">
+            Barchasi <ChevronRight className="h-3 w-3" />
+          </Link>
         </div>
-        <div className="space-y-3">
-          {recentOrders?.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-4">Hali buyurtmalar yo'q</p>
-          ) : (
-            recentOrders?.map((order) => (
-              <Card key={order.id} className="overflow-hidden">
-                <Link href={`/orders/${order.id}`}>
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{(order.stores as any)?.name || 'Noma\'lum do\'kon'}</div>
-                      <div className="text-sm text-muted-foreground">{order.order_number}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{formatCurrency(Number(order.total_amount))}</div>
-                      <div className="text-xs bg-muted px-2 py-1 rounded-full inline-block mt-1">{order.status}</div>
-                    </div>
-                  </CardContent>
-                </Link>
-              </Card>
-            ))
-          )}
+
+        <div className="space-y-2.5">
+          {recentOrders.map((order) => (
+            <div
+              key={order.id}
+              className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-emerald-200 transition-all shadow-sm"
+            >
+              <div className="min-w-0 space-y-0.5">
+                <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                  {order.store_name}
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                  <span className="font-mono text-violet-600">{order.order_number}</span>
+                  <span>•</span>
+                  <span>{new Date(order.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+
+              <div className="text-right flex-shrink-0">
+                <div className="font-bold text-sm text-gray-900 dark:text-white">
+                  {formatCurrency(order.total_amount)}
+                </div>
+                <span className="inline-block text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mt-0.5">
+                  {order.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

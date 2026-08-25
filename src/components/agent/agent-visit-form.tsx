@@ -1,203 +1,116 @@
 'use client';
 
 import { useState } from 'react';
-import { Drawer } from 'vaul';
-import { createClient } from '@/lib/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Camera, Play, Square } from 'lucide-react';
+import { MapPin, Navigation, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { INITIAL_STORES } from '@/lib/mock-data';
 
 interface AgentVisitFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
+  onSuccess: (newVisit: any) => void;
 }
 
-export function AgentVisitForm({ open, onOpenChange, userId }: AgentVisitFormProps) {
-  const supabase = createClient();
-  const queryClient = useQueryClient();
-  
-  const [storeId, setStoreId] = useState('');
+export function AgentVisitForm({ open, onOpenChange, onSuccess }: AgentVisitFormProps) {
+  const [storeId, setStoreId] = useState(INITIAL_STORES[0]?.id || '');
+  const [purpose, setPurpose] = useState('Buyurtma olish');
   const [notes, setNotes] = useState('');
 
-  const { data: stores } = useQuery({
-    queryKey: ['agent-stores', userId],
-    queryFn: async () => {
-      const { data } = await supabase.from('agent_store_assignments').select('store_id, stores(id, name)').eq('agent_id', userId);
-      return data?.map(d => d.stores).filter(Boolean) || [];
-    }
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const store = INITIAL_STORES.find((s) => s.id === storeId) || INITIAL_STORES[0];
 
-  const { data: activeVisit } = useQuery({
-    queryKey: ['active-visit', userId],
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('visits')
-        .select('*, stores(name)')
-        .eq('agent_id', userId)
-        .eq('status', 'IN_PROGRESS')
-        .single();
-      return data || null;
-    }
-  });
+    const newVisit = {
+      id: `vis-${Date.now()}`,
+      store_name: store.name,
+      address: store.address,
+      status: 'IN_PROGRESS' as const,
+      start_time: `Bugun ${new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })} (Jarayonda)`,
+      duration: 'Hozir boshlandi',
+      notes: `${purpose}: ${notes || "Muzokara olib borilmoqda"}`,
+    };
 
-  const startVisit = useMutation({
-    mutationFn: async () => {
-      if (!storeId) throw new Error('Do\'kon tanlanmagan');
-      
-      const { data: storeData } = await supabase.from('stores').select('factory_id').eq('id', storeId).single();
-      if (!storeData) throw new Error('Factory topilmadi');
-
-      const { error } = await supabase.from('visits').insert({
-        factory_id: storeData.factory_id,
-        agent_id: userId,
-        store_id: storeId,
-        status: 'IN_PROGRESS',
-        start_time: new Date().toISOString(),
-        notes: notes
-      });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Tashrif boshlandi');
-      queryClient.invalidateQueries({ queryKey: ['active-visit'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-visits'] });
-      setStoreId('');
-      setNotes('');
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Xatolik yuz berdi');
-    }
-  });
-
-  const endVisit = useMutation({
-    mutationFn: async () => {
-      if (!activeVisit) return;
-      
-      const { error } = await supabase
-        .from('visits')
-        .update({
-          status: 'COMPLETED',
-          end_time: new Date().toISOString(),
-          notes: notes ? `${activeVisit.notes ? activeVisit.notes + '\n' : ''}${notes}` : activeVisit.notes
-        })
-        .eq('id', activeVisit.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Tashrif yakunlandi');
-      queryClient.invalidateQueries({ queryKey: ['active-visit'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-visits'] });
-      onOpenChange(false);
-      setNotes('');
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Xatolik yuz berdi');
-    }
-  });
+    toast.success(`${store.name} do'koniga tashrif boshlandi!`);
+    onSuccess(newVisit);
+  };
 
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
-      <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Drawer.Content className="bg-background flex flex-col rounded-t-[10px] mt-24 fixed bottom-0 left-0 right-0 z-50">
-          <div className="p-4 bg-background rounded-t-[10px] pb-8">
-            <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-6" />
-            <div className="flex justify-between items-center mb-6">
-              <Drawer.Title className="text-xl font-bold">
-                {activeVisit ? 'Faol tashrif' : 'Yangi tashrif'}
-              </Drawer.Title>
-              <Drawer.Close asChild>
-                <Button variant="ghost" size="icon"><X className="h-4 w-4"/></Button>
-              </Drawer.Close>
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-3xl p-5 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
+            <Navigation className="h-5 w-5 text-emerald-600" />
+            Yangi Tashrif Boshlash
+          </DialogTitle>
+        </DialogHeader>
 
-            {activeVisit ? (
-              <div className="space-y-6">
-                <div className="bg-blue-500/10 text-blue-600 p-4 rounded-lg flex items-center justify-between">
-                  <div>
-                    <div className="text-sm opacity-80">Do'kon</div>
-                    <div className="font-bold text-lg">{activeVisit.stores?.name}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm opacity-80">Boshlandi</div>
-                    <div className="font-bold">{new Date(activeVisit.start_time).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Yakuniy eslatmalar</Label>
-                  <Textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    placeholder="Tashrif xulosasi..." 
-                    className="mt-2"
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1" onClick={() => {}}>
-                    <Camera className="h-4 w-4 mr-2" /> Rasm
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    className="flex-1" 
-                    onClick={() => endVisit.mutate()}
-                    disabled={endVisit.isPending}
-                  >
-                    <Square className="h-4 w-4 mr-2" /> 
-                    {endVisit.isPending ? 'Yakunlanmoqda...' : 'Yakunlash'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <Label>Do'kon</Label>
-                  <Select value={storeId} onValueChange={setStoreId}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Do'konni tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stores?.map((s: any) => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Maqsad / Eslatma</Label>
-                  <Textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    placeholder="Tashrif maqsadi..." 
-                    className="mt-2"
-                  />
-                </div>
-
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                  size="lg" 
-                  onClick={() => startVisit.mutate()}
-                  disabled={startVisit.isPending || !storeId}
-                >
-                  <Play className="h-4 w-4 mr-2" /> 
-                  {startVisit.isPending ? 'Boshlanmoqda...' : 'Tashrifni boshlash'}
-                </Button>
-              </div>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Do&apos;kon / Savdo nuqtasi *
+            </label>
+            <select
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium"
+            >
+              {INITIAL_STORES.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name} ({st.address})
+                </option>
+              ))}
+            </select>
           </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Tashrif maqsadi
+            </label>
+            <select
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+            >
+              <option value="Yangi buyurtma olish">Yangi buyurtma olish</option>
+              <option value="Qarzdorlik / to'lov qabul qilish">Qarzdorlik / to&apos;lov qabul qilish</option>
+              <option value="Vitrina va qoldiqlarni tekshirish">Vitrina va qoldiqlarni tekshirish</option>
+              <option value="Yangi mahsulot taqdimoti">Yangi mahsulot taqdimoti</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              Izoh yoki natija
+            </label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Masalan: Menejer bilan yangi assortiment kelishildi"
+              className="h-11 rounded-2xl text-xs"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 rounded-2xl h-11 text-xs"
+            >
+              Bekor qilish
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-11 text-xs font-bold gap-1.5 shadow-md shadow-emerald-500/20"
+            >
+              <Check className="h-4 w-4" /> Tashrifni boshlash
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
