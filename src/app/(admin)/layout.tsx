@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
-import { AdminHeader } from "@/components/layout/admin-header"
+import { AdminShell } from "@/components/layout/admin-shell"
 import { isRealSupabaseConfigured } from "@/lib/mock-data"
 
 export const metadata: Metadata = {
@@ -50,21 +49,5 @@ export default async function AdminLayout({
     }
   }
 
-  return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
-      {/* Sidebar */}
-      <AdminSidebar profile={profile} />
-
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <AdminHeader profile={profile} />
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50/50 dark:bg-gray-950">
-          <div className="max-w-7xl mx-auto">{children}</div>
-        </main>
-      </div>
-    </div>
-  )
+  return <AdminShell profile={profile}>{children}</AdminShell>
 }

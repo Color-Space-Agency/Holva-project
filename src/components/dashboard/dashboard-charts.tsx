@@ -120,13 +120,13 @@ export function DashboardCharts() {
   ]
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-      <div className="flex items-center justify-between mb-5">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white">Sotuv trendi</h3>
           <p className="text-xs text-gray-400 mt-0.5">Tushum va buyurtmalar dinamikasi</p>
         </div>
-        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 self-start sm:self-auto overflow-x-auto">
           {ranges.map((r) => (
             <button
               key={r.key}
