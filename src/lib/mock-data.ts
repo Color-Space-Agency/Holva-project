@@ -502,3 +502,119 @@ export function deleteStoredEmployee(id: string): MockEmployee[] {
   } catch {}
   return updatedList
 }
+
+// ==========================================
+// TASHRIFLAR (VISITS) LOCALSTORAGE PERSISTENCE
+// ==========================================
+export interface MockVisit {
+  id: string
+  store_name: string
+  address: string
+  status: "COMPLETED" | "IN_PROGRESS" | "PLANNED"
+  start_time: string
+  duration: string
+  notes: string
+}
+
+export const INITIAL_VISITS: MockVisit[] = [
+  {
+    id: "vis-1",
+    store_name: "Korzinka — Chilonzor",
+    address: "Toshkent sh., Chilonzor 9-mavze",
+    status: "COMPLETED",
+    start_time: "Bugun 10:15",
+    duration: "25 daqiqa",
+    notes: "Yangi 14.8 mln so'mlik buyurtma rasmiylashtirildi va vitrina tekshirildi",
+  },
+  {
+    id: "vis-2",
+    store_name: "Makro Supermarket — Sergeli",
+    address: "Toshkent sh., Yangi Sergeli ko'chasi, 12",
+    status: "COMPLETED",
+    start_time: "Bugun 11:40",
+    duration: "18 daqiqa",
+    notes: "Qarzdorlik bo'yicha to'lov qabul qilindi, qoldiq holvalar yetarli",
+  },
+  {
+    id: "vis-3",
+    store_name: "Havas Discounter — Yunusobod",
+    address: "Toshkent sh., Yunusobod 14-mavze",
+    status: "IN_PROGRESS",
+    start_time: "Bugun 14:00 (Jarayonda)",
+    duration: "12 daqiqa",
+    notes: "Menejer bilan yangi assortiment bo'yicha muzokara olib borilmoqda",
+  },
+  {
+    id: "vis-4",
+    store_name: "Baraka Qandolat Do'koni",
+    address: "Samarqand sh., Registon ko'chasi, 88",
+    status: "PLANNED",
+    start_time: "Bugun 16:30 (Rejada)",
+    duration: "—",
+    notes: "Muddati o'tgan mahsulotlar tekshiruvi va yangi ta'mlar namoyishi",
+  },
+]
+
+const STORAGE_KEY_VISITS = "holva_crm_stored_visits"
+const STORAGE_KEY_COMPLETED_COUNT = "holva_crm_visits_completed_count"
+
+export function getStoredVisits(): MockVisit[] {
+  if (typeof window === "undefined") return INITIAL_VISITS
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_VISITS)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored visits:", e)
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_VISITS, JSON.stringify(INITIAL_VISITS))
+  } catch {}
+  return INITIAL_VISITS
+}
+
+export function saveStoredVisits(visits: MockVisit[]): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_VISITS, JSON.stringify(visits))
+  } catch {}
+}
+
+export function completeStoredVisit(id: string): { visits: MockVisit[]; completedCount: number } {
+  if (typeof window === "undefined") return { visits: INITIAL_VISITS, completedCount: 9 }
+  const current = getStoredVisits()
+  const updated = current.map((v) =>
+    v.id === id ? { ...v, status: "COMPLETED" as const, duration: "25 daqiqa", start_time: v.start_time.replace(" (Jarayonda)", "").replace(" (Rejada)", "") } : v
+  )
+  saveStoredVisits(updated)
+
+  // Completed count ni 1 ga oshiramiz
+  const currentCount = getStoredCompletedVisitsCount()
+  const newCount = Math.min(currentCount + 1, 12)
+  setStoredCompletedVisitsCount(newCount)
+
+  return { visits: updated, completedCount: newCount }
+}
+
+export function getStoredCompletedVisitsCount(): number {
+  if (typeof window === "undefined") return 9
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_COMPLETED_COUNT)
+    if (raw) {
+      const parsed = parseInt(raw, 10)
+      if (!isNaN(parsed)) return parsed
+    }
+  } catch {}
+  return 9
+}
+
+export function setStoredCompletedVisitsCount(count: number): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_COMPLETED_COUNT, String(count))
+    window.dispatchEvent(new CustomEvent("visits-updated", { detail: { count } }))
+  } catch {}
+}
+

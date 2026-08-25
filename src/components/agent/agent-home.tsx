@@ -11,25 +11,33 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
-import { INITIAL_STORES } from '@/lib/mock-data';
+import { 
+  INITIAL_STORES, 
+  getStoredCompletedVisitsCount, 
+  setStoredCompletedVisitsCount,
+  getStoredVisits,
+  completeStoredVisit
+} from '@/lib/mock-data';
 import { toast } from 'sonner';
 
 // ============================================================
-// KOMPONENT: Haftalik / Oylik Analitika Modali
+// KOMPONENT: Haftalik / Oylik / Sana oralig'i Analitika Modali
 // ============================================================
 interface ChartItem {
   day: string;
-  value: number;
+  value: number; // so'm miqdorida
 }
 
 function AnalyticsModal({ 
   isOpen, 
   onClose, 
-  data 
+  data,
+  totalAmount
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   data: ChartItem[];
+  totalAmount: number;
 }) {
   if (!isOpen) return null;
 
@@ -44,7 +52,7 @@ function AnalyticsModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">Savdo Analitikasi</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base">Batafsil Savdo Analitikasi</h3>
           </div>
           <button 
             onClick={onClose} 
@@ -57,37 +65,59 @@ function AnalyticsModal({
         {/* Content */}
         <div className="p-6 space-y-5 mobile-scroll overflow-y-auto max-h-[70vh]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Jami Tushum</p>
-            <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">22 400 000 so&apos;m</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Tanlangan Davr Tushumi</p>
+            <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
+              {formatCurrency(totalAmount)}
+            </p>
           </div>
 
-          <div className="h-52 bg-amber-50/50 dark:bg-gray-800/40 rounded-2xl p-4 border border-amber-100 dark:border-gray-800">
+          <div className="h-56 bg-amber-50/50 dark:bg-gray-800/40 rounded-2xl p-4 border border-amber-100 dark:border-gray-800">
             <div className="flex items-end gap-2 h-full pt-4">
               {data.map((item, i) => {
-                const maxVal = Math.max(...data.map(d => d.value), 6);
+                const maxVal = Math.max(...data.map(d => d.value), 1000000);
                 const height = (item.value / maxVal) * 100;
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">{item.value}M</span>
+                    <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 text-center leading-tight">
+                      {(item.value / 1000000).toFixed(1)}M
+                    </span>
                     <div 
                       className="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-lg transition-all hover:bg-amber-600 shadow-xs"
                       style={{ height: `${height}%`, minHeight: '6px' }}
+                      title={`${item.day}: ${formatCurrency(item.value)}`}
                     />
-                    <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{item.day}</span>
+                    <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 truncate max-w-full text-center">
+                      {item.day}
+                    </span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          {/* Summalar ro'yxati */}
+          <div className="space-y-2 pt-2">
+            <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Kunlik aniq summalar:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {data.map((item, idx) => (
+                <div key={idx} className="bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl text-xs flex justify-between items-center">
+                  <span className="font-semibold text-gray-600 dark:text-gray-300">{item.day}:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5 text-center">
               <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">O&apos;sish Dinamikasi</p>
               <p className="text-lg font-black text-emerald-700 dark:text-emerald-300 mt-0.5">+18%</p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3.5 text-center">
-              <p className="text-xs font-bold text-blue-700 dark:text-blue-400">O&apos;rtacha Chek</p>
-              <p className="text-lg font-black text-blue-700 dark:text-blue-300 mt-0.5">3.7 mln so&apos;m</p>
+              <p className="text-xs font-bold text-blue-700 dark:text-blue-400">O&apos;rtacha Kunlik</p>
+              <p className="text-lg font-black text-blue-700 dark:text-blue-300 mt-0.5">
+                {formatCurrency(Math.round(totalAmount / (data.length || 1)))}
+              </p>
             </div>
           </div>
         </div>
@@ -327,17 +357,31 @@ export function AgentHome() {
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  // Tashriflar holati
+  // Tashriflar holati (LocalStorage bilan bog'langan)
   const [visits, setVisits] = useState({ completed: 9, plan: 12 });
   const [isVisitLoading, setIsVisitLoading] = useState(false);
   
-  // Analitika holati va tablari
-  const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
+  // Savdo dinamikasi tablari: 'week' | 'month' | 'custom'
+  const [activeTab, setActiveTab] = useState<'week' | 'month' | 'custom'>('week');
+  const [fromDate, setFromDate] = useState<string>('2026-08-20');
+  const [toDate, setToDate] = useState<string>('2026-08-26');
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
     if (savedName) setUserName(savedName.split(' ')[0]);
+
+    // LocalStorage dan saqlangan tashriflar sonini olish
+    const storedCount = getStoredCompletedVisitsCount();
+    setVisits({ completed: storedCount, plan: 12 });
+
+    const handleVisitsUpdated = (e: CustomEvent<{ count: number }>) => {
+      if (e.detail && typeof e.detail.count === 'number') {
+        setVisits({ completed: e.detail.count, plan: 12 });
+      }
+    };
+    window.addEventListener('visits-updated' as any, handleVisitsUpdated);
+    return () => window.removeEventListener('visits-updated' as any, handleVisitsUpdated);
   }, []);
 
   // Agent ma'lumotlari
@@ -367,20 +411,32 @@ export function AgentHome() {
       { id: 'HLV-2026-00106', client: 'Havas Diskaunter — Qo\'yliq', time: '11:21', amount: 21500000, status: 'shipping', phone: '+998712000007' },
       { id: 'HLV-2026-00107', client: 'Baraka Qandolat Do\'koni', time: '03:21', amount: 4600000, status: 'ready', phone: '+998909876543' },
     ],
+    // Haftalik ma'lumotlar (so'mda)
     weeklyData: [
-      { day: 'Dush', value: 2.8 },
-      { day: 'Sesh', value: 3.2 },
-      { day: 'Chor', value: 2.5 },
-      { day: 'Pay', value: 4.1 },
-      { day: 'Jum', value: 3.8 },
-      { day: 'Shan', value: 5.2 },
-      { day: 'Yak', value: 4.5 }
+      { day: 'Dush', value: 2800000 },
+      { day: 'Sesh', value: 3200000 },
+      { day: 'Chor', value: 2500000 },
+      { day: 'Pay', value: 4100000 },
+      { day: 'Jum', value: 3800000 },
+      { day: 'Shan', value: 5200000 },
+      { day: 'Yak', value: 4500000 }
     ],
+    // Oylik ma'lumotlar (so'mda)
     monthlyData: [
-      { day: '1-hafta', value: 12.5 },
-      { day: '2-hafta', value: 15.2 },
-      { day: '3-hafta', value: 14.8 },
-      { day: '4-hafta', value: 18.3 }
+      { day: '1-hafta', value: 12500000 },
+      { day: '2-hafta', value: 15200000 },
+      { day: '3-hafta', value: 14800000 },
+      { day: '4-hafta', value: 18300000 }
+    ],
+    // Sanadan-sanagacha ma'lumotlar (so'mda)
+    customData: [
+      { day: '20-Avg', value: 3100000 },
+      { day: '21-Avg', value: 4200000 },
+      { day: '22-Avg', value: 2900000 },
+      { day: '23-Avg', value: 4600000 },
+      { day: '24-Avg', value: 3800000 },
+      { day: '25-Avg', value: 5400000 },
+      { day: '26-Avg', value: 4800000 },
     ]
   };
 
@@ -391,26 +447,39 @@ export function AgentHome() {
     ready: { label: 'Tayyor (Omborda)', icon: Package, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' },
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('uz-UZ').format(amount) + ' so\'m';
-  };
-
-  // Tashrifni yakunlash funksiyasi
+  // Tashrifni yakunlash funksiyasi (LocalStorage ga yozish va sonini oshirish)
   const completeVisit = () => {
     setIsVisitLoading(true);
     setTimeout(() => {
+      const storedVisits = getStoredVisits();
+      const inProgressOrPlanned = storedVisits.find(v => v.status === 'IN_PROGRESS' || v.status === 'PLANNED');
+      
+      let newCount = visits.completed + 1;
+      if (inProgressOrPlanned) {
+        const res = completeStoredVisit(inProgressOrPlanned.id);
+        newCount = res.completedCount;
+      } else {
+        newCount = Math.min(visits.completed + 1, visits.plan);
+        setStoredCompletedVisitsCount(newCount);
+      }
+
       setVisits(prev => ({
         ...prev,
-        completed: Math.min(prev.completed + 1, prev.plan)
+        completed: newCount
       }));
       setIsVisitLoading(false);
-      toast.success("✅ Tashrif muvaffaqiyatli yakunlandi!");
-    }, 700);
+      toast.success(`✅ Tashrif yakunlandi! Bugungi natija: ${newCount}/${visits.plan}`);
+    }, 500);
   };
 
   const getChartData = () => {
-    return activeTab === 'week' ? agentData.weeklyData : agentData.monthlyData;
+    if (activeTab === 'week') return agentData.weeklyData;
+    if (activeTab === 'month') return agentData.monthlyData;
+    return agentData.customData;
   };
+
+  const currentChartData = getChartData();
+  const totalPeriodRevenue = currentChartData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
     <div className="space-y-5 pb-28 animate-fade-in-up max-w-lg mx-auto p-4 relative">
@@ -453,12 +522,12 @@ export function AgentHome() {
         </Link>
         <Link href="/agent/visits" className="w-full">
           <button className="w-full h-12 bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-2xl text-xs font-bold gap-2 flex items-center justify-center cursor-pointer touch-friendly active:scale-95">
-            <MapPin className="h-4 w-4 text-amber-600" /> Tashrif Qayd Etish
+            <MapPin className="h-4 w-4 text-amber-600" /> Tashriflar ({visits.completed}/{visits.plan})
           </button>
         </Link>
       </div>
 
-      {/* 2. Asosiy karta - Bugungi Savdo va Analitika */}
+      {/* 2. Asosiy karta - Bugungi Savdo va Moslashuvchan Savdo Dinamikasi */}
       <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-950/30 dark:to-orange-950/20 rounded-3xl p-6 border border-amber-200/60 dark:border-amber-800/40 shadow-xs">
         <div className="flex items-start justify-between">
           <div>
@@ -479,7 +548,7 @@ export function AgentHome() {
                 className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-bold flex items-center gap-1 cursor-pointer touch-press"
               >
                 <BarChart3 className="w-3.5 h-3.5" />
-                Batafsil analitika
+                Batafsil hisobot
               </button>
             </div>
           </div>
@@ -488,11 +557,17 @@ export function AgentHome() {
           </div>
         </div>
 
-        {/* Mini-grafik (Hafta / Oy) */}
-        <div className="mt-4 pt-4 border-t border-amber-200/40 dark:border-amber-800/40">
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-300">Savdo dinamikasi</p>
-            <div className="flex gap-1 bg-amber-100/60 dark:bg-amber-950/60 p-0.5 rounded-xl">
+        {/* Dinamik Savdo Grafigi (Hafta | Oy | Sana oralig'i va Summalar) */}
+        <div className="mt-4 pt-4 border-t border-amber-200/40 dark:border-amber-800/40 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                Savdo dinamikasi ({formatCurrency(totalPeriodRevenue)})
+              </p>
+            </div>
+            
+            {/* Tablar */}
+            <div className="flex gap-1 bg-amber-100/60 dark:bg-amber-950/60 p-0.5 rounded-xl self-start sm:self-auto">
               <button 
                 className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${activeTab === 'week' ? 'bg-amber-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
                 onClick={() => setActiveTab('week')}
@@ -505,20 +580,59 @@ export function AgentHome() {
               >
                 Oy
               </button>
+              <button 
+                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition flex items-center gap-1 ${activeTab === 'custom' ? 'bg-amber-500 text-white shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
+                onClick={() => setActiveTab('custom')}
+              >
+                <Calendar className="w-3 h-3" />
+                Sana tanlash
+              </button>
             </div>
           </div>
-          <div className="flex items-end gap-1.5 h-16 pt-2">
-            {getChartData().map((item, i) => {
-              const maxVal = Math.max(...getChartData().map(d => d.value));
+
+          {/* Sana oralig'ini tanlash maydonlari */}
+          {activeTab === 'custom' && (
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-amber-200/60 dark:border-amber-900/40 text-xs animate-fade-in">
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-400 block mb-0.5 font-semibold">Dan:</label>
+                <input 
+                  type="date" 
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg px-2 py-1 text-xs font-bold text-gray-800 dark:text-white outline-none"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-400 block mb-0.5 font-semibold">Gacha:</label>
+                <input 
+                  type="date" 
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg px-2 py-1 text-xs font-bold text-gray-800 dark:text-white outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Ustunli grafik ustida aniq summalar bilan */}
+          <div className="flex items-end gap-1.5 h-24 pt-4">
+            {currentChartData.map((item, i) => {
+              const maxVal = Math.max(...currentChartData.map(d => d.value), 1000000);
               const height = (item.value / maxVal) * 100;
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group relative">
+                  {/* Tooltip & Summa ko'rsatkichi */}
+                  <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                    {(item.value / 1000000).toFixed(1)}M
+                  </span>
                   <div 
-                    className="w-full bg-amber-500 rounded-t-md transition-all duration-500 hover:bg-amber-600 shadow-xs"
-                    style={{ height: `${height}%`, minHeight: '4px' }}
-                    title={`${item.value} mln so'm`}
+                    className="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-md transition-all duration-500 hover:bg-amber-600 shadow-xs cursor-pointer"
+                    style={{ height: `${height}%`, minHeight: '6px' }}
+                    title={`${item.day}: ${formatCurrency(item.value)}`}
                   />
-                  <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400">{item.day}</span>
+                  <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 truncate max-w-full text-center">
+                    {item.day}
+                  </span>
                 </div>
               );
             })}
@@ -558,7 +672,7 @@ export function AgentHome() {
         </div>
       </div>
 
-      {/* 4. Statistika Kartochkalari (Interaktiv Tashrif yakunlash bilan) */}
+      {/* 4. Statistika Kartochkalari (Real-Vaqtda 10/12 Reja bilan) */}
       <div className="grid grid-cols-2 gap-3">
         {/* Buyurtmalar */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs">
@@ -576,26 +690,26 @@ export function AgentHome() {
           </p>
         </div>
 
-        {/* Tashriflar - Interaktiv Yakunlash Tugmasi bilan */}
+        {/* Tashriflar - Real-vaqtda oshuvchi reja */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 rounded-xl">
               <Store className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{visits.completed}</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{visits.completed}</p>
               <p className="text-xs text-gray-400">Tashriflar</p>
             </div>
           </div>
           <div className="flex items-center justify-between mt-2.5 gap-1">
-            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+            <p className="text-[11px] font-black text-amber-600 dark:text-amber-400">
               {visits.completed} / {visits.plan} reja
             </p>
             <button 
               onClick={completeVisit}
               disabled={isVisitLoading || visits.completed >= visits.plan}
               className={`
-                text-[10px] font-bold px-2 py-1 rounded-xl transition cursor-pointer
+                text-[10px] font-black px-2.5 py-1 rounded-xl transition cursor-pointer
                 ${visits.completed >= visits.plan 
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' 
                   : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 active:scale-95 shadow-xs'
@@ -744,7 +858,8 @@ export function AgentHome() {
       <AnalyticsModal 
         isOpen={isAnalyticsModalOpen}
         onClose={() => setIsAnalyticsModalOpen(false)}
-        data={getChartData()}
+        data={currentChartData}
+        totalAmount={totalPeriodRevenue}
       />
 
       {/* 10. Jonli Chat Modali */}

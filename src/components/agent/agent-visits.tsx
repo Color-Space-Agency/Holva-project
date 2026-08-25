@@ -1,81 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock, MapPin, CheckCircle2, Navigation, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { INITIAL_STORES } from '@/lib/mock-data';
 import { AgentVisitForm } from './agent-visit-form';
 import { toast } from 'sonner';
-
-interface VisitItem {
-  id: string;
-  store_name: string;
-  address: string;
-  status: 'COMPLETED' | 'IN_PROGRESS' | 'PLANNED';
-  start_time: string;
-  duration: string;
-  notes: string;
-}
-
-const DEFAULT_VISITS: VisitItem[] = [
-  {
-    id: 'vis-1',
-    store_name: 'Korzinka — Chilonzor filiali',
-    address: 'Toshkent sh., Chilonzor 9-mavze',
-    status: 'COMPLETED',
-    start_time: 'Bugun 10:15',
-    duration: '25 daqiqa',
-    notes: 'Yangi 14.8 mln so\'mlik buyurtma rasmiylashtirildi va vitrina tekshirildi',
-  },
-  {
-    id: 'vis-2',
-    store_name: 'Makro Supermarket — Buyuk Ipak Yo\'li',
-    address: 'Toshkent sh., Mirzo Ulug\'bek tumani',
-    status: 'COMPLETED',
-    start_time: 'Bugun 11:40',
-    duration: '18 daqiqa',
-    notes: 'Qarzdorlik bo\'yicha to\'lov qabul qilindi, qoldiq holvalar yetarli',
-  },
-  {
-    id: 'vis-3',
-    store_name: 'Havas Discounter — Yunusobod',
-    address: 'Toshkent sh., Yunusobod 14-mavze',
-    status: 'IN_PROGRESS',
-    start_time: 'Bugun 14:00 (Jarayonda)',
-    duration: '12 daqiqa',
-    notes: 'Menejer bilan yangi assortiment bo\'yicha muzokara olib borilmoqda',
-  },
-  {
-    id: 'vis-4',
-    store_name: 'Baraka Qandolat Do\'koni',
-    address: 'Toshkent sh., Qo\'yliq bozori 12-do\'kon',
-    status: 'PLANNED',
-    start_time: 'Bugun 16:30 (Rejada)',
-    duration: '—',
-    notes: 'Muddati o\'tgan mahsulotlar tekshiruvi',
-  },
-];
+import { 
+  getStoredVisits, 
+  saveStoredVisits, 
+  completeStoredVisit, 
+  MockVisit 
+} from '@/lib/mock-data';
 
 export function AgentVisits() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [visits, setVisits] = useState<VisitItem[]>(DEFAULT_VISITS);
+  const [visits, setVisits] = useState<MockVisit[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const handleVisitCreated = (newVisit: VisitItem) => {
-    setVisits([newVisit, ...visits]);
+  useEffect(() => {
+    setVisits(getStoredVisits());
+  }, []);
+
+  const handleVisitCreated = (newVisit: MockVisit) => {
+    const updated = [newVisit, ...visits];
+    setVisits(updated);
+    saveStoredVisits(updated);
     setIsFormOpen(false);
   };
 
   const handleCompleteVisit = (id: string) => {
-    setVisits(
-      visits.map((v) =>
-        v.id === id ? { ...v, status: 'COMPLETED', duration: '20 daqiqa' } : v
-      )
-    );
-    toast.success("Tashrif muvaffaqiyatli yakunlandi va tizimda saqlandi!");
+    const { visits: updatedVisits } = completeStoredVisit(id);
+    setVisits(updatedVisits);
+    toast.success("✅ Tashrif muvaffaqiyatli yakunlandi va tizimda saqlandi!");
   };
 
   return (
@@ -86,7 +45,7 @@ export function AgentVisits() {
             <button
               type="button"
               onClick={() => router.push('/agent/home')}
-              className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition-all cursor-pointer shadow-sm"
+              className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition-all cursor-pointer shadow-sm touch-press"
               title="Bosh sahifaga qaytish"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -98,7 +57,7 @@ export function AgentVisits() {
           </div>
           <Button
             onClick={() => setIsFormOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold gap-1.5 h-10 shadow-md shadow-emerald-500/20"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold gap-1.5 h-10 shadow-md shadow-emerald-500/20 cursor-pointer touch-press"
           >
             <Plus className="h-4 w-4" /> Yangi tashrif
           </Button>
@@ -124,14 +83,14 @@ export function AgentVisits() {
               <span
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 flex-shrink-0 ${
                   visit.status === 'COMPLETED'
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                     : visit.status === 'IN_PROGRESS'
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 animate-pulse'
-                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 animate-pulse border border-blue-200 dark:border-blue-800'
+                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                 }`}
               >
-                {visit.status === 'COMPLETED' && <CheckCircle2 className="h-3 w-3" />}
-                {visit.status === 'IN_PROGRESS' && <Navigation className="h-3 w-3" />}
+                {visit.status === 'COMPLETED' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />}
+                {visit.status === 'IN_PROGRESS' && <Navigation className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
                 {visit.status === 'COMPLETED'
                   ? 'Tugallandi'
                   : visit.status === 'IN_PROGRESS'
@@ -153,7 +112,7 @@ export function AgentVisits() {
             {visit.status === 'IN_PROGRESS' && (
               <Button
                 onClick={() => handleCompleteVisit(visit.id)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold h-9 gap-1.5"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10 gap-1.5 cursor-pointer touch-press shadow-md shadow-emerald-500/20"
               >
                 <CheckCircle2 className="h-4 w-4" /> Tashrifni yakunlash
               </Button>
@@ -170,3 +129,5 @@ export function AgentVisits() {
     </div>
   );
 }
+
+export default AgentVisits;
