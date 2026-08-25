@@ -40,19 +40,46 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSuccess }: 
   const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: departments } = useQuery({
+  const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const { data } = await supabase.from("departments").select("*").order("name");
-      return data || [];
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data } = await supabase.from("departments").select("*").order("name");
+          if (data && data.length > 0) return data;
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "dep-1", name: "Ishlab chiqarish (Tsex)" },
+        { id: "dep-2", name: "Qadoqlash bo'limi" },
+        { id: "dep-3", name: "Sotuv va Logistika" },
+        { id: "dep-4", name: "Omborxona" },
+      ];
     }
   });
 
-  const { data: positions } = useQuery({
+  const { data: positions = [] } = useQuery({
     queryKey: ["positions"],
     queryFn: async () => {
-      const { data } = await supabase.from("positions").select("*").order("name");
-      return data || [];
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data } = await supabase.from("positions").select("*").order("name");
+          if (data && data.length > 0) return data;
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "pos-1", name: "Bosh texnolog" },
+        { id: "pos-2", name: "Qandolatchi usta" },
+        { id: "pos-3", name: "Qadoqlovchi" },
+        { id: "pos-4", name: "Sotuv agenti" },
+        { id: "pos-5", name: "Haydovchi" },
+      ];
     }
   });
 

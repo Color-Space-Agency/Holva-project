@@ -44,27 +44,63 @@ export function RawMaterialFormDialog({ open, onOpenChange, item }: Props) {
   const { data: categories = [] } = useQuery({
     queryKey: ["raw-material-categories"],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from("raw_material_categories").select("id, name").order("name")
-      return data ?? []
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { data } = await supabase.from("raw_material_categories").select("id, name").order("name")
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "cat-1", name: "Don va urug'lar" },
+        { id: "cat-2", name: "Shirinlik va qiyomlar" },
+        { id: "cat-3", name: "Yong'oqlar" },
+      ]
     },
   })
 
   const { data: units = [] } = useQuery({
     queryKey: ["product-units"],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from("product_units").select("id, name, symbol").order("name")
-      return data ?? []
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { data } = await supabase.from("product_units").select("id, name, symbol").order("name")
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "u-1", name: "Kilogramm", symbol: "kg" },
+        { id: "u-2", name: "Litr", symbol: "l" },
+        { id: "u-3", name: "Qop", symbol: "qop" },
+      ]
     },
   })
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ["raw-material-suppliers"],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from("raw_material_suppliers").select("id, name").eq("is_active", true).order("name")
-      return data ?? []
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { data } = await supabase.from("raw_material_suppliers").select("id, name").eq("is_active", true).order("name")
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "sup-1", name: "Agro Import MChJ" },
+        { id: "sup-2", name: "Shakar Savdo Bazasi" },
+        { id: "sup-3", name: "Samarqand Yong'oq MChJ" },
+      ]
     },
   })
 

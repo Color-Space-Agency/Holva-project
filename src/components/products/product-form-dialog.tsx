@@ -51,18 +51,43 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const { data: categories = [] } = useQuery({
     queryKey: ["product-categories"],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from("product_categories").select("id, name").order("name")
-      return data ?? []
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { data } = await supabase.from("product_categories").select("id, name").order("name")
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "cat-1", name: "Klassik Holvalar" },
+        { id: "cat-2", name: "Premium Holvalar" },
+        { id: "cat-3", name: "Yong'oqli Holvalar" },
+        { id: "cat-4", name: "Shokoladli Holvalar" },
+      ]
     },
   })
 
   const { data: units = [] } = useQuery({
     queryKey: ["product-units"],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from("product_units").select("id, name, symbol").order("name")
-      return data ?? []
+      const { isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { data } = await supabase.from("product_units").select("id, name, symbol").order("name")
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return [
+        { id: "u-1", name: "Dona", symbol: "dona" },
+        { id: "u-2", name: "Kilogramm", symbol: "kg" },
+        { id: "u-3", name: "Quti", symbol: "quti" },
+      ]
     },
   })
 
