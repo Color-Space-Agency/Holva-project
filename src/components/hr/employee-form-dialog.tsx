@@ -104,12 +104,21 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSuccess }: 
 
   useEffect(() => {
     if (employee && open) {
+      const depId =
+        employee.department_id ||
+        departments.find((d: any) => d.name === employee.department?.name)?.id ||
+        "dep-1";
+      const posId =
+        employee.position_id ||
+        positions.find((p: any) => p.name === employee.position?.name)?.id ||
+        "pos-1";
+
       form.reset({
         full_name: employee.full_name || "",
         phone: employee.phone || "",
         email: employee.email || "",
-        department_id: employee.department_id || "dep-1",
-        position_id: employee.position_id || "pos-1",
+        department_id: depId,
+        position_id: posId,
         employment_date: employee.employment_date || new Date().toISOString().split("T")[0],
         employment_status: employee.employment_status || "ACTIVE",
         salary_type: employee.salary_type || "MONTHLY",
@@ -143,21 +152,54 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSuccess }: 
       toast.error("Rasm hajmi 5MB dan oshmasin");
       return;
     }
-    setPhotoPreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const onSubmit = async (values: EmployeeFormValues) => {
     setIsSubmitting(true);
     try {
-      const dataToSave = {
-        ...values,
-        department_id: values.department_id || null,
-        position_id: values.position_id || null,
-        photo_url: photoPreview,
-      };
+      const depName = departments.find((d: any) => d.id === values.department_id)?.name || "Ishlab chiqarish (Tsex)";
+      const posName = positions.find((p: any) => p.id === values.position_id)?.name || "Xodim";
+
+      if (employee) {
+        const { saveStoredEmployee } = await import("@/lib/mock-data");
+        saveStoredEmployee({
+          id: employee.id,
+          full_name: values.full_name,
+          phone: values.phone || "",
+          department: depName,
+          position: posName,
+          salary_amount: values.salary_amount,
+          salary_type: values.salary_type,
+          employment_status: values.employment_status,
+          photo_url: photoPreview || "",
+        });
+      } else {
+        const { createStoredEmployee } = await import("@/lib/mock-data");
+        createStoredEmployee({
+          full_name: values.full_name,
+          phone: values.phone || "",
+          department: depName,
+          position: posName,
+          salary_amount: values.salary_amount,
+          salary_type: values.salary_type,
+          employment_status: values.employment_status,
+          photo_url: photoPreview || "",
+        });
+      }
 
       if (isRealSupabaseConfigured()) {
         try {
+          const dataToSave = {
+            ...values,
+            department_id: values.department_id || null,
+            position_id: values.position_id || null,
+            photo_url: photoPreview,
+          };
           if (employee) {
             await supabase.from("employees").update(dataToSave).eq("id", employee.id);
           } else {

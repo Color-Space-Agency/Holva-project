@@ -56,68 +56,24 @@ export function EmployeesClient() {
         }
       }
 
-      const defaultEmployees = [
-        {
-          id: "emp-1",
-          full_name: "Rustam Mahmudov",
-          phone: "+998 90 123 45 67",
-          department: { name: "Ishlab chiqarish (Tsex)" },
-          position: { name: "Bosh texnolog" },
-          employment_status: "ACTIVE",
-          salary_type: "MONTHLY",
-          salary_amount: 9500000,
-          photo_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          id: "emp-2",
-          full_name: "Sardor Rahimov",
-          phone: "+998 93 345 67 89",
-          department: { name: "Sotuv va Marketing" },
-          position: { name: "Katta savdo agenti" },
-          employment_status: "ACTIVE",
-          salary_type: "PERFORMANCE",
-          salary_amount: 5000000,
-          photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          id: "emp-3",
-          full_name: "Jamshid Qodirov",
-          phone: "+998 94 456 78 90",
-          department: { name: "Sotuv va Marketing" },
-          position: { name: "Sotuv agenti" },
-          employment_status: "ACTIVE",
-          salary_type: "PERFORMANCE",
-          salary_amount: 4500000,
-          photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          id: "emp-4",
-          full_name: "Nodira Karimova",
-          phone: "+998 97 789 01 23",
-          department: { name: "Buxgalteriya va Moliya" },
-          position: { name: "Bosh hisobchi" },
-          employment_status: "ACTIVE",
-          salary_type: "MONTHLY",
-          salary_amount: 8000000,
-          photo_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          id: "emp-5",
-          full_name: "Shavkat Ergashev",
-          phone: "+998 99 890 12 34",
-          department: { name: "Logistika va Yetkazish" },
-          position: { name: "Ekspeditor-haydovchi" },
-          employment_status: "ACTIVE",
-          salary_type: "MONTHLY",
-          salary_amount: 5500000,
-          photo_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
-        },
-      ];
+      const { getStoredEmployees } = await import("@/lib/mock-data");
+      const stored = getStoredEmployees();
+      const mapped = stored.map((e) => ({
+        id: e.id,
+        full_name: e.full_name,
+        phone: e.phone,
+        department: { name: e.department },
+        position: { name: e.position },
+        employment_status: e.employment_status,
+        salary_type: e.salary_type,
+        salary_amount: e.salary_amount,
+        photo_url: e.photo_url,
+      }));
 
       if (statusFilter !== "ALL") {
-        return defaultEmployees.filter((e) => e.employment_status === statusFilter);
+        return mapped.filter((e) => e.employment_status === statusFilter);
       }
-      return defaultEmployees;
+      return mapped;
     },
   });
 
@@ -128,16 +84,22 @@ export function EmployeesClient() {
   const handleDelete = async () => {
     if (!deletingId) return;
     try {
-      const { error } = await supabase
-        .from("employees")
-        .update({ deleted_at: new Date().toISOString(), employment_status: "TERMINATED" })
-        .eq("id", deletingId);
+      const { deleteStoredEmployee, isRealSupabaseConfigured } = await import("@/lib/mock-data");
+      deleteStoredEmployee(deletingId);
 
-      if (error) throw error;
-      toast.success("Employee deleted successfully");
+      if (isRealSupabaseConfigured()) {
+        try {
+          await supabase
+            .from("employees")
+            .update({ deleted_at: new Date().toISOString(), employment_status: "TERMINATED" })
+            .eq("id", deletingId);
+        } catch {}
+      }
+
+      toast.success("Xodim muvaffaqiyatli o'chirildi!");
       refetch();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete employee");
+      toast.error(err.message || "Xodimni o'chirishda xatolik");
     } finally {
       setDeletingId(null);
     }

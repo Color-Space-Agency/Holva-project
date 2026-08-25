@@ -58,7 +58,8 @@ export interface MockEmployee {
   position: string
   salary_amount: number
   salary_type: string
-  employment_status: "ACTIVE" | "INACTIVE" | "ON_LEAVE"
+  employment_status: "ACTIVE" | "ON_LEAVE" | "TERMINATED"
+  photo_url: string
 }
 
 export const INITIAL_PRODUCTS: MockProduct[] = [
@@ -68,13 +69,13 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     sku: "HLV-KNJ-500",
     category: "Premium",
     price: 38000,
-    cost_price: 24000,
+    cost_price: 22000,
     unit: "dona",
-    stock: 420,
-    min_stock: 100,
+    stock: 145,
+    min_stock: 30,
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1599785209707-a456fc1337bb?auto=format&fit=crop&w=600&q=80",
-    description: "Tabiiy oq kunjut va asal qiyomidan tayyorlangan klassik qandolat durdonasi",
+    image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=600&q=80",
+    description: "Tabiiy oq kunjut va asal qiyomidan tayyorlangan klassik qandolat durdonasi.",
   },
   {
     id: "p-2",
@@ -82,13 +83,13 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     sku: "HLV-SHOK-400",
     category: "Shokoladli",
     price: 45000,
-    cost_price: 29000,
+    cost_price: 27000,
     unit: "dona",
-    stock: 280,
-    min_stock: 80,
+    stock: 84,
+    min_stock: 25,
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=600&q=80",
-    description: "Belgiya kakaosi va maydalangan yong'oq bilan boyitilgan nozik shirinlik",
+    image_url: "https://images.unsplash.com/photo-1548848221-0c2e497ed557?auto=format&fit=crop&w=600&q=80",
+    description: "Belgiya kakao kukuni va maydalangan bodom mag'izi bilan to'yintirilgan shokoladli holva.",
   },
   {
     id: "p-3",
@@ -96,13 +97,13 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     sku: "HLV-PST-1000",
     category: "Samarqand",
     price: 95000,
-    cost_price: 62000,
-    unit: "kg",
-    stock: 65,
-    min_stock: 50,
+    cost_price: 58000,
+    unit: "dona",
+    stock: 42,
+    min_stock: 15,
     status: "ACTIVE",
     image_url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=600&q=80",
-    description: "Maxsus qandolatchilik siri asosida xandon pista bilan tayyorlangan shohona holva",
+    description: "Eron xandon pistasi va tabiiy sariyog' qo'shib pishirilgan maxsus Samarqand holvasi.",
   },
   {
     id: "p-4",
@@ -112,11 +113,11 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     price: 18000,
     cost_price: 11000,
     unit: "dona",
-    stock: 850,
-    min_stock: 200,
+    stock: 320,
+    min_stock: 50,
     status: "ACTIVE",
     image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
-    description: "Tozalangan quyoshli kungaboqar mag'zidan an'anaviy xushbo'y retsept",
+    description: "Qovurilgan kungaboqar mag'izidan tayyorlangan an'anaviy hamyonbop xalqona holva.",
   },
   {
     id: "p-5",
@@ -124,13 +125,13 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     sku: "HLV-BDM-500",
     category: "Premium",
     price: 60000,
-    cost_price: 39000,
+    cost_price: 36000,
     unit: "dona",
-    stock: 135,
-    min_stock: 50,
+    stock: 65,
+    min_stock: 20,
     status: "ACTIVE",
     image_url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80",
-    description: "Maydalangan shirin tog' bodomi va vanil xushbo'yligi",
+    description: "Saralangan mayin bodom uni va tabiiy vanil aromatli nozik qandolat mahsuloti.",
   },
   {
     id: "p-6",
@@ -138,134 +139,123 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     sku: "HLV-MRM-450",
     category: "Shokoladli",
     price: 42000,
-    cost_price: 27000,
+    cost_price: 25000,
     unit: "dona",
-    stock: 310,
-    min_stock: 60,
+    stock: 110,
+    min_stock: 30,
     status: "ACTIVE",
     image_url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80",
-    description: "Oq kunjut va quyuq shokolad naqshlari uyg'unlashgan marmar holva",
+    description: "Oq kunjut va quyuq shokoladli qatlamlarning uyg'unlashgan marmar naqshli ko'rinishi.",
   },
 ]
 
 export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = [
   {
     id: "rm-1",
-    name: "Oq tozalangan Kunjut",
-    sku: "RAW-KNJ-01",
-    category: "Mag'izlar",
-    purchase_price: 32000,
+    name: "Oq kunjut (tozalangan)",
+    sku: "RM-KNJ-01",
+    category: "Don va urug'lar",
+    purchase_price: 28000,
     unit: "kg",
-    current_stock: 1450,
-    minimum_stock: 300,
-    supplier: "Agro Import MCHJ",
+    current_stock: 450,
+    minimum_stock: 100,
+    supplier: "Agro Import MChJ",
   },
   {
     id: "rm-2",
-    name: "Shakar (1-nav)",
-    sku: "RAW-SHK-01",
-    category: "Qand",
-    purchase_price: 9500,
+    name: "Shakar kukuni (I-nav)",
+    sku: "RM-SHK-02",
+    category: "Shirinlik va qiyomlar",
+    purchase_price: 13500,
     unit: "kg",
-    current_stock: 3200,
-    minimum_stock: 1000,
-    supplier: "Xorazm Shakar",
+    current_stock: 800,
+    minimum_stock: 200,
+    supplier: "Shakar Savdo Bazasi",
   },
   {
     id: "rm-3",
-    name: "Qiyom (Glyukoza siropi)",
-    sku: "RAW-SIROP-01",
-    category: "Qiyom",
-    purchase_price: 14000,
+    name: "Xandon pista mag'zi",
+    sku: "RM-PST-03",
+    category: "Yong'oqlar",
+    purchase_price: 140000,
     unit: "kg",
-    current_stock: 800,
-    minimum_stock: 250,
-    supplier: "Toshkent Qandolat Xomashyo",
+    current_stock: 45,
+    minimum_stock: 50, // Past qoldiq
+    supplier: "Samarqand Yong'oq MChJ",
   },
   {
     id: "rm-4",
-    name: "Kakao kukuni (Alkalizatsiyalangan)",
-    sku: "RAW-KAK-01",
-    category: "Qo'shimchalar",
-    purchase_price: 68000,
+    name: "Tozalangan bodom mag'zi",
+    sku: "RM-BDM-04",
+    category: "Yong'oqlar",
+    purchase_price: 98000,
     unit: "kg",
-    current_stock: 180,
-    minimum_stock: 100,
-    supplier: "Choco Trade MCHJ",
+    current_stock: 90,
+    minimum_stock: 30,
+    supplier: "Samarqand Yong'oq MChJ",
   },
   {
     id: "rm-5",
-    name: "Kungaboqar mag'zi (tozalangan)",
-    sku: "RAW-KNG-01",
-    category: "Mag'izlar",
-    purchase_price: 18500,
+    name: "Tabiiy Belgiya kakao kukuni",
+    sku: "RM-KKO-05",
+    category: "Qo'shimchalar",
+    purchase_price: 65000,
     unit: "kg",
-    current_stock: 2100,
-    minimum_stock: 500,
-    supplier: "Agro Yulduz",
-  },
-  {
-    id: "rm-6",
-    name: "Xandon pista (tozalangan)",
-    sku: "RAW-PST-01",
-    category: "Mag'izlar",
-    purchase_price: 145000,
-    unit: "kg",
-    current_stock: 45,
-    minimum_stock: 50,
-    supplier: "Samarqand Yong'oq Savdo",
+    current_stock: 60,
+    minimum_stock: 25,
+    supplier: "Choco Import Distribution",
   },
 ]
 
 export const INITIAL_STORES: MockStore[] = [
   {
-    id: "st-1",
-    name: "Korzinka — Chilonzor filiali",
+    id: "s-1",
+    name: "Korzinka — Chilonzor",
     phone: "+998 71 140 14 14",
-    address: "Toshkent sh., Chilonzor 9-mavze",
-    contact_person: "Bobur Aliyev",
+    address: "Toshkent sh., Chilonzor tumani, 9-mavze",
+    contact_person: "Bobur Rahmonov",
     credit_limit: 50000000,
-    current_balance: -8400000,
+    current_balance: -8400000, // Qarzdorlik
     status: "ACTIVE",
   },
   {
-    id: "st-2",
-    name: "Makro Supermarket — Buyuk Ipak Yo'li",
-    phone: "+998 71 205 12 25",
-    address: "Toshkent sh., Mirzo Ulug'bek tumani",
-    contact_person: "Aziz Karimov",
+    id: "s-2",
+    name: "Makro Supermarket — Sergeli",
+    phone: "+998 71 205 12 22",
+    address: "Toshkent sh., Yangi Sergeli ko'chasi, 12",
+    contact_person: "Dilshod Ergashev",
     credit_limit: 40000000,
     current_balance: 0,
     status: "ACTIVE",
   },
   {
-    id: "st-3",
-    name: "Havas Discounter — Yunusobod",
-    phone: "+998 71 200 00 20",
-    address: "Toshkent sh., Yunusobod 14-mavze",
-    contact_person: "Dilshod Saidov",
+    id: "s-3",
+    name: "Havas Diskaunter — Qo'yliq",
+    phone: "+998 71 200 00 07",
+    address: "Toshkent sh., Farg'ona yo'li, 45",
+    contact_person: "Azizbek Karimov",
     credit_limit: 30000000,
-    current_balance: -14200000,
+    current_balance: -3200000, // Qarzdorlik
     status: "ACTIVE",
   },
   {
-    id: "st-4",
+    id: "s-4",
     name: "Baraka Qandolat Do'koni",
-    phone: "+998 90 123 45 67",
-    address: "Toshkent sh., Qo'yliq bozori 12-do'kon",
-    contact_person: "Olim aka",
-    credit_limit: 10000000,
-    current_balance: -2100000,
+    phone: "+998 90 987 65 43",
+    address: "Samarqand sh., Registon ko'chasi, 88",
+    contact_person: "Olimjon Toirov",
+    credit_limit: 15000000,
+    current_balance: -2600000, // Qarzdorlik
     status: "ACTIVE",
   },
   {
-    id: "st-5",
+    id: "s-5",
     name: "Shirin Dunyo Savdo Markazi",
-    phone: "+998 93 987 65 43",
-    address: "Samarqand sh., Registon ko'chasi 45",
-    contact_person: "Mansur Jo'rayev",
-    credit_limit: 25000000,
-    current_balance: 3500000,
+    phone: "+998 93 555 44 33",
+    address: "Farg'ona sh., Al-Farg'oniy ko'chasi, 104",
+    contact_person: "Zokirjon Madumarov",
+    credit_limit: 20000000,
+    current_balance: 1500000,
     status: "ACTIVE",
   },
 ]
@@ -274,29 +264,29 @@ export const INITIAL_ORDERS: MockOrder[] = [
   {
     id: "ord-1",
     order_number: "HLV-2026-00104",
-    store_name: "Korzinka — Chilonzor filiali",
+    store_name: "Korzinka — Chilonzor",
     agent_name: "Sardor Rahimov",
     total_amount: 14800000,
     paid_amount: 6400000,
     status: "DELIVERED",
     payment_status: "PARTIAL",
-    created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
+    created_at: new Date().toISOString(),
   },
   {
     id: "ord-2",
     order_number: "HLV-2026-00105",
-    store_name: "Makro Supermarket — Buyuk Ipak Yo'li",
+    store_name: "Makro Supermarket — Sergeli",
     agent_name: "Jamshid Qodirov",
     total_amount: 9200000,
     paid_amount: 9200000,
-    status: "DELIVERED",
+    status: "CONFIRMED",
     payment_status: "PAID",
-    created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
   {
     id: "ord-3",
     order_number: "HLV-2026-00106",
-    store_name: "Havas Discounter — Yunusobod",
+    store_name: "Havas Diskaunter — Qo'yliq",
     agent_name: "Sardor Rahimov",
     total_amount: 21500000,
     paid_amount: 7300000,
@@ -328,6 +318,64 @@ export const INITIAL_ORDERS: MockOrder[] = [
   },
 ]
 
+export const INITIAL_EMPLOYEES: MockEmployee[] = [
+  {
+    id: "emp-1",
+    full_name: "Rustam Mahmudov",
+    phone: "+998 90 123 45 67",
+    department: "Ishlab chiqarish (Tsex)",
+    position: "Bosh texnolog",
+    employment_status: "ACTIVE",
+    salary_type: "MONTHLY",
+    salary_amount: 9500000,
+    photo_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "emp-2",
+    full_name: "Sardor Rahimov",
+    phone: "+998 93 345 67 89",
+    department: "Sotuv va Logistika",
+    position: "Katta savdo agenti",
+    employment_status: "ACTIVE",
+    salary_type: "PERFORMANCE",
+    salary_amount: 5000000,
+    photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "emp-3",
+    full_name: "Jamshid Qodirov",
+    phone: "+998 94 456 78 90",
+    department: "Sotuv va Logistika",
+    position: "Sotuv agenti",
+    employment_status: "ACTIVE",
+    salary_type: "PERFORMANCE",
+    salary_amount: 4500000,
+    photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "emp-4",
+    full_name: "Nodira Karimova",
+    phone: "+998 97 789 01 23",
+    department: "Moliya va Buxgalteriya",
+    position: "Bosh hisobchi",
+    employment_status: "ACTIVE",
+    salary_type: "MONTHLY",
+    salary_amount: 8000000,
+    photo_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "emp-5",
+    full_name: "Shavkat Ergashev",
+    phone: "+998 91 890 12 34",
+    department: "Sotuv va Logistika",
+    position: "Haydovchi-yetkazuvchi",
+    employment_status: "ACTIVE",
+    salary_type: "MONTHLY",
+    salary_amount: 5500000,
+    photo_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80",
+  },
+]
+
 // Tezkor tekshirish helper: Haqiqiy Supabase bormi yoki yo'q?
 export function isRealSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -343,7 +391,9 @@ export function isRealSupabaseConfigured(): boolean {
   )
 }
 
-// Brauzer localStorage'da mahsulotlarni saqlash va boshqarish
+// ==========================================
+// MAHSULOTLAR UCHUN LOCALSTORAGE PERSISTENCE
+// ==========================================
 const STORAGE_KEY_PRODUCTS = "holva_crm_stored_products"
 
 export function getStoredProducts(): MockProduct[] {
@@ -357,7 +407,6 @@ export function getStoredProducts(): MockProduct[] {
   } catch (e) {
     console.error("Error reading stored products:", e)
   }
-  // Initialize storage
   try {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(INITIAL_PRODUCTS))
   } catch {}
@@ -398,3 +447,58 @@ export function deleteStoredProduct(id: string): MockProduct[] {
   return updatedList
 }
 
+// ==========================================
+// XODIMLAR UCHUN LOCALSTORAGE PERSISTENCE
+// ==========================================
+const STORAGE_KEY_EMPLOYEES = "holva_crm_stored_employees"
+
+export function getStoredEmployees(): MockEmployee[] {
+  if (typeof window === "undefined") return INITIAL_EMPLOYEES
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EMPLOYEES)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored employees:", e)
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_EMPLOYEES, JSON.stringify(INITIAL_EMPLOYEES))
+  } catch {}
+  return INITIAL_EMPLOYEES
+}
+
+export function saveStoredEmployee(updated: Partial<MockEmployee> & { id: string }): MockEmployee[] {
+  if (typeof window === "undefined") return INITIAL_EMPLOYEES
+  const list = getStoredEmployees()
+  const updatedList = list.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+  try {
+    localStorage.setItem(STORAGE_KEY_EMPLOYEES, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
+
+export function createStoredEmployee(newItem: Omit<MockEmployee, "id"> & { id?: string }): MockEmployee[] {
+  if (typeof window === "undefined") return INITIAL_EMPLOYEES
+  const list = getStoredEmployees()
+  const emp: MockEmployee = {
+    ...newItem,
+    id: newItem.id || `emp-${Date.now()}`,
+  }
+  const updatedList = [emp, ...list]
+  try {
+    localStorage.setItem(STORAGE_KEY_EMPLOYEES, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
+
+export function deleteStoredEmployee(id: string): MockEmployee[] {
+  if (typeof window === "undefined") return INITIAL_EMPLOYEES
+  const list = getStoredEmployees()
+  const updatedList = list.filter((item) => item.id !== id)
+  try {
+    localStorage.setItem(STORAGE_KEY_EMPLOYEES, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
