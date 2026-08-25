@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { OrderStatusBadge, OrderPaymentStatusBadge } from "@/components/orders/order-status-badge"
 import {
   Table,
   TableBody,
@@ -155,9 +156,11 @@ export function StoreDetailClient({ storeId }: StoreDetailClientProps) {
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.order_number}</TableCell>
                       <TableCell>{formatDate(order.created_at)}</TableCell>
-                      <TableCell>{formatCurrency(order.total_amount)}</TableCell>
-                      <TableCell><Badge variant="outline">{order.status}</Badge></TableCell>
-                      <TableCell><Badge variant="outline">{order.payment_status}</Badge></TableCell>
+                      <TableCell className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(order.total_amount)}
+                      </TableCell>
+                      <TableCell><OrderStatusBadge status={order.status} /></TableCell>
+                      <TableCell><OrderPaymentStatusBadge status={order.payment_status} /></TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/orders/${order.id}`}>Ko'rish</Link>

@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { OrderFormDialog } from "./order-form-dialog"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
+import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -154,14 +155,14 @@ export function OrdersClient() {
                 <TableCell>{formatDate(order.created_at)}</TableCell>
                 <TableCell>{order.stores?.name}</TableCell>
                 <TableCell>{order.profiles?.first_name} {order.profiles?.last_name}</TableCell>
-                <TableCell className="font-semibold">
+                <TableCell className="font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(order.total_amount)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{order.status}</Badge>
+                  <OrderStatusBadge status={order.status} />
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{order.payment_status}</Badge>
+                  <OrderPaymentStatusBadge status={order.payment_status} />
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

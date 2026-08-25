@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
 import {
   Table,
   TableBody,
@@ -88,13 +89,13 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               <span className="text-muted-foreground">Sana:</span>
               <span>{formatDate(order.created_at)}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Holat:</span>
-              <Badge variant="outline">{order.status}</Badge>
+              <OrderStatusBadge status={order.status} />
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">To'lov holati:</span>
-              <Badge variant="outline">{order.payment_status}</Badge>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">To&apos;lov holati:</span>
+              <OrderPaymentStatusBadge status={order.payment_status} />
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Agent:</span>

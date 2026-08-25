@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, MapPin, Store, CreditCard, ChevronRight, Plus, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { INITIAL_ORDERS, INITIAL_STORES } from '@/lib/mock-data';
+import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 
 export function AgentHome() {
   const [userName, setUserName] = useState<string>('Sardor Rahimov');
@@ -162,13 +163,11 @@ export function AgentHome() {
                 </div>
               </div>
 
-              <div className="text-right flex-shrink-0">
+              <div className="text-right flex-shrink-0 space-y-1">
                 <div className="font-bold text-sm text-gray-900 dark:text-white">
                   {formatCurrency(order.total_amount)}
                 </div>
-                <span className="inline-block text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mt-0.5">
-                  {order.status}
-                </span>
+                <OrderStatusBadge status={order.status} />
               </div>
             </div>
           ))}
