@@ -1,13 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
 import { ReactNode } from 'react'
 import { AgentNav } from '@/components/agent/agent-nav'
+import { isRealSupabaseConfigured } from '@/lib/mock-data'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function AgentLayout({ children }: { children: ReactNode }) {
-  try {
-    const supabase = await createClient()
-    await supabase.auth.getUser()
-  } catch {
-    // Graceful fallback
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = await createClient()
+      await supabase.auth.getUser()
+    } catch {
+      // Graceful fallback
+    }
   }
 
   return (

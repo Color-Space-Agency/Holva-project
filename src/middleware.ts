@@ -1,6 +1,18 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+function isRealSupabaseConfigured(url?: string, key?: string): boolean {
+  return Boolean(
+    url &&
+    key &&
+    url.startsWith("https://") &&
+    !url.includes("mock-") &&
+    !url.includes("your_supabase") &&
+    !url.includes("placeholder") &&
+    key.length > 30
+  )
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -9,19 +21,13 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  const isConfigured =
-    supabaseUrl &&
-    supabaseAnonKey &&
-    supabaseUrl !== "your_supabase_url" &&
-    !supabaseUrl.includes("your_supabase")
-
+  const isConfigured = isRealSupabaseConfigured(supabaseUrl, supabaseAnonKey)
+  const isDemo = request.cookies.get("demo_session")?.value
   const { pathname } = request.nextUrl
   const publicRoutes = ["/login", "/register", "/forgot-password"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  // Agar demo rejimida bo'lsa (haqiqiy Supabase kiritilmagan yoki demo cookie mavjud)
-  const isDemo = request.cookies.get("demo_session")?.value
-
+  // Agar demo rejimida bo'lsa yoki haqiqiy Supabase ulanmagan bo'lsa (0ms instant routing)
   if (!isConfigured || isDemo) {
     if (pathname === "/login" && isDemo) {
       const url = request.nextUrl.clone()
@@ -33,8 +39,8 @@ export async function middleware(request: NextRequest) {
 
   try {
     const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
+      supabaseUrl!,
+      supabaseAnonKey!,
       {
         cookies: {
           getAll() {
@@ -71,7 +77,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
   } catch {
-    // Supabase aloqasida xatolik bo'lsa o'tkazib yuborish
     return supabaseResponse
   }
 

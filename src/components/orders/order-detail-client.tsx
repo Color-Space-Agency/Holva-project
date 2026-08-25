@@ -25,22 +25,47 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   const { data: order, isLoading } = useQuery({
     queryKey: ["orders", orderId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          stores(name, phone, address),
-          profiles:agent_id(first_name, last_name),
-          order_items(
-            *,
-            products(name)
-          ),
-          order_payments(*)
-        `)
-        .eq("id", orderId)
-        .single()
-      if (error) throw error
-      return data
+      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("orders")
+            .select(`
+              *,
+              stores(name, phone, address),
+              profiles:agent_id(first_name, last_name),
+              order_items(
+                *,
+                products(name)
+              ),
+              order_payments(*)
+            `)
+            .eq("id", orderId)
+            .single()
+          if (!error && data) return data
+        } catch {
+          // Fallback
+        }
+      }
+      const ord = INITIAL_ORDERS.find(o => o.id === orderId) || INITIAL_ORDERS[0]
+      return {
+        id: ord.id,
+        order_number: ord.order_number,
+        total_amount: ord.total_amount,
+        paid_amount: ord.paid_amount,
+        status: ord.status,
+        payment_status: ord.payment_status,
+        created_at: ord.created_at,
+        stores: { name: ord.store_name, phone: "+998 90 123 45 67", address: "Toshkent sh." },
+        profiles: { first_name: ord.agent_name.split(' ')[0], last_name: ord.agent_name.split(' ')[1] || '' },
+        order_items: [
+          { id: "1", quantity: 10, unit_price: 38000, total_price: 380000, products: { name: "Klassik Samarqand Holvasi" } },
+          { id: "2", quantity: 15, unit_price: 45000, total_price: 675000, products: { name: "Shokoladli Marmar Holva" } }
+        ],
+        order_payments: [
+          { id: "p1", amount: ord.paid_amount, payment_method: "CASH", payment_date: ord.created_at }
+        ]
+      }
     },
   })
 

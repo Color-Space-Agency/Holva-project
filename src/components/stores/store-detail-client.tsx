@@ -28,26 +28,40 @@ export function StoreDetailClient({ storeId }: StoreDetailClientProps) {
   const { data: store, isLoading } = useQuery({
     queryKey: ["stores", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("id", storeId)
-        .single()
-      if (error) throw error
-      return data
+      const { INITIAL_STORES, isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("stores")
+            .select("*")
+            .eq("id", storeId)
+            .single()
+          if (!error && data) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return INITIAL_STORES.find(s => s.id === storeId) || INITIAL_STORES[0]
     },
   })
 
   const { data: orders } = useQuery({
     queryKey: ["stores", storeId, "orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("store_id", storeId)
-        .order("created_at", { ascending: false })
-      if (error) throw error
-      return data
+      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("store_id", storeId)
+            .order("created_at", { ascending: false })
+          if (!error && data) return data
+        } catch {
+          // Fallback
+        }
+      }
+      return INITIAL_ORDERS.slice(0, 4)
     },
   })
 

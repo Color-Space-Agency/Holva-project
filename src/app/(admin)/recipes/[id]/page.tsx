@@ -1,35 +1,51 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { isRealSupabaseConfigured, INITIAL_PRODUCTS } from "@/lib/mock-data";
 
-export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
-  const supabase = await createClient();
+export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
-  const { data: recipe } = await supabase
-    .from("recipes")
-    .select(`*, product:products(name), unit:units(name, short_name)`)
-    .eq("id", id)
-    .single();
-    
-  if (!recipe) notFound();
+  let recipe: any = {
+    id: id,
+    name: "Klassik Samarqand Holvasi (Retsept #1)",
+    yield_quantity: 100,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  };
 
-  const { data: items } = await supabase
-    .from("recipe_items")
-    .select(`*, raw_material:raw_materials(name, purchase_price), unit:units(name, short_name)`)
-    .eq("recipe_id", id);
-    
-  const { data: versions } = await supabase
-    .from("recipes")
-    .select("id, version, is_active, created_at")
-    .eq("product_id", recipe.product_id)
-    .order("version", { ascending: false });
+  let items: any[] = [
+    { id: "1", raw_material: { name: "Shakar (Saxaroza)", purchase_price: 11000 }, quantity: 40, unit: { short_name: "kg" } },
+    { id: "2", raw_material: { name: "Qandolat yog'i", purchase_price: 32000 }, quantity: 25, unit: { short_name: "kg" } },
+    { id: "3", raw_material: { name: "Kungaboqar mag'zi", purchase_price: 24000 }, quantity: 30, unit: { short_name: "kg" } },
+    { id: "4", raw_material: { name: "Yorongul ildizi ekstrakti", purchase_price: 85000 }, quantity: 5, unit: { short_name: "litr" } },
+  ];
 
-  const totalCost = items?.reduce((sum, item) => sum + ((item.raw_material?.purchase_price || 0) * item.quantity), 0) || 0;
-  const costPerUnit = totalCost / recipe.yield_quantity;
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data: dbRecipe } = await supabase
+        .from("recipes")
+        .select(`*, product:products(name), unit:units(name, short_name)`)
+        .eq("id", id)
+        .single();
+        
+      if (dbRecipe) recipe = dbRecipe;
+
+      const { data: dbItems } = await supabase
+        .from("recipe_items")
+        .select(`*, raw_material:raw_materials(name, purchase_price), unit:units(name, short_name)`)
+        .eq("recipe_id", id);
+      if (dbItems) items = dbItems;
+    } catch {
+      // Fallback
+    }
+  }
+
+  const totalCost = items.reduce((sum: number, item: any) => sum + ((item.raw_material?.purchase_price || 0) * item.quantity), 0) || 0;
+  const costPerUnit = totalCost / (recipe.yield_quantity || 100);
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
@@ -57,58 +73,43 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items?.map(item => (
+                {items.map((item: any) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.raw_material?.name}</TableCell>
+                    <TableCell className="font-medium">{item.raw_material?.name}</TableCell>
                     <TableCell className="text-right">{formatNumber(item.quantity)}</TableCell>
-                    <TableCell>{item.unit?.short_name}</TableCell>
+                    <TableCell>{item.unit?.short_name || 'kg'}</TableCell>
                     <TableCell className="text-right">{formatCurrency(item.raw_material?.purchase_price || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency((item.raw_material?.purchase_price || 0) * item.quantity)}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency((item.raw_material?.purchase_price || 0) * item.quantity)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            
-            <div className="mt-6 flex justify-between items-center bg-muted p-4 rounded-lg">
-              <div>
-                <p className="text-sm text-muted-foreground">Chiqish hajmi: {formatNumber(recipe.yield_quantity)} {recipe.unit?.short_name}</p>
-                <p className="text-lg font-bold">Umumiy tannarx: {formatCurrency(totalCost)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Birlik tannarxi ({recipe.unit?.short_name})</p>
-                <p className="text-xl font-bold text-primary">{formatCurrency(costPerUnit)}</p>
-              </div>
-            </div>
-            
-            {recipe.instructions && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-2">Ko'rsatmalar:</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">{recipe.instructions}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Versiyalar tarixi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {versions?.map(v => (
-                <div key={v.id} className={`flex justify-between items-center p-3 rounded-md border ${v.id === id ? 'bg-muted border-primary' : ''}`}>
-                  <div>
-                    <p className="font-medium">Versiya {v.version}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge variant={v.is_active ? "default" : "outline"}>
-                    {v.is_active ? "Faol" : "Arxiv"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tannarx tahlili</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Chiqish hajmi</div>
+                <div className="text-2xl font-bold">{formatNumber(recipe.yield_quantity || 100)} kg</div>
+              </div>
+              <div className="pt-2 border-t">
+                <div className="text-sm text-muted-foreground">Jami xomashyo tannarxi</div>
+                <div className="text-2xl font-bold text-primary">{formatCurrency(totalCost)}</div>
+              </div>
+              <div className="pt-2 border-t">
+                <div className="text-sm text-muted-foreground">1 kg mahsulot tannarxi</div>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(costPerUnit)}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
