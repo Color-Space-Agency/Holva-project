@@ -7,8 +7,9 @@ import {
   Truck, Package, CircleDollarSign, 
   Star, Zap, MessageCircle, BarChart3,
   Eye, EyeOff, Sparkles, ArrowUp, ArrowDown,
-  X, Calendar, RefreshCw, Send, Plus, MapPin,
-  Flame, Award, DollarSign
+  X, Calendar, RefreshCw, CreditCard, 
+  Wallet, Building2, Plus, AlertCircle, Send, MapPin,
+  Flame, Award
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
@@ -22,29 +23,328 @@ import {
 import { toast } from 'sonner';
 
 // ============================================================
-// KOMPONENT: Haftalik / Oylik / Sana oralig'i Analitika Modali
+// KOMPONENT: Buyurtma To'lovini Qabul Qilish Modali
+// ============================================================
+interface OrderItem {
+  id: string;
+  client: string;
+  time: string;
+  amount: number;
+  status: string;
+  phone?: string;
+  paidAmount?: number;
+}
+
+function PaymentModal({
+  isOpen,
+  onClose,
+  order,
+  onPaymentSuccess
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  order: OrderItem | null;
+  onPaymentSuccess: (paymentData: { orderId: string; amount: number; method: string }) => void;
+}) {
+  const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const paymentMethods = [
+    { id: 'cash', label: 'Naqd', icon: Wallet, color: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' },
+    { id: 'card', label: 'Plastik karta', icon: CreditCard, color: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300' },
+    { id: 'transfer', label: 'O\'tkazma', icon: Building2, color: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300' },
+  ];
+
+  const orderTotal = order?.amount || 0;
+  const paidAmount = order?.paidAmount || 0;
+  const remainingAmount = Math.max(orderTotal - paidAmount, 0);
+
+  if (!isOpen || !order) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const paymentAmount = parseFloat(amount);
+    if (!paymentAmount || paymentAmount <= 0) {
+      setError('Iltimos, to\'g\'ri summani kiriting');
+      return;
+    }
+
+    if (paymentAmount > remainingAmount) {
+      setError(`To'lov miqdori qoldiqdan (${formatCurrency(remainingAmount)}) oshib ketdi`);
+      return;
+    }
+
+    setIsLoading(true);
+    setTimeout(() => {
+      onPaymentSuccess({
+        orderId: order.id,
+        amount: paymentAmount,
+        method: paymentMethod,
+      });
+      setIsLoading(false);
+      onClose();
+      toast.success(`✅ ${formatCurrency(paymentAmount)} to'lov muvaffaqiyatli qabul qilindi!`);
+    }, 600);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" onClick={onClose} />
+      
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto slide-up shadow-2xl border border-gray-100 dark:border-gray-800">
+        {/* Header */}
+        <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs z-10 flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base">To&apos;lov qabul qilish</h3>
+            <p className="text-xs text-gray-400 truncate max-w-[240px]">{order.client}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Buyurtma hisob-kitobi */}
+          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-2">
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Umumiy summa:</span>
+              <span className="font-black text-gray-900 dark:text-white">{formatCurrency(orderTotal)}</span>
+            </div>
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-gray-500 dark:text-gray-400">To&apos;langan:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(paidAmount)}</span>
+            </div>
+            <div className="flex justify-between text-xs sm:text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-gray-700 dark:text-gray-300 font-bold">Qoldiq qarz:</span>
+              <span className="font-black text-amber-600 dark:text-amber-400 text-sm sm:text-base">{formatCurrency(remainingAmount)}</span>
+            </div>
+          </div>
+
+          {/* To'lov usuli tanlash */}
+          <div>
+            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">To&apos;lov usuli</label>
+            <div className="grid grid-cols-3 gap-2">
+              {paymentMethods.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  className={`
+                    flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition cursor-pointer
+                    ${paymentMethod === method.id 
+                      ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shadow-xs' 
+                      : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                    touch-press active:scale-95
+                  `}
+                  onClick={() => setPaymentMethod(method.id as any)}
+                >
+                  <method.icon className="w-5 h-5" />
+                  <span className="text-[11px] font-bold">{method.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Summa kiritish */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                To&apos;lov miqdori (so&apos;m)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">UZS</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Masalan: 500000"
+                  className="w-full pl-14 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white font-bold text-sm outline-none"
+                  required
+                  min="1"
+                  max={remainingAmount}
+                />
+              </div>
+              {error && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1 font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {error}
+                </p>
+              )}
+            </div>
+
+            {/* Tezkor summalar */}
+            <div className="flex gap-2 flex-wrap">
+              {[500000, 1000000, 2000000, remainingAmount].filter(a => a > 0).map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-950 transition cursor-pointer touch-press"
+                  onClick={() => setAmount(preset.toString())}
+                >
+                  {preset === remainingAmount ? "To'liq qoldiq" : formatCurrency(preset)}
+                </button>
+              ))}
+            </div>
+
+            {/* Yuborish tugmasi */}
+            <button
+              type="submit"
+              disabled={isLoading || remainingAmount <= 0}
+              className="w-full mt-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white font-bold py-3.5 rounded-2xl transition touch-press active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-amber-500/30 cursor-pointer flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <RefreshCw className="animate-spin h-4 w-4" />
+                  Qabul qilinmoqda...
+                </span>
+              ) : (
+                `💰 To'lovni qabul qilish`
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// KOMPONENT: Buyurtma kartochkasi (Kengaytirilgan To'lov Bilan)
+// ============================================================
+function OrderCard({ 
+  order, 
+  statusConfig, 
+  formatCurrency, 
+  isSelected, 
+  onSelect,
+  onPayment
+}: {
+  order: OrderItem;
+  statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }>;
+  formatCurrency: (amount: number) => string;
+  isSelected: boolean;
+  onSelect: (id: string | null) => void;
+  onPayment: (order: OrderItem) => void;
+}) {
+  const status = statusConfig[order.status] || statusConfig.delivered;
+  const StatusIcon = status.icon;
+  const remaining = order.amount - (order.paidAmount || 0);
+
+  return (
+    <div 
+      className={`
+        bg-white dark:bg-gray-900 rounded-2xl border-2 transition-all duration-300 touch-press cursor-pointer
+        active:scale-[0.98]
+        ${isSelected 
+          ? 'border-amber-400 shadow-lg shadow-amber-500/10' 
+          : 'border-gray-100 dark:border-gray-800 hover:border-amber-200 dark:hover:border-amber-900/60 hover:shadow-md'
+        }
+      `}
+      onClick={() => onSelect(isSelected ? null : order.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') onSelect(isSelected ? null : order.id); }}
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                {order.client}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-mono text-gray-400">{order.id}</span>
+              <span className="text-xs text-gray-300 dark:text-gray-700">•</span>
+              <span className="text-xs text-gray-400">{order.time}</span>
+            </div>
+          </div>
+          <div className="text-right ml-3 flex-shrink-0">
+            <p className="font-black text-gray-900 dark:text-white text-sm">{formatCurrency(order.amount)}</p>
+            <div className="flex flex-col items-end gap-0.5 mt-1">
+              <span className={`
+                inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border
+                ${status.color}
+              `}>
+                <StatusIcon className="w-3 h-3" />
+                {status.label}
+              </span>
+              {(order.paidAmount || 0) > 0 && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                  ✅ {formatCurrency(order.paidAmount || 0)} to&apos;langan
+                </span>
+              )}
+              {remaining > 0 && order.status !== 'delivered' && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                  ⏳ Qoldiq: {formatCurrency(remaining)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Ochiluvchi harakatlar paneli */}
+        {isSelected && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 animate-fade-in-up">
+            <div className="flex gap-2 flex-wrap">
+              <button 
+                className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 py-2.5 rounded-xl transition touch-press active:scale-[0.95] cursor-pointer shadow-sm shadow-amber-500/20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPayment(order);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                To&apos;lov qabul qilish
+              </button>
+              <a 
+                href={`tel:${order.phone || '+998711401414'}`}
+                className="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3.5 py-2.5 rounded-xl transition touch-press active:scale-[0.95]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                Bog&apos;lanish
+              </a>
+              <Link 
+                href="/agent/orders"
+                className="flex items-center justify-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 px-3.5 py-2.5 rounded-xl transition touch-press active:scale-[0.95]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Batafsil
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// KOMPONENT: Haftalik / Oylik Analitika Modali
 // ============================================================
 interface ChartItem {
   day: string;
   fullDate?: string;
-  value: number; // so'm miqdorida
+  value: number;
 }
 
-// Dinamik sanalar bo'yicha savdo hisoblash
 function getDynamicCustomData(fromStr: string, toStr: string): ChartItem[] {
   try {
     const start = new Date(fromStr);
     const end = new Date(toStr);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
-      return [
-        { day: 'Bugun', fullDate: 'Bugungi savdo', value: 3800000 },
-      ];
+      return [{ day: 'Bugun', fullDate: 'Bugungi savdo', value: 3800000 }];
     }
 
     const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
     const items: ChartItem[] = [];
 
-    // Agar 1 kundan 14 kungacha bo'lsa - har bir kunni chiqaradi
     if (diffDays <= 14) {
       for (let i = 0; i < diffDays; i++) {
         const d = new Date(start);
@@ -54,7 +354,6 @@ function getDynamicCustomData(fromStr: string, toStr: string): ChartItem[] {
         const weekdayName = d.toLocaleDateString('uz-UZ', { weekday: 'short' });
         const fullDateStr = d.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
         
-        // Sanaga bog'langan deterministik, o'zgaruvchan savdo summasi
         const seed = (d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) % 10;
         const base = 2600000;
         const variable = (seed * 380000) + (d.getDay() === 0 || d.getDay() === 6 ? 1400000 : 0);
@@ -67,7 +366,6 @@ function getDynamicCustomData(fromStr: string, toStr: string): ChartItem[] {
         });
       }
     } else {
-      // 14 kundan ko'p bo'lsa - 6 ta teng oraliqqa (intervallarga) bo'ladi
       const step = Math.ceil(diffDays / 6);
       for (let i = 0; i < diffDays; i += step) {
         const segStart = new Date(start);
@@ -93,9 +391,7 @@ function getDynamicCustomData(fromStr: string, toStr: string): ChartItem[] {
 
     return items;
   } catch (e) {
-    return [
-      { day: 'Tanlangan davr', fullDate: 'Umumiy davr', value: 4500000 },
-    ];
+    return [{ day: 'Tanlangan davr', fullDate: 'Umumiy davr', value: 4500000 }];
   }
 }
 
@@ -114,26 +410,18 @@ function AnalyticsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:p-4 animate-fade-in">
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" 
-        onClick={onClose} 
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-3xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl z-10 border border-gray-100 dark:border-gray-800 slide-up">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h3 className="font-bold text-gray-900 dark:text-white text-base">Batafsil Savdo Analitikasi</h3>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-          >
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 space-y-5 mobile-scroll overflow-y-auto max-h-[70vh]">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Tanlangan Davr Tushumi</p>
@@ -166,7 +454,6 @@ function AnalyticsModal({
             </div>
           </div>
 
-          {/* Summalar ro'yxati */}
           <div className="space-y-2 pt-2">
             <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Kunlik aniq summalar:</p>
             <div className="grid grid-cols-2 gap-2">
@@ -247,12 +534,8 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:p-4 animate-fade-in">
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[85vh] overflow-hidden shadow-2xl z-10 border border-gray-100 dark:border-gray-800 slide-up flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-2xl flex items-center justify-center font-bold">
@@ -266,15 +549,11 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
               </p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
         
-        {/* Xabarlar lentasi */}
         <div className="p-4 space-y-3 h-72 overflow-y-auto mobile-scroll">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
@@ -294,12 +573,8 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           ))}
         </div>
         
-        {/* Kiritish maydoni */}
         <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-          <form 
-            onSubmit={(e) => { e.preventDefault(); handleSend(); }} 
-            className="flex gap-2 items-center"
-          >
+          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
             <input
               type="text"
               value={message}
@@ -323,103 +598,6 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 }
 
 // ============================================================
-// KOMPONENT: Buyurtma kartochkasi
-// ============================================================
-interface OrderItem {
-  id: string;
-  client: string;
-  time: string;
-  amount: number;
-  status: string;
-  phone?: string;
-}
-
-function OrderCard({ 
-  order, 
-  statusConfig, 
-  formatCurrency, 
-  isSelected, 
-  onSelect 
-}: {
-  order: OrderItem;
-  statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }>;
-  formatCurrency: (amount: number) => string;
-  isSelected: boolean;
-  onSelect: (id: string | null) => void;
-}) {
-  const status = statusConfig[order.status] || statusConfig.delivered;
-  const StatusIcon = status.icon;
-
-  return (
-    <div 
-      className={`
-        bg-white dark:bg-gray-900 rounded-2xl border-2 transition-all duration-300 touch-press cursor-pointer
-        active:scale-[0.98]
-        ${isSelected 
-          ? 'border-amber-400 shadow-lg shadow-amber-500/10' 
-          : 'border-gray-100 dark:border-gray-800 hover:border-amber-200 dark:hover:border-amber-900/60 hover:shadow-md'
-        }
-      `}
-      onClick={() => onSelect(isSelected ? null : order.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onSelect(isSelected ? null : order.id); }}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                {order.client}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-mono text-gray-400">{order.id}</span>
-              <span className="text-xs text-gray-300 dark:text-gray-700">•</span>
-              <span className="text-xs text-gray-400">{order.time}</span>
-            </div>
-          </div>
-          <div className="text-right ml-3 flex-shrink-0">
-            <p className="font-bold text-gray-900 dark:text-white text-sm">{formatCurrency(order.amount)}</p>
-            <span className={`
-              inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border mt-1
-              ${status.color}
-            `}>
-              <StatusIcon className="w-3 h-3" />
-              {status.label}
-            </span>
-          </div>
-        </div>
-        
-        {/* Ochiluvchi harakatlar paneli */}
-        {isSelected && (
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 animate-fade-in-up">
-            <div className="flex gap-2">
-              <a 
-                href={`tel:${order.phone || '+998711401414'}`}
-                className="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 py-2.5 rounded-xl transition touch-press active:scale-[0.95]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Phone className="w-4 h-4" />
-                Bog&apos;lanish
-              </a>
-              <Link 
-                href="/agent/orders"
-                className="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 py-2.5 rounded-xl transition touch-press active:scale-[0.95]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Eye className="w-4 h-4" />
-                Batafsil
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============================================================
 // ASOSIY KOMPONENT: AgentHome
 // ============================================================
 export function AgentHome() {
@@ -428,10 +606,14 @@ export function AgentHome() {
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  // Tashriflar holati (LocalStorage bilan bog'langan)
+  // Tashriflar holati
   const [visits, setVisits] = useState({ completed: 9, plan: 12 });
   const [isVisitLoading, setIsVisitLoading] = useState(false);
   
+  // To'lov modali holati
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<OrderItem | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   // Savdo dinamikasi tablari: 'week' | 'month' | 'custom'
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'custom'>('week');
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
@@ -439,11 +621,18 @@ export function AgentHome() {
   const [toDate, setToDate] = useState<string>('2026-08-26');
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
+  // Buyurtmalar ro'yxati (To'langan summasi bilan)
+  const [ordersList, setOrdersList] = useState<OrderItem[]>([
+    { id: 'HLV-2026-00104', client: 'Korzinka — Chilonzor', time: '05:21', amount: 14800000, status: 'delivered', phone: '+998711401414', paidAmount: 14800000 },
+    { id: 'HLV-2026-00105', client: 'Makro Supermarket — Sergeli', time: '00:21', amount: 9200000, status: 'accepted', phone: '+998712051222', paidAmount: 5000000 },
+    { id: 'HLV-2026-00106', client: 'Havas Diskaunter — Qo\'yliq', time: '11:21', amount: 21500000, status: 'shipping', phone: '+998712000007', paidAmount: 0 },
+    { id: 'HLV-2026-00107', client: 'Baraka Qandolat Do\'koni', time: '03:21', amount: 4600000, status: 'ready', phone: '+998909876543', paidAmount: 2000000 },
+  ]);
+
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
     if (savedName) setUserName(savedName.split(' ')[0]);
 
-    // LocalStorage dan saqlangan tashriflar sonini olish
     const storedCount = getStoredCompletedVisitsCount();
     setVisits({ completed: storedCount, plan: 12 });
 
@@ -461,7 +650,7 @@ export function AgentHome() {
     name: userName,
     todayRevenue: 22400000,
     revenuePercent: 118,
-    orders: 6,
+    orders: ordersList.length,
     stores: INITIAL_STORES.length,
     commission: 4725000,
     commissionPaid: 3500000,
@@ -477,13 +666,6 @@ export function AgentHome() {
       { store: 'Makro Supermarket — Sergeli', suggestion: 'Kichik qadoqli holvalardan qo\'shing — kassa zonasida tez sotiladi' },
       { store: 'Havas Diskaunter — Qo\'yliq', suggestion: 'Klassik holva zaxirasini oshiring — xaridorlar talabi yuqori' },
     ],
-    ordersList: [
-      { id: 'HLV-2026-00104', client: 'Korzinka — Chilonzor', time: '05:21', amount: 14800000, status: 'delivered', phone: '+998711401414' },
-      { id: 'HLV-2026-00105', client: 'Makro Supermarket — Sergeli', time: '00:21', amount: 9200000, status: 'accepted', phone: '+998712051222' },
-      { id: 'HLV-2026-00106', client: 'Havas Diskaunter — Qo\'yliq', time: '11:21', amount: 21500000, status: 'shipping', phone: '+998712000007' },
-      { id: 'HLV-2026-00107', client: 'Baraka Qandolat Do\'koni', time: '03:21', amount: 4600000, status: 'ready', phone: '+998909876543' },
-    ],
-    // Haftalik ma'lumotlar (so'mda)
     weeklyData: [
       { day: 'Dush', fullDate: '20-Avgust, Dushanba', value: 2800000 },
       { day: 'Sesh', fullDate: '21-Avgust, Seshanba', value: 3200000 },
@@ -493,7 +675,6 @@ export function AgentHome() {
       { day: 'Shan', fullDate: '25-Avgust, Shanba', value: 5200000 },
       { day: 'Yak', fullDate: '26-Avgust, Yakshanba', value: 4500000 }
     ],
-    // Oylik ma'lumotlar (so'mda)
     monthlyData: [
       { day: '1-hafta', fullDate: '1 — 7 Avgust haftaligi', value: 12500000 },
       { day: '2-hafta', fullDate: '8 — 14 Avgust haftaligi', value: 15200000 },
@@ -509,7 +690,6 @@ export function AgentHome() {
     ready: { label: 'Tayyor (Omborda)', icon: Package, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' },
   };
 
-  // Tashrifni yakunlash funksiyasi (LocalStorage ga yozish va sonini oshirish)
   const completeVisit = () => {
     setIsVisitLoading(true);
     setTimeout(() => {
@@ -534,7 +714,26 @@ export function AgentHome() {
     }, 500);
   };
 
-  // Dinamik hisoblanuvchi grafik ma'lumotlari
+  // To'lov muvaffaqiyatli qabul qilinganda
+  const handlePaymentSuccess = (paymentData: { orderId: string; amount: number; method: string }) => {
+    setOrdersList(prev => prev.map(order => {
+      if (order.id === paymentData.orderId) {
+        const updatedPaid = (order.paidAmount || 0) + paymentData.amount;
+        return {
+          ...order,
+          paidAmount: updatedPaid,
+          status: updatedPaid >= order.amount ? 'delivered' : order.status
+        };
+      }
+      return order;
+    }));
+  };
+
+  const openPaymentModal = (order: OrderItem) => {
+    setSelectedOrderForPayment(order);
+    setIsPaymentModalOpen(true);
+  };
+
   const currentChartData = useMemo(() => {
     if (activeTab === 'week') return agentData.weeklyData;
     if (activeTab === 'month') return agentData.monthlyData;
@@ -545,7 +744,6 @@ export function AgentHome() {
     return currentChartData.reduce((acc, curr) => acc + curr.value, 0);
   }, [currentChartData]);
 
-  // Tanlangan kun yoki default jami summa ko'rsatkichi
   const activeItem = selectedDayIndex !== null && currentChartData[selectedDayIndex] ? currentChartData[selectedDayIndex] : null;
   const bestDay = useMemo(() => {
     return [...currentChartData].sort((a, b) => b.value - a.value)[0] || { day: '—', value: 0 };
@@ -597,7 +795,7 @@ export function AgentHome() {
         </Link>
       </div>
 
-      {/* 2. YANGILANGAN SAVDO DINAMIKASI (DINAMIK SANALAR VA SUMMALAR BILAN) */}
+      {/* 2. YANGILANGAN SAVDO DINAMIKASI (PREMIUM FINTECH UI/UX) */}
       <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
         
         {/* Yuqori qism: Segmented Control & Analitika tugmasi */}
@@ -725,7 +923,6 @@ export function AgentHome() {
                   onClick={() => setSelectedDayIndex(isSelected ? null : i)}
                   className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer relative touch-friendly"
                 >
-                  {/* Floating tooltip summa */}
                   <span className={`
                     text-[10px] font-black transition-all whitespace-nowrap
                     ${isSelected 
@@ -736,7 +933,6 @@ export function AgentHome() {
                     {(item.value / 1000000).toFixed(1)}M
                   </span>
 
-                  {/* Bar */}
                   <div 
                     className={`
                       w-full rounded-t-xl transition-all duration-300 relative
@@ -752,7 +948,6 @@ export function AgentHome() {
                     )}
                   </div>
 
-                  {/* Day label */}
                   <span className={`
                     text-[11px] transition-all font-bold mt-1 truncate max-w-full text-center
                     ${isSelected 
@@ -767,7 +962,6 @@ export function AgentHome() {
             })}
           </div>
 
-          {/* Mini yordamchi ko'rsatkichlar (KPI Footers) */}
           <div className="flex items-center justify-between pt-3 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1.5">
               <Award className="w-4 h-4 text-amber-500" />
@@ -961,17 +1155,20 @@ export function AgentHome() {
         )}
       </div>
 
-      {/* 7. Oxirgi Buyurtmalar */}
+      {/* 7. Oxirgi Buyurtmalar (To'lov Qabul Qilish Bilan) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalarim</h2>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalarim</h2>
+            <p className="text-xs text-gray-400">To&apos;lov holati bilan</p>
+          </div>
           <Link href="/agent/orders" className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 transition touch-press">
             Barchasi <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         <div className="space-y-3">
-          {agentData.ordersList.map((order) => (
+          {ordersList.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -979,6 +1176,7 @@ export function AgentHome() {
               formatCurrency={formatCurrency}
               isSelected={selectedOrder === order.id}
               onSelect={setSelectedOrder}
+              onPayment={openPaymentModal}
             />
           ))}
         </div>
@@ -1003,7 +1201,18 @@ export function AgentHome() {
         totalAmount={totalPeriodRevenue}
       />
 
-      {/* 10. Jonli Chat Modali */}
+      {/* 10. To'lov Qabul Qilish Modali */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setSelectedOrderForPayment(null);
+        }}
+        order={selectedOrderForPayment}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* 11. Jonli Chat Modali */}
       <ChatModal 
         isOpen={isChatOpen} 
         onClose={() => setIsChatOpen(false)} 
