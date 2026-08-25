@@ -57,96 +57,99 @@ function StatCardSkeleton() {
   )
 }
 
+import { isRealSupabaseConfigured } from "@/lib/mock-data"
+
 async function fetchDashboardStats() {
-  const supabase = createClient()
-  const today = new Date().toISOString().split("T")[0]
-  const todayStart = `${today}T00:00:00`
-  const todayEnd = `${today}T23:59:59`
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const today = new Date().toISOString().split("T")[0]
+      const todayStart = `${today}T00:00:00`
+      const todayEnd = `${today}T23:59:59`
 
-  const [
-    ordersResult,
-    revenueResult,
-    productionResult,
-    productsResult,
-    deliveriesResult,
-    presentResult,
-    absentResult,
-    storeDebtsResult,
-  ] = await Promise.all([
-    supabase
-      .from("orders")
-      .select("id", { count: "exact" })
-      .gte("created_at", todayStart)
-      .lte("created_at", todayEnd)
-      .neq("status", "CANCELLED"),
-    supabase
-      .from("orders")
-      .select("total_amount")
-      .gte("created_at", todayStart)
-      .lte("created_at", todayEnd)
-      .neq("status", "CANCELLED"),
-    supabase
-      .from("production_batches")
-      .select("actual_quantity, planned_quantity")
-      .eq("production_date", today),
-    supabase
-      .from("products")
-      .select("id", { count: "exact" })
-      .eq("status", "ACTIVE"),
-    supabase
-      .from("deliveries")
-      .select("id", { count: "exact" })
-      .in("status", ["PENDING", "PREPARING", "OUT_FOR_DELIVERY"]),
-    supabase
-      .from("employee_attendance")
-      .select("id", { count: "exact" })
-      .eq("date", today)
-      .in("status", ["PRESENT", "LATE", "CHECKED_OUT"]),
-    supabase
-      .from("employee_attendance")
-      .select("id", { count: "exact" })
-      .eq("date", today)
-      .in("status", ["ABSENT_UNEXCUSED", "ABSENT_EXCUSED"]),
-    supabase
-      .from("stores")
-      .select("current_balance")
-      .lt("current_balance", 0),
-  ])
+      const [
+        ordersResult,
+        revenueResult,
+        productionResult,
+        productsResult,
+        deliveriesResult,
+        presentResult,
+        absentResult,
+        storeDebtsResult,
+      ] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id", { count: "exact" })
+          .gte("created_at", todayStart)
+          .lte("created_at", todayEnd)
+          .neq("status", "CANCELLED"),
+        supabase
+          .from("orders")
+          .select("total_amount")
+          .gte("created_at", todayStart)
+          .lte("created_at", todayEnd)
+          .neq("status", "CANCELLED"),
+        supabase
+          .from("production_batches")
+          .select("actual_quantity, planned_quantity")
+          .eq("production_date", today),
+        supabase
+          .from("products")
+          .select("id", { count: "exact" })
+          .eq("status", "ACTIVE"),
+        supabase
+          .from("deliveries")
+          .select("id", { count: "exact" })
+          .in("status", ["PENDING", "PREPARING", "OUT_FOR_DELIVERY"]),
+        supabase
+          .from("employee_attendance")
+          .select("id", { count: "exact" })
+          .eq("date", today)
+          .in("status", ["PRESENT", "LATE", "CHECKED_OUT"]),
+        supabase
+          .from("employee_attendance")
+          .select("id", { count: "exact" })
+          .eq("date", today)
+          .in("status", ["ABSENT_UNEXCUSED", "ABSENT_EXCUSED"]),
+        supabase
+          .from("stores")
+          .select("current_balance")
+          .lt("current_balance", 0),
+      ])
 
-  try {
-    const totalRevenue = (revenueResult.data ?? []).reduce(
-      (sum, o) => sum + (o.total_amount ?? 0),
-      0
-    )
-    const producedKg = (productionResult.data ?? []).reduce(
-      (sum, b) => sum + (b.actual_quantity ?? b.planned_quantity ?? 0),
-      0
-    )
-    const totalDebt = Math.abs(
-      (storeDebtsResult.data ?? []).reduce(
-        (sum, s) => sum + (s.current_balance < 0 ? s.current_balance : 0),
+      const totalRevenue = (revenueResult.data ?? []).reduce(
+        (sum, o) => sum + (o.total_amount ?? 0),
         0
       )
-    )
+      const producedKg = (productionResult.data ?? []).reduce(
+        (sum, b) => sum + (b.actual_quantity ?? b.planned_quantity ?? 0),
+        0
+      )
+      const totalDebt = Math.abs(
+        (storeDebtsResult.data ?? []).reduce(
+          (sum, s) => sum + (s.current_balance < 0 ? s.current_balance : 0),
+          0
+        )
+      )
 
-    // Agar ma'lumotlar bor bo'lsa
-    if (ordersResult.count || totalRevenue || productsResult.count) {
-      return {
-        todayOrders: ordersResult.count ?? 0,
-        todayRevenue: totalRevenue,
-        producedKg,
-        totalProducts: productsResult.count ?? 0,
-        pendingDeliveries: deliveriesResult.count ?? 0,
-        presentEmployees: presentResult.count ?? 0,
-        absentEmployees: absentResult.count ?? 0,
-        totalDebt,
+      if (ordersResult.count || totalRevenue || productsResult.count) {
+        return {
+          todayOrders: ordersResult.count ?? 0,
+          todayRevenue: totalRevenue,
+          producedKg,
+          totalProducts: productsResult.count ?? 0,
+          pendingDeliveries: deliveriesResult.count ?? 0,
+          presentEmployees: presentResult.count ?? 0,
+          absentEmployees: absentResult.count ?? 0,
+          totalDebt,
+        }
       }
+    } catch {
+      // Fallback
     }
-  } catch {
-    // Ignore and return demo stats
   }
 
-  // Standart demo statistikasi
+  // Instant demo stats (0ms)
   return {
     todayOrders: 18,
     todayRevenue: 28450000,

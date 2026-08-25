@@ -20,15 +20,46 @@ type RawMaterial = Database["public"]["Tables"]["raw_materials"]["Row"] & {
   raw_material_suppliers: { name: string } | null
 }
 
-async function fetchRawMaterials() {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("raw_materials")
-    .select(`*, raw_material_categories(name), product_units(name, symbol), raw_material_suppliers(name)`)
-    .is("deleted_at", null)
-    .order("name")
-  if (error) throw error
-  return data as RawMaterial[]
+import { INITIAL_RAW_MATERIALS, isRealSupabaseConfigured } from "@/lib/mock-data"
+
+async function fetchRawMaterials(): Promise<RawMaterial[]> {
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("raw_materials")
+        .select(`*, raw_material_categories(name), product_units(name, symbol), raw_material_suppliers(name)`)
+        .is("deleted_at", null)
+        .order("name")
+      if (data && data.length > 0) return data as RawMaterial[]
+    } catch {
+      // Fallback
+    }
+  }
+
+  // Instant demo raw materials
+  return INITIAL_RAW_MATERIALS.map((rm) => ({
+    id: rm.id,
+    factory_id: "demo",
+    name: rm.name,
+    sku: rm.sku,
+    category_id: null,
+    unit_id: "u-kg",
+    supplier_id: null,
+    purchase_price: rm.purchase_price,
+    minimum_stock: rm.minimum_stock,
+    current_stock: rm.current_stock,
+    image_url: null,
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: null,
+    updated_by: null,
+    deleted_at: null,
+    raw_material_categories: { name: rm.category },
+    product_units: { name: rm.unit, symbol: rm.unit },
+    raw_material_suppliers: { name: rm.supplier },
+  })) as unknown as RawMaterial[]
 }
 
 export function RawMaterialsClient() {

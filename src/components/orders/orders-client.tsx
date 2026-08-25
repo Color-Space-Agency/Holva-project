@@ -39,28 +39,31 @@ export function OrdersClient() {
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ["orders", searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from("orders")
-        .select(`
-          *,
-          stores:store_id(name),
-          profiles:agent_id(first_name, last_name)
-        `)
-        .order("created_at", { ascending: false })
+      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
 
-      if (searchQuery) {
-        query = query.or(`order_number.ilike.%${searchQuery}%`)
+      if (isRealSupabaseConfigured()) {
+        try {
+          let query = supabase
+            .from("orders")
+            .select(`
+              *,
+              stores:store_id(name),
+              profiles:agent_id(first_name, last_name)
+            `)
+            .order("created_at", { ascending: false })
+
+          if (searchQuery) {
+            query = query.or(`order_number.ilike.%${searchQuery}%`)
+          }
+
+          const { data, error } = await query
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
       }
 
-      try {
-        const { data, error } = await query
-        if (data && data.length > 0) return data
-      } catch {
-        // Fallback
-      }
-
-      const { INITIAL_ORDERS } = await import("@/lib/mock-data")
-      return INITIAL_ORDERS.map((o) => ({
+      let res = INITIAL_ORDERS.map((o) => ({
         id: o.id,
         order_number: o.order_number,
         total_amount: o.total_amount,
@@ -71,6 +74,10 @@ export function OrdersClient() {
         stores: { name: o.store_name },
         profiles: { first_name: o.agent_name.split(" ")[0], last_name: o.agent_name.split(" ")[1] || "" },
       }))
+      if (searchQuery) {
+        res = res.filter((o) => o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) || o.stores.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      }
+      return res
     },
   })
 

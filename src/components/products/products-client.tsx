@@ -19,23 +19,25 @@ type Product = Database["public"]["Tables"]["products"]["Row"] & {
   product_units: { name: string; symbol: string } | null
 }
 
-import { INITIAL_PRODUCTS } from "@/lib/mock-data"
+import { INITIAL_PRODUCTS, isRealSupabaseConfigured } from "@/lib/mock-data"
 
 async function fetchProducts(): Promise<Product[]> {
-  try {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("products")
-      .select(`*, product_categories(name), product_units(name, symbol)`)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("products")
+        .select(`*, product_categories(name), product_units(name, symbol)`)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
 
-    if (data && data.length > 0) return data as Product[]
-  } catch {
-    // Ignore error
+      if (data && data.length > 0) return data as Product[]
+    } catch {
+      // Fallback
+    }
   }
 
-  // Fallback demo data
+  // Instant fallback demo data with high-res photos
   return INITIAL_PRODUCTS.map((p) => ({
     id: p.id,
     factory_id: "demo",
@@ -46,15 +48,16 @@ async function fetchProducts(): Promise<Product[]> {
     barcode: null,
     description: p.description || null,
     cost_price: p.cost_price,
-    sale_price: p.price,
-    wholesale_price: p.price * 0.9,
+    sales_price: p.price,
+    wholesale_price: Math.round(p.price * 0.9),
+    minimum_price: Math.round(p.price * 0.85),
     minimum_order_qty: 1,
     weight_gross: null,
     weight_net: null,
-    image_url: null,
+    image_url: p.image_url,
     status: p.status,
     shelf_life_days: 180,
-    storage_conditions: "Salqin joyda",
+    storage_conditions: "Salqin va quruq joyda",
     notes: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

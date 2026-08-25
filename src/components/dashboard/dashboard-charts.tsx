@@ -48,38 +48,42 @@ function getDateRange(range: DateRange) {
   return { start, end }
 }
 
+import { isRealSupabaseConfigured } from "@/lib/mock-data"
+
 async function fetchChartData(range: DateRange) {
-  const supabase = createClient()
   const { start, end } = getDateRange(range)
 
-  try {
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("created_at, total_amount, status")
-      .gte("created_at", `${start}T00:00:00`)
-      .lte("created_at", `${end}T23:59:59`)
-      .neq("status", "CANCELLED")
-      .order("created_at")
+  if (isRealSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("created_at, total_amount, status")
+        .gte("created_at", `${start}T00:00:00`)
+        .lte("created_at", `${end}T23:59:59`)
+        .neq("status", "CANCELLED")
+        .order("created_at")
 
-    if (orders && orders.length > 0) {
-      const byDate: Record<string, { revenue: number; orders: number }> = {}
-      orders.forEach((o) => {
-        const date = o.created_at.split("T")[0]
-        if (!byDate[date]) byDate[date] = { revenue: 0, orders: 0 }
-        byDate[date].revenue += o.total_amount ?? 0
-        byDate[date].orders += 1
-      })
+      if (orders && orders.length > 0) {
+        const byDate: Record<string, { revenue: number; orders: number }> = {}
+        orders.forEach((o) => {
+          const date = o.created_at.split("T")[0]
+          if (!byDate[date]) byDate[date] = { revenue: 0, orders: 0 }
+          byDate[date].revenue += o.total_amount ?? 0
+          byDate[date].orders += 1
+        })
 
-      return Object.entries(byDate)
-        .map(([date, data]) => ({
-          date: new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
-          Tushum: data.revenue,
-          Buyurtmalar: data.orders,
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date))
+        return Object.entries(byDate)
+          .map(([date, data]) => ({
+            date: new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
+            Tushum: data.revenue,
+            Buyurtmalar: data.orders,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date))
+      }
+    } catch {
+      // Ignore and return demo trend
     }
-  } catch {
-    // Ignore and return demo trend
   }
 
   // Demo trend ma'lumotlari

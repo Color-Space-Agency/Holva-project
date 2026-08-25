@@ -47,27 +47,34 @@ export function StoresClient() {
   const { data: stores, isLoading, refetch } = useQuery({
     queryKey: ["stores", searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from("stores")
-        .select("*")
-        .order("created_at", { ascending: false })
+      const { INITIAL_STORES, isRealSupabaseConfigured } = await import("@/lib/mock-data")
 
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+      if (isRealSupabaseConfigured()) {
+        try {
+          let query = supabase
+            .from("stores")
+            .select("*")
+            .order("created_at", { ascending: false })
+
+          if (searchQuery) {
+            query = query.or(`name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+          }
+
+          const { data, error } = await query
+          if (data && data.length > 0) return data
+        } catch {
+          // Fallback
+        }
       }
 
-      try {
-        const { data, error } = await query
-        if (data && data.length > 0) return data
-      } catch {
-        // Fallback
-      }
-
-      const { INITIAL_STORES } = await import("@/lib/mock-data")
-      return INITIAL_STORES.map((s) => ({
+      let res = INITIAL_STORES.map((s) => ({
         ...s,
         created_at: new Date().toISOString(),
       }))
+      if (searchQuery) {
+        res = res.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.phone.includes(searchQuery))
+      }
+      return res
     },
   })
 

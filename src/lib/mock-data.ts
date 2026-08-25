@@ -1,4 +1,4 @@
-// Boy namunaviy ma'lumotlar (Initial Seed Data for Holva Factory)
+// Boy namunaviy ma'lumotlar va rasmlar (High-Quality Halva & Confectionery Photos)
 
 export interface MockProduct {
   id: string
@@ -11,7 +11,7 @@ export interface MockProduct {
   stock: number
   min_stock: number
   status: "ACTIVE" | "INACTIVE"
-  image?: string
+  image_url: string
   description?: string
 }
 
@@ -34,7 +34,7 @@ export interface MockStore {
   address: string
   contact_person: string
   credit_limit: number
-  current_balance: number // manfiy bo'lsa qarz
+  current_balance: number
   status: "ACTIVE" | "INACTIVE" | "BLOCKED"
 }
 
@@ -73,7 +73,8 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     stock: 420,
     min_stock: 100,
     status: "ACTIVE",
-    description: "Tabiiy oq kunjut va asal qiyomidan tayyorlangan klassik holva",
+    image_url: "https://images.unsplash.com/photo-1599785209707-a456fc1337bb?auto=format&fit=crop&w=600&q=80",
+    description: "Tabiiy oq kunjut va asal qiyomidan tayyorlangan klassik qandolat durdonasi",
   },
   {
     id: "p-2",
@@ -86,7 +87,8 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     stock: 280,
     min_stock: 80,
     status: "ACTIVE",
-    description: "Belgiya kakaosi va maydalangan yong'oq bilan boyitilgan",
+    image_url: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=600&q=80",
+    description: "Belgiya kakaosi va maydalangan yong'oq bilan boyitilgan nozik shirinlik",
   },
   {
     id: "p-3",
@@ -99,7 +101,8 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     stock: 65,
     min_stock: 50,
     status: "ACTIVE",
-    description: "Maxsus qandolatchilik siri asosida xandon pista bilan tayyorlangan",
+    image_url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=600&q=80",
+    description: "Maxsus qandolatchilik siri asosida xandon pista bilan tayyorlangan shohona holva",
   },
   {
     id: "p-4",
@@ -112,7 +115,8 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     stock: 850,
     min_stock: 200,
     status: "ACTIVE",
-    description: "Tozalangan kungaboqar mag'zidan an'anaviy retsept",
+    image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    description: "Tozalangan quyoshli kungaboqar mag'zidan an'anaviy xushbo'y retsept",
   },
   {
     id: "p-5",
@@ -122,10 +126,25 @@ export const INITIAL_PRODUCTS: MockProduct[] = [
     price: 60000,
     cost_price: 39000,
     unit: "dona",
-    stock: 35,
+    stock: 135,
     min_stock: 50,
     status: "ACTIVE",
-    description: "Maydalangan shirin bodom va vanil xushbo'yligi",
+    image_url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80",
+    description: "Maydalangan shirin tog' bodomi va vanil xushbo'yligi",
+  },
+  {
+    id: "p-6",
+    name: "Kakao-Kunjutli Marmar Holva (450g)",
+    sku: "HLV-MRM-450",
+    category: "Shokoladli",
+    price: 42000,
+    cost_price: 27000,
+    unit: "dona",
+    stock: 310,
+    min_stock: 60,
+    status: "ACTIVE",
+    image_url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80",
+    description: "Oq kunjut va quyuq shokolad naqshlari uyg'unlashgan marmar holva",
   },
 ]
 
@@ -206,7 +225,7 @@ export const INITIAL_STORES: MockStore[] = [
     address: "Toshkent sh., Chilonzor 9-mavze",
     contact_person: "Bobur Aliyev",
     credit_limit: 50000000,
-    current_balance: -8400000, // 8.4M so'm qarz
+    current_balance: -8400000,
     status: "ACTIVE",
   },
   {
@@ -226,7 +245,7 @@ export const INITIAL_STORES: MockStore[] = [
     address: "Toshkent sh., Yunusobod 14-mavze",
     contact_person: "Dilshod Saidov",
     credit_limit: 30000000,
-    current_balance: -14200000, // 14.2M so'm qarz
+    current_balance: -14200000,
     status: "ACTIVE",
   },
   {
@@ -309,55 +328,17 @@ export const INITIAL_ORDERS: MockOrder[] = [
   },
 ]
 
-export const INITIAL_EMPLOYEES: MockEmployee[] = [
-  {
-    id: "emp-1",
-    full_name: "Rustam Mahmudov",
-    phone: "+998 90 111 22 33",
-    department: "Ishlab chiqarish",
-    position: "Bosh texnolog / Usta",
-    salary_amount: 9500000,
-    salary_type: "MONTHLY",
-    employment_status: "ACTIVE",
-  },
-  {
-    id: "emp-2",
-    full_name: "Sardor Rahimov",
-    phone: "+998 93 222 33 44",
-    department: "Sotuv bo'limi",
-    position: "Katta sotuv agenti",
-    salary_amount: 5000000,
-    salary_type: "PERFORMANCE",
-    employment_status: "ACTIVE",
-  },
-  {
-    id: "emp-3",
-    full_name: "Jamshid Qodirov",
-    phone: "+998 97 333 44 55",
-    department: "Sotuv bo'limi",
-    position: "Sotuv agenti",
-    salary_amount: 4500000,
-    salary_type: "PERFORMANCE",
-    employment_status: "ACTIVE",
-  },
-  {
-    id: "emp-4",
-    full_name: "Nodira Karimova",
-    phone: "+998 91 444 55 66",
-    department: "Buxgalteriya",
-    position: "Bosh hisobchi",
-    salary_amount: 8000000,
-    salary_type: "MONTHLY",
-    employment_status: "ACTIVE",
-  },
-  {
-    id: "emp-5",
-    full_name: "Shavkat Ergashev",
-    phone: "+998 94 555 66 77",
-    department: "Logistika",
-    position: "Haydovchi-yetkazuvchi",
-    salary_amount: 5500000,
-    salary_type: "MONTHLY",
-    employment_status: "ACTIVE",
-  },
-]
+// Tezkor tekshirish helper: Haqiqiy Supabase bormi yoki yo'q?
+export function isRealSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  return Boolean(
+    url &&
+    key &&
+    url.startsWith("https://") &&
+    !url.includes("mock-") &&
+    !url.includes("your_supabase") &&
+    !url.includes("placeholder") &&
+    key.length > 30
+  )
+}
