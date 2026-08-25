@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { Search, MapPin, Phone, ShoppingCart, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Phone, ShoppingCart, Plus, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { INITIAL_STORES } from '@/lib/mock-data';
 
 export function AgentStores() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [stores, setStores] = useState(INITIAL_STORES);
 
@@ -22,7 +24,15 @@ export function AgentStores() {
   return (
     <div className="p-4 space-y-4 pb-24 max-w-lg mx-auto">
       <div className="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur py-2 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/agent/home')}
+            className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition-all cursor-pointer shadow-sm"
+            title="Bosh sahifaga qaytish"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Mening Do&apos;konlarim</h1>
             <p className="text-xs text-gray-400">Jami {filteredStores.length} ta biriktirilgan savdo nuqtasi</p>

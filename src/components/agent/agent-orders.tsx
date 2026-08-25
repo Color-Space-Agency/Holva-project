@@ -6,11 +6,13 @@ import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, ShoppingCart, Search, CheckCircle2, Clock, Truck, Store } from 'lucide-react';
+import { Plus, ShoppingCart, Search, CheckCircle2, Clock, Truck, Store, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { INITIAL_ORDERS, INITIAL_PRODUCTS, INITIAL_STORES } from '@/lib/mock-data';
 import { AgentOrderForm } from './agent-order-form';
 
 export function AgentOrders() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -69,9 +71,19 @@ export function AgentOrders() {
     <div className="p-4 space-y-4 pb-24 max-w-lg mx-auto">
       <div className="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur py-2 space-y-3">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Buyurtmalarim</h1>
-            <p className="text-xs text-gray-400">Jami {filteredOrders.length} ta buyurtma</p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/agent/home')}
+              className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition-all cursor-pointer shadow-sm"
+              title="Bosh sahifaga qaytish"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Buyurtmalarim</h1>
+              <p className="text-xs text-gray-400">Jami {filteredOrders.length} ta buyurtma</p>
+            </div>
           </div>
           <Button
             onClick={() => setIsFormOpen(true)}

@@ -1,19 +1,38 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Phone, LogOut, Wallet, Award, TrendingUp, ShieldCheck } from 'lucide-react';
+import { User, Phone, LogOut, Wallet, Award, TrendingUp, ShieldCheck, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { LogoutDialog } from '@/components/shared/logout-dialog';
 
 export function AgentProfile() {
+  const router = useRouter();
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   return (
-    <div className="p-4 space-y-6 pb-24 max-w-md mx-auto">
-      <div className="text-center pt-6 pb-2">
-        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 rounded-full mx-auto flex items-center justify-center mb-3 border-2 border-emerald-500/30">
+    <div className="p-4 space-y-5 pb-24 max-w-md mx-auto">
+      {/* Top Header with Back Arrow */}
+      <div className="flex items-center justify-between pt-2 pb-1 border-b border-gray-100 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => router.push('/agent/home')}
+          className="flex items-center gap-1.5 p-2 -ml-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer text-xs font-semibold"
+          title="Bosh sahifaga qaytish"
+        >
+          <ArrowLeft className="h-4 w-4 text-emerald-600" />
+          <span>Orqaga</span>
+        </button>
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white">Shaxsiy Profil</h2>
+        <div className="w-12"></div> {/* Spacer for balance */}
+      </div>
+
+      {/* Profil markazi */}
+      <div className="text-center pt-2 pb-1">
+        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 rounded-full mx-auto flex items-center justify-center mb-3 border-2 border-emerald-500/30 shadow-sm">
           <User className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
         </div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">Sardor Rahimov</h1>
