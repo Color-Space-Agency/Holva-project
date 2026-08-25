@@ -618,3 +618,69 @@ export function setStoredCompletedVisitsCount(count: number): void {
   } catch {}
 }
 
+// ==========================================
+// BUYURTMALAR (ORDERS) LOCALSTORAGE PERSISTENCE
+// ==========================================
+const STORAGE_KEY_ORDERS = "holva_crm_stored_orders"
+
+export function getStoredOrders(): MockOrder[] {
+  if (typeof window === "undefined") return INITIAL_ORDERS
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ORDERS)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored orders:", e)
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(INITIAL_ORDERS))
+  } catch {}
+  return INITIAL_ORDERS
+}
+
+export function saveStoredOrders(orders: MockOrder[]): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders))
+    window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders } }))
+  } catch {}
+}
+
+export function recordStoredOrderPayment(orderId: string, amount: number): { orders: MockOrder[]; updatedOrder: MockOrder | null } {
+  if (typeof window === "undefined") return { orders: INITIAL_ORDERS, updatedOrder: null }
+  const currentOrders = getStoredOrders()
+  let updatedOrder: MockOrder | null = null
+
+  const updatedOrders: MockOrder[] = currentOrders.map((ord) => {
+    if (ord.id === orderId || ord.order_number === orderId) {
+      const currentPaid = ord.paid_amount || 0
+      const newPaid = currentPaid + amount
+      const isFull = newPaid >= ord.total_amount
+      const newPaymentStatus: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE" = isFull ? "PAID" : newPaid > 0 ? "PARTIAL" : "PENDING"
+      
+      const res: MockOrder = {
+        ...ord,
+        paid_amount: newPaid,
+        payment_status: newPaymentStatus,
+        status: isFull && ord.status === "CONFIRMED" ? "DELIVERED" : ord.status,
+      }
+      updatedOrder = res
+      return res
+    }
+    return ord
+  })
+
+  saveStoredOrders(updatedOrders)
+  return { orders: updatedOrders, updatedOrder }
+}
+
+export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
+  if (typeof window === "undefined") return INITIAL_ORDERS
+  const list = getStoredOrders()
+  const updatedList = [newOrder, ...list]
+  saveStoredOrders(updatedList)
+  return updatedList
+}
+

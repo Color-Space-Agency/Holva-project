@@ -18,7 +18,10 @@ import {
   getStoredCompletedVisitsCount, 
   setStoredCompletedVisitsCount,
   getStoredVisits,
-  completeStoredVisit
+  completeStoredVisit,
+  getStoredOrders,
+  recordStoredOrderPayment,
+  MockOrder
 } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
@@ -636,13 +639,46 @@ export function AgentHome() {
     const storedCount = getStoredCompletedVisitsCount();
     setVisits({ completed: storedCount, plan: 12 });
 
+    // Stored orders dan yuklash
+    const stored = getStoredOrders();
+    if (stored && stored.length > 0) {
+      const mapped: OrderItem[] = stored.map((o: MockOrder) => ({
+        id: o.order_number,
+        client: o.store_name,
+        time: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+        amount: o.total_amount,
+        status: o.status.toLowerCase(),
+        paidAmount: o.paid_amount || 0,
+      }));
+      setOrdersList(mapped);
+    }
+
     const handleVisitsUpdated = (e: CustomEvent<{ count: number }>) => {
       if (e.detail && typeof e.detail.count === 'number') {
         setVisits({ completed: e.detail.count, plan: 12 });
       }
     };
+
+    const handleOrdersUpdated = (e: CustomEvent<{ orders: MockOrder[] }>) => {
+      if (e.detail && Array.isArray(e.detail.orders)) {
+        const mapped: OrderItem[] = e.detail.orders.map((o: MockOrder) => ({
+          id: o.order_number,
+          client: o.store_name,
+          time: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+          amount: o.total_amount,
+          status: o.status.toLowerCase(),
+          paidAmount: o.paid_amount || 0,
+        }));
+        setOrdersList(mapped);
+      }
+    };
+
     window.addEventListener('visits-updated' as any, handleVisitsUpdated);
-    return () => window.removeEventListener('visits-updated' as any, handleVisitsUpdated);
+    window.addEventListener('orders-updated' as any, handleOrdersUpdated);
+    return () => {
+      window.removeEventListener('visits-updated' as any, handleVisitsUpdated);
+      window.removeEventListener('orders-updated' as any, handleOrdersUpdated);
+    };
   }, []);
 
   // Agent ma'lumotlari
@@ -686,7 +722,9 @@ export function AgentHome() {
   const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
     delivered: { label: 'Yetkazib berildi', icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
     accepted: { label: 'Qabul qilindi', icon: Clock, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
+    confirmed: { label: 'Qabul qilindi', icon: Clock, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
     shipping: { label: 'Yetkazilmoqda', icon: Truck, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+    delivering: { label: 'Yetkazilmoqda', icon: Truck, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
     ready: { label: 'Tayyor (Omborda)', icon: Package, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' },
   };
 
@@ -714,19 +752,9 @@ export function AgentHome() {
     }, 500);
   };
 
-  // To'lov muvaffaqiyatli qabul qilinganda
+  // To'lov muvaffaqiyatli qabul qilinganda (Global storage ga saqlash)
   const handlePaymentSuccess = (paymentData: { orderId: string; amount: number; method: string }) => {
-    setOrdersList(prev => prev.map(order => {
-      if (order.id === paymentData.orderId) {
-        const updatedPaid = (order.paidAmount || 0) + paymentData.amount;
-        return {
-          ...order,
-          paidAmount: updatedPaid,
-          status: updatedPaid >= order.amount ? 'delivered' : order.status
-        };
-      }
-      return order;
-    }));
+    recordStoredOrderPayment(paymentData.orderId, paymentData.amount);
   };
 
   const openPaymentModal = (order: OrderItem) => {
