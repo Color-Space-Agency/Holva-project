@@ -11,8 +11,10 @@ import {
   Search,
   Menu,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LogoutDialog } from "@/components/shared/logout-dialog"
 import type { Database } from "@/types/database"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -34,6 +36,7 @@ interface AdminHeaderProps {
 export function AdminHeader({ profile }: AdminHeaderProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => setMounted(true), [])
@@ -122,6 +125,16 @@ export function AdminHeader({ profile }: AdminHeaderProps) {
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
         </Link>
 
+        {/* Logout Quick Button */}
+        <button
+          type="button"
+          onClick={() => setLogoutOpen(true)}
+          className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all cursor-pointer"
+          title="Tizimdan chiqish"
+        >
+          <LogOut size={18} />
+        </button>
+
         {/* Profile */}
         <Link
           href="/settings"
@@ -129,19 +142,21 @@ export function AdminHeader({ profile }: AdminHeaderProps) {
         >
           <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-bold text-white">
-              {profile?.full_name?.charAt(0)?.toUpperCase() || "?"}
+              {profile?.full_name?.charAt(0)?.toUpperCase() || "A"}
             </span>
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
-              {profile?.full_name || "Foydalanuvchi"}
+              {profile?.full_name || "Super Admin"}
             </p>
             <p className="text-xs text-gray-400 leading-tight">
-              {roleLabels[profile?.role || ""] || profile?.role}
+              {roleLabels[profile?.role || ""] || "Super Admin"}
             </p>
           </div>
         </Link>
       </div>
+
+      <LogoutDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
     </header>
   )
 }

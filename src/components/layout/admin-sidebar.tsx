@@ -34,6 +34,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { LogoutDialog } from "@/components/shared/logout-dialog"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
@@ -187,12 +188,7 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
     )
   }
 
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    toast.success("Tizimdan chiqildi")
-    router.push("/login")
-  }
+  const [logoutOpen, setLogoutOpen] = useState(false)
 
   const filteredNavItems = navItems.filter((item) => {
     if (!item.roles) return true
@@ -353,9 +349,9 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
             </button>
           )}
           <button
-            onClick={handleLogout}
+            onClick={() => setLogoutOpen(true)}
             className={cn(
-              "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all duration-150",
+              "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all duration-150 cursor-pointer",
               collapsed && "justify-center"
             )}
             title={collapsed ? "Chiqish" : undefined}
@@ -365,6 +361,8 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
           </button>
         </div>
       </aside>
+
+      <LogoutDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
     </>
   )
 }
