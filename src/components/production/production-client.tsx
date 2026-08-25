@@ -152,7 +152,7 @@ export function ProductionClient() {
                   <TableCell className="font-medium">{batch.batch_number}</TableCell>
                   <TableCell>{new Date(batch.production_date).toLocaleDateString()}</TableCell>
                   <TableCell>{batch.product?.name}</TableCell>
-                  <TableCell>v{batch.recipe?.version}</TableCell>
+                  <TableCell>{batch.recipe?.name || "Standart retsept"}</TableCell>
                   <TableCell className="text-right font-medium">{formatNumber(batch.planned_quantity)} {batch.unit?.short_name}</TableCell>
                   <TableCell>{getStatusBadge(batch.status)}</TableCell>
                   <TableCell className="text-right">

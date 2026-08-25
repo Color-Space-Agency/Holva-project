@@ -7,7 +7,7 @@ import { z } from "zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { Upload, X, Package, Check } from "lucide-react"
+import { Upload, X, Package, Check, TrendingUp, AlertCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { isRealSupabaseConfigured } from "@/lib/mock-data"
+import { formatCurrency } from "@/lib/utils"
 import type { Database } from "@/types/database"
 
 type Product = Database["public"]["Tables"]["products"]["Row"]
@@ -37,6 +38,7 @@ const schema = z.object({
   category_id: z.string().optional(),
   description: z.string().optional(),
   unit_id: z.string().optional(),
+  cost_price: z.coerce.number().min(0, "Tan narx 0 dan kam bo'lmasligi kerak"),
   sales_price: z.coerce.number().min(0, "Narx manfiy bo'lishi mumkin emas"),
   wholesale_price: z.coerce.number().min(0),
   minimum_price: z.coerce.number().min(0),
@@ -50,7 +52,7 @@ type FormData = z.infer<typeof schema>
 interface ProductFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  product: (Product & { product_categories?: { name: string } | null; product_units?: { name: string; symbol: string } | null }) | null
+  product: (Product & { product_categories?: { name: string } | null; product_units?: { name: string; symbol: string } | null; cost_price?: number }) | null
 }
 
 export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDialogProps) {
@@ -111,16 +113,23 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     resolver: zodResolver(schema),
     defaultValues: {
       status: "ACTIVE",
-      sales_price: 0,
-      wholesale_price: 0,
-      minimum_price: 0,
-      packaging_type: "",
+      cost_price: 25000,
+      sales_price: 45000,
+      wholesale_price: 40000,
+      minimum_price: 38000,
+      packaging_type: "Korobka",
       description: "",
     },
   })
 
+  const watchedCostPrice = watch("cost_price") || 0
+  const watchedSalesPrice = watch("sales_price") || 0
+  const profitPerItem = watchedSalesPrice - watchedCostPrice
+  const marginPercentage = watchedCostPrice > 0 ? ((profitPerItem / watchedCostPrice) * 100).toFixed(1) : "0"
+
   useEffect(() => {
     if (product) {
+      const estimatedCost = (product as any).cost_price || Math.round(product.sales_price * 0.6)
       reset({
         name: product.name,
         sku: product.sku,
@@ -128,6 +137,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         category_id: product.category_id ?? "cat-1",
         description: product.description ?? "",
         unit_id: product.unit_id ?? "u-1",
+        cost_price: estimatedCost,
         sales_price: product.sales_price,
         wholesale_price: product.wholesale_price || Math.round(product.sales_price * 0.9),
         minimum_price: product.minimum_price || Math.round(product.sales_price * 0.85),
@@ -144,6 +154,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         category_id: "cat-1",
         description: "",
         unit_id: "u-1",
+        cost_price: 25000,
         sales_price: 45000,
         wholesale_price: 40000,
         minimum_price: 38000,
@@ -219,7 +230,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             {product ? "Mahsulotni Tahrirlash" : "Yangi Mahsulot Qo'shish"}
           </DialogTitle>
           <p className="text-xs text-gray-400">
-            Mahsulot nomi, narxlari va qadoqlash parametrlarini kiriting
+            Mahsulot nomi, tan narxi, sotuv narxlari va sof foyda hisobi
           </p>
         </DialogHeader>
 
@@ -374,46 +385,94 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             </div>
           </div>
 
-          {/* Price section */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                Sotuv narxi (so&apos;m) *
-              </Label>
-              <Input
-                type="number"
-                step="500"
-                {...register("sales_price")}
-                placeholder="45000"
-                className="h-10 rounded-xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 font-semibold"
-              />
-              {errors.sales_price && <p className="text-xs text-red-500">{errors.sales_price.message}</p>}
+          {/* Tan Narx, Sotuv Narxi va Sof Foyda hisoblash bloki */}
+          <div className="space-y-3 p-4 bg-gradient-to-br from-violet-50/60 to-emerald-50/60 dark:from-violet-950/20 dark:to-emerald-950/20 rounded-2xl border border-violet-100 dark:border-violet-900/40">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-emerald-600" />
+                Narxlar va Sof Foyda Hisob-kitobi
+              </span>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                Ulgurji narxi (so&apos;m)
-              </Label>
-              <Input
-                type="number"
-                step="500"
-                {...register("wholesale_price")}
-                placeholder="40000"
-                className="h-10 rounded-xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Tan narxi (Maya) */}
+              <div className="space-y-1.5 bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                <Label className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                  Tan narxi (so&apos;m) *
+                </Label>
+                <Input
+                  type="number"
+                  step="500"
+                  {...register("cost_price")}
+                  placeholder="25000"
+                  className="h-9 rounded-lg bg-amber-50/50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 font-bold text-amber-900 dark:text-amber-200 text-xs"
+                />
+              </div>
+
+              {/* Sotuv narxi */}
+              <div className="space-y-1.5 bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                <Label className="text-[11px] font-bold text-violet-700 dark:text-violet-400">
+                  Sotuv narxi (so&apos;m) *
+                </Label>
+                <Input
+                  type="number"
+                  step="500"
+                  {...register("sales_price")}
+                  placeholder="45000"
+                  className="h-9 rounded-lg bg-violet-50/50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800 font-bold text-violet-900 dark:text-violet-200 text-xs"
+                />
+              </div>
+
+              {/* Ulgurji narx */}
+              <div className="space-y-1.5 bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                <Label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                  Ulgurji narxi
+                </Label>
+                <Input
+                  type="number"
+                  step="500"
+                  {...register("wholesale_price")}
+                  placeholder="40000"
+                  className="h-9 rounded-lg text-xs"
+                />
+              </div>
+
+              {/* Minimal narx */}
+              <div className="space-y-1.5 bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                <Label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                  Minimal narx
+                </Label>
+                <Input
+                  type="number"
+                  step="500"
+                  {...register("minimum_price")}
+                  placeholder="38000"
+                  className="h-9 rounded-lg text-xs"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                Minimal narx (so&apos;m)
-              </Label>
-              <Input
-                type="number"
-                step="500"
-                {...register("minimum_price")}
-                placeholder="38000"
-                className="h-10 rounded-xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-              />
+            {/* Real-vaqtdagi Sof Foyda Ko'rsatkichi */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 bg-white dark:bg-gray-800 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs">
+                  %
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    1 dona mahsulotdan sof foyda:
+                  </p>
+                  <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    +{formatCurrency(profitPerItem)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-black">
+                  Foyda marjasi: +{marginPercentage}%
+                </span>
+              </div>
             </div>
           </div>
 

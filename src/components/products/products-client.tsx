@@ -256,21 +256,21 @@ export function ProductsClient() {
               {/* Prices */}
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl py-2">
-                  <p className="text-xs text-gray-400 mb-0.5">Sotuv</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <p className="text-[11px] text-gray-400 mb-0.5">Sotuv narxi</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
                     {formatCurrency(product.sales_price)}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl py-2">
-                  <p className="text-xs text-gray-400 mb-0.5">Ulgurji</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(product.wholesale_price)}
+                  <p className="text-[11px] text-gray-400 mb-0.5">Tan narxi</p>
+                  <p className="text-xs sm:text-sm font-bold text-amber-700 dark:text-amber-400 truncate">
+                    {formatCurrency((product as any).cost_price || Math.round(product.sales_price * 0.6))}
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl py-2">
-                  <p className="text-xs text-gray-400 mb-0.5">Min narx</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(product.minimum_price)}
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-xl py-2">
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium mb-0.5">Sof foyda</p>
+                  <p className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 truncate">
+                    +{formatCurrency(product.sales_price - ((product as any).cost_price || Math.round(product.sales_price * 0.6)))}
                   </p>
                 </div>
               </div>

@@ -171,7 +171,6 @@ export function RecipesClient() {
             <TableRow>
               <TableHead>Nomi</TableHead>
               <TableHead>Mahsulot</TableHead>
-              <TableHead>Versiya</TableHead>
               <TableHead>Chiqish hajmi</TableHead>
               <TableHead>Holati</TableHead>
               <TableHead className="text-right">Amallar</TableHead>
@@ -183,7 +182,6 @@ export function RecipesClient() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
@@ -191,8 +189,8 @@ export function RecipesClient() {
               ))
             ) : recipes?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                  Ma'lumot topilmadi
+                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  Ma&apos;lumot topilmadi
                 </TableCell>
               </TableRow>
             ) : (
@@ -200,8 +198,7 @@ export function RecipesClient() {
                 <TableRow key={recipe.id}>
                   <TableCell className="font-medium">{recipe.name}</TableCell>
                   <TableCell>{recipe.product?.name}</TableCell>
-                  <TableCell>v{recipe.version}</TableCell>
-                  <TableCell>{recipe.yield_quantity}</TableCell>
+                  <TableCell>{recipe.yield_quantity} kg</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Switch 
