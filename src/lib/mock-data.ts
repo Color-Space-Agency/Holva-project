@@ -342,3 +342,59 @@ export function isRealSupabaseConfigured(): boolean {
     key.length > 30
   )
 }
+
+// Brauzer localStorage'da mahsulotlarni saqlash va boshqarish
+const STORAGE_KEY_PRODUCTS = "holva_crm_stored_products"
+
+export function getStoredProducts(): MockProduct[] {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored products:", e)
+  }
+  // Initialize storage
+  try {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(INITIAL_PRODUCTS))
+  } catch {}
+  return INITIAL_PRODUCTS
+}
+
+export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }): MockProduct[] {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  const list = getStoredProducts()
+  const updatedList = list.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+  try {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
+
+export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: string }): MockProduct[] {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  const list = getStoredProducts()
+  const product: MockProduct = {
+    ...newItem,
+    id: newItem.id || `p-${Date.now()}`,
+  }
+  const updatedList = [product, ...list]
+  try {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
+
+export function deleteStoredProduct(id: string): MockProduct[] {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  const list = getStoredProducts()
+  const updatedList = list.filter((item) => item.id !== id)
+  try {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+  } catch {}
+  return updatedList
+}
+

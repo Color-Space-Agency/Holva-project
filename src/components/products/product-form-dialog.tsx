@@ -181,6 +181,42 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const onSubmit = async (formData: FormData) => {
     setIsSubmitting(true)
     try {
+      const catName = categories.find((c: any) => c.id === formData.category_id)?.name || "Klassik Holvalar"
+      const uName = units.find((u: any) => u.id === formData.unit_id)?.name || "dona"
+
+      if (product) {
+        // Update in localStorage
+        const { saveStoredProduct } = await import("@/lib/mock-data")
+        saveStoredProduct({
+          id: product.id,
+          name: formData.name,
+          sku: formData.sku,
+          category: catName,
+          price: formData.sales_price,
+          cost_price: formData.cost_price,
+          unit: uName,
+          status: formData.status as any,
+          image_url: imagePreview || product.image_url || "",
+          description: formData.description || undefined,
+        })
+      } else {
+        // Create in localStorage
+        const { createStoredProduct } = await import("@/lib/mock-data")
+        createStoredProduct({
+          name: formData.name,
+          sku: formData.sku,
+          category: catName,
+          price: formData.sales_price,
+          cost_price: formData.cost_price,
+          unit: uName,
+          stock: 50,
+          min_stock: 10,
+          status: formData.status as any,
+          image_url: imagePreview || "",
+          description: formData.description || undefined,
+        })
+      }
+
       if (isRealSupabaseConfigured()) {
         try {
           const supabase = createClient()

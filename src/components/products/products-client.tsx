@@ -19,7 +19,14 @@ type Product = Database["public"]["Tables"]["products"]["Row"] & {
   product_units: { name: string; symbol: string } | null
 }
 
-import { INITIAL_PRODUCTS, isRealSupabaseConfigured } from "@/lib/mock-data"
+import {
+  INITIAL_PRODUCTS,
+  isRealSupabaseConfigured,
+  getStoredProducts,
+  saveStoredProduct,
+  createStoredProduct,
+  deleteStoredProduct,
+} from "@/lib/mock-data"
 
 async function fetchProducts(): Promise<Product[]> {
   if (isRealSupabaseConfigured()) {
@@ -37,8 +44,9 @@ async function fetchProducts(): Promise<Product[]> {
     }
   }
 
-  // Instant fallback demo data with high-res photos
-  return INITIAL_PRODUCTS.map((p) => ({
+  // Persistent localStorage demo products
+  const stored = getStoredProducts()
+  return stored.map((p) => ({
     id: p.id,
     factory_id: "demo",
     name: p.name,
@@ -96,13 +104,17 @@ export function ProductsClient() {
 
   const deleteMutation = useMutation({
     mutationFn: async (product: Product) => {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("products")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", product.id)
-      if (error) throw error
-      await createAuditLog({ action: "DELETE", tableName: "products", recordId: product.id, oldValues: product })
+      deleteStoredProduct(product.id)
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          await supabase
+            .from("products")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", product.id)
+          await createAuditLog({ action: "DELETE", tableName: "products", recordId: product.id, oldValues: product })
+        } catch {}
+      }
     },
     onSuccess: () => {
       toast.success("Mahsulot o'chirildi")
@@ -114,15 +126,32 @@ export function ProductsClient() {
 
   const duplicateMutation = useMutation({
     mutationFn: async (product: Product) => {
-      const supabase = createClient()
-      const { id, created_at, updated_at, product_categories, product_units, ...rest } = product
-      const { error } = await supabase.from("products").insert({
-        ...rest,
+      createStoredProduct({
         name: `${product.name} (nusxa)`,
-        sku: `${product.sku}-copy-${Date.now()}`,
-        status: "INACTIVE" as const,
+        sku: `${product.sku}-copy-${Date.now().toString().slice(-4)}`,
+        category: (product as any).product_categories?.name || "Klassik Holvalar",
+        price: product.sales_price,
+        cost_price: (product as any).cost_price || Math.round(product.sales_price * 0.6),
+        unit: (product as any).product_units?.name || "dona",
+        stock: 50,
+        min_stock: 10,
+        status: "ACTIVE",
+        image_url: product.image_url || "",
+        description: product.description || undefined,
       })
-      if (error) throw error
+
+      if (isRealSupabaseConfigured()) {
+        try {
+          const supabase = createClient()
+          const { id, created_at, updated_at, product_categories, product_units, ...rest } = product
+          await supabase.from("products").insert({
+            ...rest,
+            name: `${product.name} (nusxa)`,
+            sku: `${product.sku}-copy-${Date.now()}`,
+            status: "INACTIVE" as const,
+          })
+        } catch {}
+      }
     },
     onSuccess: () => {
       toast.success("Mahsulot nusxalandi")
