@@ -115,45 +115,48 @@ export function AttendanceClient() {
             className="w-auto"
           />
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Attendance
+        <Button onClick={() => setIsFormOpen(true)} className="rounded-xl bg-violet-600 hover:bg-violet-700 font-bold">
+          <Plus className="mr-2 h-4 w-4" /> Davomat qo&apos;shish
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-4 space-y-4">
+            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
         ) : attendance?.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center">
-            <p className="text-sm text-muted-foreground">No attendance records for this date.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ushbu sana bo&apos;yicha davomat yozuvlari topilmadi.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-muted text-muted-foreground">
+              <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 font-bold">
                 <tr>
-                  <th className="px-4 py-3">Employee</th>
-                  <th className="px-4 py-3">Check-in</th>
-                  <th className="px-4 py-3">Check-out</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Hours</th>
-                  <th className="px-4 py-3">Late Min</th>
+                  <th className="px-4 py-3.5">Xodim</th>
+                  <th className="px-4 py-3.5">Kelgan vaqti</th>
+                  <th className="px-4 py-3.5">Ketgan vaqti</th>
+                  <th className="px-4 py-3.5">Holati</th>
+                  <th className="px-4 py-3.5">Ishlagan soati</th>
+                  <th className="px-4 py-3.5">Kechikish (daq)</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {attendance?.map((record) => (
-                  <tr key={record.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="px-4 py-3 font-medium">{record.employee?.full_name}</td>
-                    <td className="px-4 py-3">{record.check_in || "-"}</td>
-                    <td className="px-4 py-3">{record.check_out || "-"}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={getStatusColor(record.status)}>{record.status}</Badge>
+                  <tr key={record.id} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-4 py-3.5 font-bold text-gray-900 dark:text-white">{record.employee?.full_name}</td>
+                    <td className="px-4 py-3.5 font-mono text-gray-700 dark:text-gray-300">{record.check_in || "-"}</td>
+                    <td className="px-4 py-3.5 font-mono text-gray-700 dark:text-gray-300">{record.check_out || "-"}</td>
+                    <td className="px-4 py-3.5">
+                      <Badge className={getStatusColor(record.status)}>
+                        {record.status === "PRESENT" ? "Kelgan" : record.status === "LATE" ? "Kechikkan" : record.status === "ABSENT" ? "Kelmagan" : record.status === "VACATION" ? "Ta'tilda" : "Ketgan"}
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3">{record.working_hours || "-"}</td>
-                    <td className="px-4 py-3">{record.late_minutes || "0"}</td>
+                    <td className="px-4 py-3.5 text-gray-700 dark:text-gray-300 font-semibold">{record.working_hours ? `${record.working_hours} soat` : "-"}</td>
+                    <td className="px-4 py-3.5 text-gray-700 dark:text-gray-300">{record.late_minutes ? `${record.late_minutes} daq` : "0"}</td>
                   </tr>
                 ))}
               </tbody>

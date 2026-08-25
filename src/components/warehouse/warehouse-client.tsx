@@ -90,7 +90,7 @@ export function WarehouseClient() {
             <TableHead>Ombor</TableHead>
             <TableHead className="text-right">Mavjud (Zaxira)</TableHead>
             <TableHead>Holat</TableHead>
-            <TableHead className="text-right">Harakatlar</TableHead>
+            <TableHead className="text-right">Amallar</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

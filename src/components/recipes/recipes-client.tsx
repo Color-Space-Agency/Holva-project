@@ -152,10 +152,10 @@ export function RecipesClient() {
         />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Holati" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Barchasi</SelectItem>
+            <SelectItem value="all">Barcha holatlar</SelectItem>
             <SelectItem value="active">Faol</SelectItem>
             <SelectItem value="inactive">Nofaol</SelectItem>
           </SelectContent>
@@ -173,8 +173,8 @@ export function RecipesClient() {
               <TableHead>Mahsulot</TableHead>
               <TableHead>Versiya</TableHead>
               <TableHead>Chiqish hajmi</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Harakatlar</TableHead>
+              <TableHead>Holati</TableHead>
+              <TableHead className="text-right">Amallar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

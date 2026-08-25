@@ -150,30 +150,30 @@ export function EmployeesClient() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search employees..."
-              className="pl-8"
+              placeholder="Xodimlarni qidirish..."
+              className="pl-8 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="w-[160px] rounded-xl">
+              <SelectValue placeholder="Holati" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All Status</SelectItem>
-              <SelectItem value="ACTIVE">Active</SelectItem>
-              <SelectItem value="ON_LEAVE">On Leave</SelectItem>
-              <SelectItem value="TERMINATED">Terminated</SelectItem>
+              <SelectItem value="ALL">Barcha holatlar</SelectItem>
+              <SelectItem value="ACTIVE">Faol</SelectItem>
+              <SelectItem value="ON_LEAVE">Ta&apos;tilda</SelectItem>
+              <SelectItem value="TERMINATED">Bo&apos;shatilgan</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => { setEditingEmployee(null); setIsFormOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Employee
+        <Button onClick={() => { setEditingEmployee(null); setIsFormOpen(true); }} className="rounded-xl bg-violet-600 hover:bg-violet-700 font-bold">
+          <Plus className="mr-2 h-4 w-4" /> Yangi xodim qo&apos;shish
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-4 space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -182,51 +182,51 @@ export function EmployeesClient() {
           </div>
         ) : filteredEmployees?.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center">
-            <p className="text-sm text-muted-foreground">No employees found.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Hech qanday xodim topilmadi.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-muted text-muted-foreground">
+              <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 font-bold">
                 <tr>
-                  <th className="px-4 py-3">Employee</th>
-                  <th className="px-4 py-3">Department</th>
-                  <th className="px-4 py-3">Position</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Salary</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3.5">Xodim</th>
+                  <th className="px-4 py-3.5">Bo&apos;lim</th>
+                  <th className="px-4 py-3.5">Lavozim</th>
+                  <th className="px-4 py-3.5">Holati</th>
+                  <th className="px-4 py-3.5">Ish haqi</th>
+                  <th className="px-4 py-3.5 text-right">Amallar</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredEmployees?.map((emp) => (
-                  <tr key={emp.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                  <tr key={emp.id} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage src={emp.photo_url || ""} />
-                          <AvatarFallback>{emp.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback className="bg-violet-100 text-violet-700 font-bold">{emp.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{emp.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{emp.phone}</p>
+                          <p className="font-bold text-gray-900 dark:text-white">{emp.full_name}</p>
+                          <p className="text-xs text-gray-400">{emp.phone}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">{emp.department?.name || "-"}</td>
-                    <td className="px-4 py-3">{emp.position?.name || "-"}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={emp.employment_status === "ACTIVE" ? "default" : "secondary"}>
-                        {emp.employment_status}
+                    <td className="px-4 py-3.5 text-gray-700 dark:text-gray-300">{emp.department?.name || "-"}</td>
+                    <td className="px-4 py-3.5 text-gray-700 dark:text-gray-300">{emp.position?.name || "-"}</td>
+                    <td className="px-4 py-3.5">
+                      <Badge variant={emp.employment_status === "ACTIVE" ? "default" : "secondary"} className={emp.employment_status === "ACTIVE" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200" : ""}>
+                        {emp.employment_status === "ACTIVE" ? "Faol" : emp.employment_status === "ON_LEAVE" ? "Ta'tilda" : "Bo'shatilgan"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
-                      {formatCurrency(emp.salary_amount)} <span className="text-xs text-muted-foreground">/{emp.salary_type === "MONTHLY" ? "mo" : "hr"}</span>
+                    <td className="px-4 py-3.5 font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(emp.salary_amount)} <span className="text-xs text-gray-400 font-normal">/{emp.salary_type === "MONTHLY" ? "oy" : "soat"}</span>
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }}>
+                    <td className="px-4 py-3.5 text-right space-x-1">
+                      <Button variant="ghost" size="icon" className="rounded-xl hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-gray-800" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeletingId(emp.id)}>
+                      <Button variant="ghost" size="icon" className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" onClick={() => setDeletingId(emp.id)}>
                         <Trash className="h-4 w-4" />
                       </Button>
                     </td>
@@ -249,8 +249,8 @@ export function EmployeesClient() {
         open={!!deletingId} 
         onOpenChange={(v) => !v && setDeletingId(null)} 
         onConfirm={handleDelete} 
-        title="Delete Employee" 
-        description="Are you sure you want to remove this employee? This action cannot be undone." 
+        title="Xodimni o'chirish" 
+        description="Ushbu xodimni ro'yxatdan o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi." 
       />
     </div>
   );

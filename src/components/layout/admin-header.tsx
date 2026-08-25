@@ -52,7 +52,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
   // Build breadcrumb from pathname
   const segments = pathname.split("/").filter(Boolean)
   const breadcrumbMap: Record<string, string> = {
-    dashboard: "Dashboard",
+    dashboard: "Boshqaruv paneli",
     products: "Mahsulotlar",
     categories: "Kategoriyalar",
     recipes: "Retseptlar",

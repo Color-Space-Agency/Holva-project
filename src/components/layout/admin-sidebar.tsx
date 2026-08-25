@@ -47,7 +47,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Boshqaruv paneli",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
