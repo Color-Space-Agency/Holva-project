@@ -23,7 +23,7 @@ import { OrderStatusBadge, OrderPaymentStatusBadge } from '@/components/orders/o
 import { toast } from 'sonner';
 
 // ============================================================
-// KOMPONENT: Buyurtma To'lovini Qabul Qilish Modali
+// KOMPONENT: Buyurtma To'lovini Qabul Qilish Modali (Fixed Frame UI/UX)
 // ============================================================
 function PaymentModal({
   isOpen,
@@ -82,65 +82,67 @@ function PaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer" onClick={onClose} />
       
-      <div className="relative bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto slide-up shadow-2xl border border-gray-100 dark:border-gray-800">
-        {/* Header */}
-        <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs z-10 flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
+      <div className="relative bg-white dark:bg-gray-900 rounded-t-[32px] sm:rounded-3xl w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col slide-up shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-10">
+        
+        {/* Modal Header */}
+        <div className="flex-shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">To&apos;lov qabul qilish</h3>
-            <p className="text-xs text-gray-400 truncate max-w-[240px]">{order.store_name}</p>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg">To&apos;lov qabul qilish</h3>
+            <p className="text-xs text-gray-400 truncate max-w-[240px] mt-0.5">{order.store_name} ({order.order_number})</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Buyurtma hisob-kitobi */}
-          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-2">
-            <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Umumiy summa:</span>
-              <span className="font-black text-gray-900 dark:text-white">{formatCurrency(orderTotal)}</span>
+        {/* Modal Scrollable Content */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 mobile-scroll">
+            {/* Buyurtma hisob-kitobi */}
+            <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-2">
+              <div className="flex justify-between text-xs sm:text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Umumiy summa:</span>
+                <span className="font-black text-gray-900 dark:text-white">{formatCurrency(orderTotal)}</span>
+              </div>
+              <div className="flex justify-between text-xs sm:text-sm">
+                <span className="text-gray-500 dark:text-gray-400">To&apos;langan:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(paidAmount)}</span>
+              </div>
+              <div className="flex justify-between text-xs sm:text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
+                <span className="text-gray-700 dark:text-gray-300 font-bold">Qoldiq qarz:</span>
+                <span className="font-black text-amber-600 dark:text-amber-400 text-sm sm:text-base">{formatCurrency(remainingAmount)}</span>
+              </div>
             </div>
-            <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-500 dark:text-gray-400">To&apos;langan:</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(paidAmount)}</span>
-            </div>
-            <div className="flex justify-between text-xs sm:text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300 font-bold">Qoldiq qarz:</span>
-              <span className="font-black text-amber-600 dark:text-amber-400 text-sm sm:text-base">{formatCurrency(remainingAmount)}</span>
-            </div>
-          </div>
 
-          {/* To'lov usuli tanlash */}
-          <div>
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">To&apos;lov usuli</label>
-            <div className="grid grid-cols-3 gap-2">
-              {paymentMethods.map((method) => (
-                <button
-                  key={method.id}
-                  type="button"
-                  className={`
-                    flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition cursor-pointer
-                    ${paymentMethod === method.id 
-                      ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shadow-xs' 
-                      : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
-                    }
-                    touch-press active:scale-95
-                  `}
-                  onClick={() => setPaymentMethod(method.id as any)}
-                >
-                  <method.icon className="w-5 h-5" />
-                  <span className="text-[11px] font-bold">{method.label}</span>
-                </button>
-              ))}
+            {/* To'lov usuli tanlash */}
+            <div>
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">To&apos;lov usuli</label>
+              <div className="grid grid-cols-3 gap-2">
+                {paymentMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    className={`
+                      flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition cursor-pointer
+                      ${paymentMethod === method.id 
+                        ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shadow-xs' 
+                        : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                      }
+                      touch-press active:scale-95
+                    `}
+                    onClick={() => setPaymentMethod(method.id as any)}
+                  >
+                    <method.icon className="w-5 h-5" />
+                    <span className="text-[11px] font-bold">{method.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Summa kiritish */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Summa kiritish */}
             <div>
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
                 To&apos;lov miqdori (so&apos;m)
@@ -179,12 +181,14 @@ function PaymentModal({
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Yuborish tugmasi */}
+          {/* Fixed Modal Footer: Doim ko'rinib turuvchi tasdiqlash tugmasi */}
+          <div className="flex-shrink-0 p-4 sm:p-5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs border-t border-gray-100 dark:border-gray-800 pb-7 sm:pb-5">
             <button
               type="submit"
               disabled={isLoading || remainingAmount <= 0}
-              className="w-full mt-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white font-bold py-3.5 rounded-2xl transition touch-press active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-amber-500/30 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white font-bold py-3.5 rounded-2xl transition touch-press active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-amber-500/30 cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -195,8 +199,9 @@ function PaymentModal({
                 `💰 To'lovni qabul qilish`
               )}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
+
       </div>
     </div>
   );
