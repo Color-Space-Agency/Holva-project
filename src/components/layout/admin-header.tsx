@@ -34,12 +34,18 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ profile }: AdminHeaderProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => setMounted(true), [])
+
+  const isDark = (resolvedTheme || theme) === "dark"
+
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark")
+  }
 
   // Build breadcrumb from pathname
   const segments = pathname.split("/").filter(Boolean)
@@ -104,14 +110,15 @@ export function AdminHeader({ profile }: AdminHeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        {/* Dark mode toggle */}
+        {/* Dark / Light mode toggle */}
         {mounted && (
           <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
+            type="button"
+            onClick={toggleTheme}
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
+            title={isDark ? "Yorug' rejim (Light mode)" : "Tungi rejim (Dark mode)"}
           >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-violet-600" />}
           </button>
         )}
 

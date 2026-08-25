@@ -6,16 +6,19 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Phone, LogOut, Wallet, Award, TrendingUp, ShieldCheck, ArrowLeft, ChevronLeft } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { User, Phone, LogOut, Wallet, Award, TrendingUp, ShieldCheck, ArrowLeft, ChevronLeft, Sun, Moon } from 'lucide-react';
 import { LogoutDialog } from '@/components/shared/logout-dialog';
 
 export function AgentProfile() {
   const router = useRouter();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const isDark = (resolvedTheme || theme) === 'dark';
 
   return (
     <div className="p-4 space-y-5 pb-24 max-w-md mx-auto">
-      {/* Top Header with Back Arrow */}
+      {/* Top Header with Back Arrow and Theme Toggle */}
       <div className="flex items-center justify-between pt-2 pb-1 border-b border-gray-100 dark:border-gray-800">
         <button
           type="button"
@@ -27,7 +30,14 @@ export function AgentProfile() {
           <span>Orqaga</span>
         </button>
         <h2 className="text-sm font-bold text-gray-900 dark:text-white">Shaxsiy Profil</h2>
-        <div className="w-12"></div> {/* Spacer for balance */}
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          className="p-2 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
+          title={isDark ? "Yorug' rejimga o'tish" : "Tungi rejimga o'tish"}
+        >
+          {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-violet-600" />}
+        </button>
       </div>
 
       {/* Profil markazi */}

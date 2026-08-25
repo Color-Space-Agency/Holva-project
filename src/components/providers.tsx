@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 5 * 60 * 1000,
             gcTime: 10 * 60 * 1000,
-            retry: 0, // No retry delay on failed/demo network
+            retry: 0,
             refetchOnWindowFocus: false,
           },
         },
@@ -26,9 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange={true}
+        defaultTheme="light"
+        enableSystem={false}
+        disableTransitionOnChange
       >
         <TooltipProvider>
           {children}
