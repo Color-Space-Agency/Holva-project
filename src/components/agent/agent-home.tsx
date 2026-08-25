@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, ShoppingBag, Store, Users, 
   Phone, ChevronRight, CheckCircle, Clock, 
@@ -28,6 +28,75 @@ interface ChartItem {
   day: string;
   fullDate?: string;
   value: number; // so'm miqdorida
+}
+
+// Dinamik sanalar bo'yicha savdo hisoblash
+function getDynamicCustomData(fromStr: string, toStr: string): ChartItem[] {
+  try {
+    const start = new Date(fromStr);
+    const end = new Date(toStr);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return [
+        { day: 'Bugun', fullDate: 'Bugungi savdo', value: 3800000 },
+      ];
+    }
+
+    const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+    const items: ChartItem[] = [];
+
+    // Agar 1 kundan 14 kungacha bo'lsa - har bir kunni chiqaradi
+    if (diffDays <= 14) {
+      for (let i = 0; i < diffDays; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dayOfMonth = d.getDate();
+        const monthName = d.toLocaleDateString('uz-UZ', { month: 'short' });
+        const weekdayName = d.toLocaleDateString('uz-UZ', { weekday: 'short' });
+        const fullDateStr = d.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        // Sanaga bog'langan deterministik, o'zgaruvchan savdo summasi
+        const seed = (d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) % 10;
+        const base = 2600000;
+        const variable = (seed * 380000) + (d.getDay() === 0 || d.getDay() === 6 ? 1400000 : 0);
+        const val = base + variable;
+
+        items.push({
+          day: `${dayOfMonth}-${monthName}`,
+          fullDate: `${fullDateStr} (${weekdayName})`,
+          value: val,
+        });
+      }
+    } else {
+      // 14 kundan ko'p bo'lsa - 6 ta teng oraliqqa (intervallarga) bo'ladi
+      const step = Math.ceil(diffDays / 6);
+      for (let i = 0; i < diffDays; i += step) {
+        const segStart = new Date(start);
+        segStart.setDate(start.getDate() + i);
+        const segEnd = new Date(start);
+        segEnd.setDate(Math.min(start.getDate() + i + step - 1, end.getDate()));
+
+        const startLabel = `${segStart.getDate()}-${segStart.toLocaleDateString('uz-UZ', { month: 'short' })}`;
+        const endLabel = `${segEnd.getDate()}-${segEnd.toLocaleDateString('uz-UZ', { month: 'short' })}`;
+        const fullRange = `${segStart.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' })} — ${segEnd.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+        const daysInSeg = Math.round((segEnd.getTime() - segStart.getTime()) / (1000 * 3600 * 24)) + 1;
+        const seed = (segStart.getDate() + segEnd.getDate()) % 7;
+        const segVal = (3200000 + seed * 450000) * daysInSeg;
+
+        items.push({
+          day: `${startLabel}`,
+          fullDate: fullRange,
+          value: segVal,
+        });
+      }
+    }
+
+    return items;
+  } catch (e) {
+    return [
+      { day: 'Tanlangan davr', fullDate: 'Umumiy davr', value: 4500000 },
+    ];
+  }
 }
 
 function AnalyticsModal({ 
@@ -103,8 +172,8 @@ function AnalyticsModal({
             <div className="grid grid-cols-2 gap-2">
               {data.map((item, idx) => (
                 <div key={idx} className="bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-xl text-xs flex justify-between items-center border border-gray-100 dark:border-gray-700/50">
-                  <span className="font-semibold text-gray-600 dark:text-gray-300">{item.day}:</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(item.value)}</span>
+                  <span className="font-semibold text-gray-600 dark:text-gray-300 truncate mr-2">{item.day}:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">{formatCurrency(item.value)}</span>
                 </div>
               ))}
             </div>
@@ -430,16 +499,6 @@ export function AgentHome() {
       { day: '2-hafta', fullDate: '8 — 14 Avgust haftaligi', value: 15200000 },
       { day: '3-hafta', fullDate: '15 — 21 Avgust haftaligi', value: 14800000 },
       { day: '4-hafta', fullDate: '22 — 28 Avgust haftaligi', value: 18300000 }
-    ],
-    // Sanadan-sanagacha ma'lumotlar (so'mda)
-    customData: [
-      { day: '20-Avg', fullDate: '20-Avgust, 2026', value: 3100000 },
-      { day: '21-Avg', fullDate: '21-Avgust, 2026', value: 4200000 },
-      { day: '22-Avg', fullDate: '22-Avgust, 2026', value: 2900000 },
-      { day: '23-Avg', fullDate: '23-Avgust, 2026', value: 4600000 },
-      { day: '24-Avg', fullDate: '24-Avgust, 2026', value: 3800000 },
-      { day: '25-Avg', fullDate: '25-Avgust, 2026', value: 5400000 },
-      { day: '26-Avg', fullDate: '26-Avgust, 2026', value: 4800000 },
     ]
   };
 
@@ -475,18 +534,22 @@ export function AgentHome() {
     }, 500);
   };
 
-  const getChartData = () => {
+  // Dinamik hisoblanuvchi grafik ma'lumotlari
+  const currentChartData = useMemo(() => {
     if (activeTab === 'week') return agentData.weeklyData;
     if (activeTab === 'month') return agentData.monthlyData;
-    return agentData.customData;
-  };
+    return getDynamicCustomData(fromDate, toDate);
+  }, [activeTab, fromDate, toDate]);
 
-  const currentChartData = getChartData();
-  const totalPeriodRevenue = currentChartData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalPeriodRevenue = useMemo(() => {
+    return currentChartData.reduce((acc, curr) => acc + curr.value, 0);
+  }, [currentChartData]);
 
   // Tanlangan kun yoki default jami summa ko'rsatkichi
-  const activeItem = selectedDayIndex !== null ? currentChartData[selectedDayIndex] : null;
-  const bestDay = [...currentChartData].sort((a, b) => b.value - a.value)[0];
+  const activeItem = selectedDayIndex !== null && currentChartData[selectedDayIndex] ? currentChartData[selectedDayIndex] : null;
+  const bestDay = useMemo(() => {
+    return [...currentChartData].sort((a, b) => b.value - a.value)[0] || { day: '—', value: 0 };
+  }, [currentChartData]);
 
   return (
     <div className="space-y-5 pb-28 animate-fade-in-up max-w-lg mx-auto p-4 relative">
@@ -534,7 +597,7 @@ export function AgentHome() {
         </Link>
       </div>
 
-      {/* 2. YANGILANGAN SAVDO DINAMIKASI (PREMIUM FINTECH UI/UX) */}
+      {/* 2. YANGILANGAN SAVDO DINAMIKASI (DINAMIK SANALAR VA SUMMALAR BILAN) */}
       <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
         
         {/* Yuqori qism: Segmented Control & Analitika tugmasi */}
@@ -590,8 +653,11 @@ export function AgentHome() {
               <input 
                 type="date" 
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setSelectedDayIndex(null);
+                }}
+                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
               />
             </div>
             <div>
@@ -599,8 +665,11 @@ export function AgentHome() {
               <input 
                 type="date" 
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setSelectedDayIndex(null);
+                }}
+                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
               />
             </div>
           </div>
@@ -612,7 +681,7 @@ export function AgentHome() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
-                {activeItem ? activeItem.fullDate || activeItem.day : 'Tanlangan Davr Tushumi'}
+                {activeItem ? activeItem.fullDate || activeItem.day : (activeTab === 'custom' ? `Davr: ${fromDate} — ${toDate}` : 'Tanlangan Davr Tushumi')}
               </p>
               <p className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">
                 {formatCurrency(activeItem ? activeItem.value : totalPeriodRevenue)}
@@ -621,16 +690,16 @@ export function AgentHome() {
                 {activeItem ? (
                   <>
                     <span className="font-bold text-amber-600 dark:text-amber-400">
-                      {((activeItem.value / totalPeriodRevenue) * 100).toFixed(0)}%
+                      {totalPeriodRevenue > 0 ? ((activeItem.value / totalPeriodRevenue) * 100).toFixed(0) : 0}%
                     </span> 
-                    umumiy savdo ulushi
+                    umumiy davr savdosidagi ulushi
                   </>
                 ) : (
                   <>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                       <TrendingUp className="w-3 h-3 inline" /> +18%
                     </span>
-                    o&apos;tgan davrga nisbatan o&apos;sish
+                    o&apos;tgan davrga nisbatan o&apos;sish sur&apos;ati
                   </>
                 )}
               </p>
@@ -660,7 +729,7 @@ export function AgentHome() {
                   <span className={`
                     text-[10px] font-black transition-all whitespace-nowrap
                     ${isSelected 
-                      ? 'text-amber-600 dark:text-amber-400 scale-110 -translate-y-1' 
+                      ? 'text-amber-600 dark:text-amber-400 scale-110 -translate-y-1 font-black' 
                       : 'text-gray-400 dark:text-gray-500 group-hover:text-amber-600'
                     }
                   `}>
@@ -704,8 +773,8 @@ export function AgentHome() {
               <Award className="w-4 h-4 text-amber-500" />
               <span>Eng yaxshi kun: <strong className="text-gray-900 dark:text-white font-bold">{bestDay?.day} ({formatCurrency(bestDay?.value || 0)})</strong></span>
             </div>
-            <div className="font-semibold text-[11px] text-gray-400">
-              Barmoq bilan bosing
+            <div className="font-semibold text-[11px] text-amber-600 dark:text-amber-400">
+              {activeItem ? "Tanlandi" : "Kunni bosing"}
             </div>
           </div>
         </div>
