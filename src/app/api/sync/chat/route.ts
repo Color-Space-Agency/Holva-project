@@ -10,6 +10,17 @@ if (!globalThis.__HOLVA_SERVER_CHAT_MESSAGES) {
   globalThis.__HOLVA_SERVER_CHAT_MESSAGES = [...INITIAL_CHAT_MESSAGES];
 }
 
+function mergeArrays(a: RealtimeChatMessage[], b: RealtimeChatMessage[]): RealtimeChatMessage[] {
+  const map = new Map<string, RealtimeChatMessage>();
+  for (const m of a || []) {
+    if (m && m.id) map.set(m.id, m);
+  }
+  for (const m of b || []) {
+    if (m && m.id) map.set(m.id, m);
+  }
+  return Array.from(map.values()).sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
+}
+
 // GET /api/sync/chat?agentId=sardor
 export async function GET(request: NextRequest) {
   try {
@@ -29,44 +40,49 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/sync/chat — Yangi xabar yuborish
+// POST /api/sync/chat — Yangi xabar yoki xabarlar ro'yxatini sinxronlash
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agentId, sender, senderName, text } = body;
+    const { agentId, sender, senderName, text, clientMessages } = body;
 
-    if (!text || !agentId || !sender) {
-      return NextResponse.json({ success: false, error: "Ma'lumotlar yetarli emas" }, { status: 400 });
+    let currentServer = globalThis.__HOLVA_SERVER_CHAT_MESSAGES || [...INITIAL_CHAT_MESSAGES];
+
+    // Agar client o'zidagi xabarlar ro'yxatini yuborgan bo'lsa, server bilan birlashtirish
+    if (Array.isArray(clientMessages) && clientMessages.length > 0) {
+      currentServer = mergeArrays(currentServer, clientMessages);
     }
 
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    let newMsg: RealtimeChatMessage | null = null;
 
-    const newMsg: RealtimeChatMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      agentId: agentId || "sardor",
-      sender,
-      senderName: senderName || (sender === "admin" ? "Super Admin" : "Sardor Rahimov"),
-      text: String(text).trim(),
-      time: timeStr,
-      timestamp: Date.now(),
-    };
+    if (text && agentId && sender) {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-    if (!globalThis.__HOLVA_SERVER_CHAT_MESSAGES) {
-      globalThis.__HOLVA_SERVER_CHAT_MESSAGES = [...INITIAL_CHAT_MESSAGES];
+      newMsg = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        agentId: agentId || "sardor",
+        sender,
+        senderName: senderName || (sender === "admin" ? "Super Admin" : "Sardor Rahimov"),
+        text: String(text).trim(),
+        time: timeStr,
+        timestamp: Date.now(),
+      };
+
+      currentServer = mergeArrays(currentServer, [newMsg]);
     }
 
-    globalThis.__HOLVA_SERVER_CHAT_MESSAGES.push(newMsg);
+    globalThis.__HOLVA_SERVER_CHAT_MESSAGES = currentServer;
 
-    const agentMessages = globalThis.__HOLVA_SERVER_CHAT_MESSAGES.filter(
-      (m) => (m.agentId || "sardor") === agentId
-    );
+    const agentMessages = agentId
+      ? currentServer.filter((m) => (m.agentId || "sardor") === agentId)
+      : currentServer;
 
     return NextResponse.json({
       success: true,
       newMessage: newMsg,
       messages: agentMessages,
-      allMessages: globalThis.__HOLVA_SERVER_CHAT_MESSAGES,
+      allMessages: currentServer,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

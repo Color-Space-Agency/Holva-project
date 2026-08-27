@@ -26,7 +26,8 @@ import {
   sendStoredChatMessage,
   syncChatMessagesFromServer,
   syncOrdersFromServer,
-  RealtimeChatMessage
+  RealtimeChatMessage,
+  mergeChatMessages
 } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
@@ -508,20 +509,22 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
     // Serverdan xabarlarni yuklash
     syncChatMessagesFromServer('sardor').then((srvMsgs) => {
-      if (srvMsgs) {
-        setMessages(srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor'));
+      if (srvMsgs && srvMsgs.length > 0) {
+        const filtered = srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor');
+        setMessages((prev) => mergeChatMessages(prev, filtered));
       }
     });
 
     const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[]; agentId?: string }>) => {
       if (e.detail && Array.isArray(e.detail.messages)) {
-        setMessages(e.detail.messages.filter((m) => (m.agentId || 'sardor') === 'sardor'));
+        const filtered = e.detail.messages.filter((m) => (m.agentId || 'sardor') === 'sardor');
+        setMessages((prev) => mergeChatMessages(prev, filtered));
       }
     };
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'holva_crm_chat_messages') {
-        setMessages(getStoredChatMessages('sardor'));
+        setMessages((prev) => mergeChatMessages(prev, getStoredChatMessages('sardor')));
       }
     };
 
@@ -532,7 +535,8 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     const interval = setInterval(() => {
       syncChatMessagesFromServer('sardor').then((srvMsgs) => {
         if (srvMsgs && srvMsgs.length > 0) {
-          setMessages(srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor'));
+          const filtered = srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor');
+          setMessages((prev) => mergeChatMessages(prev, filtered));
         }
       });
     }, 1500);

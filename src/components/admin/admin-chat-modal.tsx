@@ -9,7 +9,8 @@ import {
   RealtimeChatMessage, 
   getStoredChatMessages, 
   sendStoredChatMessage,
-  syncChatMessagesFromServer 
+  syncChatMessagesFromServer,
+  mergeChatMessages 
 } from '@/lib/mock-data';
 
 interface AdminChatModalProps {
@@ -37,18 +38,20 @@ export function AdminChatModal({ isOpen, onClose }: AdminChatModalProps) {
 
     // Dastlabki serverdan yuklash
     syncChatMessagesFromServer().then((srvMsgs) => {
-      if (srvMsgs) setMessages(srvMsgs);
+      if (srvMsgs && srvMsgs.length > 0) {
+        setMessages((prev) => mergeChatMessages(prev, srvMsgs));
+      }
     });
 
     const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[] }>) => {
       if (e.detail && Array.isArray(e.detail.messages)) {
-        setMessages(e.detail.messages);
+        setMessages((prev) => mergeChatMessages(prev, e.detail.messages));
       }
     };
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'holva_crm_chat_messages') {
-        setMessages(getStoredChatMessages());
+        setMessages((prev) => mergeChatMessages(prev, getStoredChatMessages()));
       }
     };
 
@@ -59,7 +62,7 @@ export function AdminChatModal({ isOpen, onClose }: AdminChatModalProps) {
     const interval = setInterval(() => {
       syncChatMessagesFromServer().then((srvMsgs) => {
         if (srvMsgs && srvMsgs.length > 0) {
-          setMessages(srvMsgs);
+          setMessages((prev) => mergeChatMessages(prev, srvMsgs));
         }
       });
     }, 1500);

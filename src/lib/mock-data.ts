@@ -827,16 +827,28 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
   },
 ]
 
+export function mergeChatMessages(listA: RealtimeChatMessage[], listB: RealtimeChatMessage[]): RealtimeChatMessage[] {
+  const map = new Map<string, RealtimeChatMessage>()
+  for (const m of listA || []) {
+    if (m && m.id) map.set(m.id, m)
+  }
+  for (const m of listB || []) {
+    if (m && m.id) map.set(m.id, m)
+  }
+  return Array.from(map.values()).sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0))
+}
+
 export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
   if (typeof window === "undefined") {
-    return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => m.agentId === agentId) : INITIAL_CHAT_MESSAGES
+    return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => (m.agentId || "sardor") === agentId) : INITIAL_CHAT_MESSAGES
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CHAT)
     if (raw !== null) {
       const parsed: RealtimeChatMessage[] = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return agentId ? parsed.filter((m) => (m.agentId || "sardor") === agentId) : parsed
+        const merged = mergeChatMessages(INITIAL_CHAT_MESSAGES, parsed)
+        return agentId ? merged.filter((m) => (m.agentId || "sardor") === agentId) : merged
       }
     }
   } catch (e) {
@@ -845,20 +857,23 @@ export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
   try {
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(INITIAL_CHAT_MESSAGES))
   } catch {}
-  return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => m.agentId === agentId) : INITIAL_CHAT_MESSAGES
+  return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => (m.agentId || "sardor") === agentId) : INITIAL_CHAT_MESSAGES
 }
 
 export async function syncChatMessagesFromServer(agentId?: string): Promise<RealtimeChatMessage[]> {
   if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
   try {
+    const currentLocal = getStoredChatMessages() // barcha local xabarlar
     const url = agentId ? `/api/sync/chat?agentId=${encodeURIComponent(agentId)}` : `/api/sync/chat`
     const res = await fetch(url, { cache: "no-store" })
     if (res.ok) {
       const data = await res.json()
       if (data.success && Array.isArray(data.allMessages)) {
-        localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(data.allMessages))
-        window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: data.allMessages, agentId } }))
-        return agentId ? data.allMessages.filter((m: RealtimeChatMessage) => (m.agentId || "sardor") === agentId) : data.allMessages
+        // Local va server xabarlarini doim ID bo'yicha birlashtiramiz (Hech qachon o'chmaydi!)
+        const merged = mergeChatMessages(currentLocal, data.allMessages)
+        localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(merged))
+        window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: merged, agentId } }))
+        return agentId ? merged.filter((m) => (m.agentId || "sardor") === agentId) : merged
       }
     }
   } catch (e) {
@@ -874,7 +889,7 @@ export function sendStoredChatMessage(
   text: string
 ): RealtimeChatMessage[] {
   if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
-  const allMessages = getStoredChatMessages() // barcha agentlar xabarlari
+  const currentLocal = getStoredChatMessages() // barcha agentlar xabarlari
   const now = new Date()
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
   
@@ -888,23 +903,30 @@ export function sendStoredChatMessage(
     timestamp: Date.now(),
   }
 
-  const updated = [...allMessages, newMsg]
+  const updated = mergeChatMessages(currentLocal, [newMsg])
   try {
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(updated))
     window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated, agentId } }))
   } catch {}
 
-  // Serverga cross-device sync yuborish
+  // Serverga cross-device sync yuborish (o'zining yangi xabari va barcha local xabarlarini yuboradi)
   try {
     fetch("/api/sync/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentId, sender, senderName, text: text.trim() }),
+      body: JSON.stringify({
+        agentId,
+        sender,
+        senderName,
+        text: text.trim(),
+        clientMessages: updated,
+      }),
     }).then(async (res) => {
       if (res.ok) {
         const data = await res.json()
         if (data.success && Array.isArray(data.allMessages)) {
-          localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(data.allMessages))
+          const reMerged = mergeChatMessages(updated, data.allMessages)
+          localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(reMerged))
         }
       }
     }).catch(() => {})
