@@ -8,7 +8,8 @@ import {
 import { 
   RealtimeChatMessage, 
   getStoredChatMessages, 
-  sendStoredChatMessage 
+  sendStoredChatMessage,
+  syncChatMessagesFromServer 
 } from '@/lib/mock-data';
 
 interface AdminChatModalProps {
@@ -34,6 +35,11 @@ export function AdminChatModal({ isOpen, onClose }: AdminChatModalProps) {
   useEffect(() => {
     setMessages(getStoredChatMessages());
 
+    // Dastlabki serverdan yuklash
+    syncChatMessagesFromServer().then((srvMsgs) => {
+      if (srvMsgs) setMessages(srvMsgs);
+    });
+
     const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[] }>) => {
       if (e.detail && Array.isArray(e.detail.messages)) {
         setMessages(e.detail.messages);
@@ -49,9 +55,19 @@ export function AdminChatModal({ isOpen, onClose }: AdminChatModalProps) {
     window.addEventListener('holva-chat-updated' as any, handleChatUpdated);
     window.addEventListener('storage', handleStorage);
 
+    // Cross-device server polling (har 1.5 soniyada serverdan yangi xabarlarni tekshirish)
+    const interval = setInterval(() => {
+      syncChatMessagesFromServer().then((srvMsgs) => {
+        if (srvMsgs && srvMsgs.length > 0) {
+          setMessages(srvMsgs);
+        }
+      });
+    }, 1500);
+
     return () => {
       window.removeEventListener('holva-chat-updated' as any, handleChatUpdated);
       window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
     };
   }, []);
 

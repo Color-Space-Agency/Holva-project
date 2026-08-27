@@ -5,13 +5,16 @@ import Link from "next/link"
 import { Eye, Clock, CheckCircle2, Package, Truck, ArrowRight, Store } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { OrderStatusBadge, OrderPaymentStatusBadge } from "@/components/orders/order-status-badge"
-import { getStoredOrders, MockOrder } from "@/lib/mock-data"
+import { getStoredOrders, MockOrder, syncOrdersFromServer } from "@/lib/mock-data"
 
 export function RecentOrders() {
   const [orders, setOrders] = useState<MockOrder[]>([])
 
   useEffect(() => {
     setOrders(getStoredOrders().slice(0, 5))
+    syncOrdersFromServer().then((srv) => {
+      if (srv && srv.length > 0) setOrders(srv.slice(0, 5))
+    })
 
     const handleOrdersUpdated = (e: CustomEvent<{ orders: MockOrder[] }>) => {
       if (e.detail?.orders) {
@@ -30,9 +33,17 @@ export function RecentOrders() {
     window.addEventListener("orders-updated" as any, handleOrdersUpdated)
     window.addEventListener("storage", handleStorage)
 
+    // Cross-device server polling har 2 soniyada
+    const interval = setInterval(() => {
+      syncOrdersFromServer().then((srv) => {
+        if (srv && srv.length > 0) setOrders(srv.slice(0, 5))
+      })
+    }, 2000)
+
     return () => {
       window.removeEventListener("orders-updated" as any, handleOrdersUpdated)
       window.removeEventListener("storage", handleStorage)
+      clearInterval(interval)
     }
   }, [])
 

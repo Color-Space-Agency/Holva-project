@@ -31,7 +31,7 @@ import { useEffect } from "react"
 import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
 import { toast } from "sonner"
 import Link from "next/link"
-import { getStoredOrders, deleteStoredOrder, isRealSupabaseConfigured } from "@/lib/mock-data"
+import { getStoredOrders, deleteStoredOrder, isRealSupabaseConfigured, syncOrdersFromServer } from "@/lib/mock-data"
 
 export function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -83,8 +83,10 @@ export function OrdersClient() {
     },
   })
 
-  // Real-time synchronization with Sales Agent orders & payments
+  // Real-time synchronization with Sales Agent orders & payments (Cross-device)
   useEffect(() => {
+    syncOrdersFromServer().then(() => refetch())
+
     const handleOrdersUpdated = () => {
       refetch()
     }
@@ -97,9 +99,15 @@ export function OrdersClient() {
     window.addEventListener("orders-updated", handleOrdersUpdated)
     window.addEventListener("storage", handleStorage)
 
+    // Cross-device polling har 2 soniyada serverdan yangi buyurtmalarni tekshiradi
+    const interval = setInterval(() => {
+      syncOrdersFromServer().then(() => refetch())
+    }, 2000)
+
     return () => {
       window.removeEventListener("orders-updated", handleOrdersUpdated)
       window.removeEventListener("storage", handleStorage)
+      clearInterval(interval)
     }
   }, [refetch])
 

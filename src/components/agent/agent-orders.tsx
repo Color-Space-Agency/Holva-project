@@ -16,7 +16,8 @@ import {
   MockOrder, 
   getStoredOrders, 
   recordStoredOrderPayment, 
-  createStoredOrder 
+  createStoredOrder,
+  syncOrdersFromServer
 } from '@/lib/mock-data';
 import { AgentOrderForm } from './agent-order-form';
 import { OrderStatusBadge, OrderPaymentStatusBadge } from '@/components/orders/order-status-badge';
@@ -226,6 +227,11 @@ export function AgentOrders() {
     // LocalStorage dan buyurtmalarni yuklash
     setOrders(getStoredOrders());
 
+    // Serverdan eng so'nggi buyurtmalarni yuklash
+    syncOrdersFromServer().then((srv) => {
+      if (srv && srv.length > 0) setOrders(srv);
+    });
+
     if (searchParams.get('new') === 'true') {
       setIsFormOpen(true);
     }
@@ -236,7 +242,18 @@ export function AgentOrders() {
       }
     };
     window.addEventListener('orders-updated' as any, handleOrdersUpdated);
-    return () => window.removeEventListener('orders-updated' as any, handleOrdersUpdated);
+
+    // Cross-device server polling har 2 soniyada
+    const interval = setInterval(() => {
+      syncOrdersFromServer().then((srv) => {
+        if (srv && srv.length > 0) setOrders(srv);
+      });
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('orders-updated' as any, handleOrdersUpdated);
+      clearInterval(interval);
+    };
   }, [searchParams]);
 
   const filteredOrders = orders.filter((o) => {

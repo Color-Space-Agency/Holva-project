@@ -649,6 +649,24 @@ export function saveStoredOrders(orders: MockOrder[]): void {
   } catch {}
 }
 
+export async function syncOrdersFromServer(): Promise<MockOrder[]> {
+  if (typeof window === "undefined") return INITIAL_ORDERS
+  try {
+    const res = await fetch("/api/sync/orders", { cache: "no-store" })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.orders)) {
+        localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(data.orders))
+        window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: data.orders } }))
+        return data.orders
+      }
+    }
+  } catch (e) {
+    console.error("syncOrdersFromServer error:", e)
+  }
+  return getStoredOrders()
+}
+
 export function recordStoredOrderPayment(orderId: string, amount: number): { orders: MockOrder[]; updatedOrder: MockOrder | null } {
   if (typeof window === "undefined") return { orders: INITIAL_ORDERS, updatedOrder: null }
   const currentOrders = getStoredOrders()
@@ -674,6 +692,16 @@ export function recordStoredOrderPayment(orderId: string, amount: number): { ord
   })
 
   saveStoredOrders(updatedOrders)
+
+  // Serverga cross-device sync yuborish
+  try {
+    fetch("/api/sync/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "pay", orderId, amount }),
+    }).catch(() => {})
+  } catch {}
+
   return { orders: updatedOrders, updatedOrder }
 }
 
@@ -682,6 +710,16 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   const list = getStoredOrders()
   const updatedList = [newOrder, ...list]
   saveStoredOrders(updatedList)
+
+  // Serverga cross-device sync yuborish
+  try {
+    fetch("/api/sync/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", order: newOrder }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -690,6 +728,16 @@ export function deleteStoredOrder(orderId: string): MockOrder[] {
   const list = getStoredOrders()
   const updatedList = list.filter((o) => o.id !== orderId && o.order_number !== orderId)
   saveStoredOrders(updatedList)
+
+  // Serverga cross-device sync yuborish
+  try {
+    fetch("/api/sync/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", orderId }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -787,8 +835,8 @@ export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
     const raw = localStorage.getItem(STORAGE_KEY_CHAT)
     if (raw !== null) {
       const parsed: RealtimeChatMessage[] = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        return agentId ? parsed.filter((m) => m.agentId === agentId) : parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return agentId ? parsed.filter((m) => (m.agentId || "sardor") === agentId) : parsed
       }
     }
   } catch (e) {
@@ -798,6 +846,25 @@ export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(INITIAL_CHAT_MESSAGES))
   } catch {}
   return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => m.agentId === agentId) : INITIAL_CHAT_MESSAGES
+}
+
+export async function syncChatMessagesFromServer(agentId?: string): Promise<RealtimeChatMessage[]> {
+  if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
+  try {
+    const url = agentId ? `/api/sync/chat?agentId=${encodeURIComponent(agentId)}` : `/api/sync/chat`
+    const res = await fetch(url, { cache: "no-store" })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.allMessages)) {
+        localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(data.allMessages))
+        window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: data.allMessages, agentId } }))
+        return agentId ? data.allMessages.filter((m: RealtimeChatMessage) => (m.agentId || "sardor") === agentId) : data.allMessages
+      }
+    }
+  } catch (e) {
+    console.error("syncChatMessagesFromServer error:", e)
+  }
+  return getStoredChatMessages(agentId)
 }
 
 export function sendStoredChatMessage(
@@ -826,6 +893,23 @@ export function sendStoredChatMessage(
     localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(updated))
     window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated, agentId } }))
   } catch {}
+
+  // Serverga cross-device sync yuborish
+  try {
+    fetch("/api/sync/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentId, sender, senderName, text: text.trim() }),
+    }).then(async (res) => {
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && Array.isArray(data.allMessages)) {
+          localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(data.allMessages))
+        }
+      }
+    }).catch(() => {})
+  } catch {}
+
   return updated
 }
 

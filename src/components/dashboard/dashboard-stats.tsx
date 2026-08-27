@@ -17,7 +17,7 @@ import {
   TrendingDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isRealSupabaseConfigured, getStoredOrders, getStoredProducts, getStoredEmployees } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, getStoredOrders, getStoredProducts, getStoredEmployees, syncOrdersFromServer } from "@/lib/mock-data"
 
 interface StatCardProps {
   title: string
@@ -190,7 +190,7 @@ export function DashboardStats() {
     staleTime: 60 * 1000,
   })
 
-  // Real-time synchronization
+  // Real-time synchronization (Cross-device)
   useEffect(() => {
     const handleSync = () => {
       refetch()
@@ -198,9 +198,14 @@ export function DashboardStats() {
     window.addEventListener("orders-updated", handleSync)
     window.addEventListener("storage", handleSync)
 
+    const interval = setInterval(() => {
+      syncOrdersFromServer().then(() => refetch())
+    }, 3000)
+
     return () => {
       window.removeEventListener("orders-updated", handleSync)
       window.removeEventListener("storage", handleSync)
+      clearInterval(interval)
     }
   }, [refetch])
 

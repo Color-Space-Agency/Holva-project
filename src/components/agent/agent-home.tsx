@@ -24,6 +24,8 @@ import {
   MockOrder,
   getStoredChatMessages,
   sendStoredChatMessage,
+  syncChatMessagesFromServer,
+  syncOrdersFromServer,
   RealtimeChatMessage
 } from '@/lib/mock-data';
 import { toast } from 'sonner';
@@ -504,6 +506,13 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
   useEffect(() => {
     setMessages(getStoredChatMessages('sardor'));
 
+    // Serverdan xabarlarni yuklash
+    syncChatMessagesFromServer('sardor').then((srvMsgs) => {
+      if (srvMsgs) {
+        setMessages(srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor'));
+      }
+    });
+
     const handleChatUpdated = (e: CustomEvent<{ messages: RealtimeChatMessage[]; agentId?: string }>) => {
       if (e.detail && Array.isArray(e.detail.messages)) {
         setMessages(e.detail.messages.filter((m) => (m.agentId || 'sardor') === 'sardor'));
@@ -519,9 +528,19 @@ function ChatModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     window.addEventListener('holva-chat-updated' as any, handleChatUpdated);
     window.addEventListener('storage', handleStorage);
 
+    // Cross-device server polling (har 1.5 soniyada serverdan tekshirish)
+    const interval = setInterval(() => {
+      syncChatMessagesFromServer('sardor').then((srvMsgs) => {
+        if (srvMsgs && srvMsgs.length > 0) {
+          setMessages(srvMsgs.filter((m) => (m.agentId || 'sardor') === 'sardor'));
+        }
+      });
+    }, 1500);
+
     return () => {
       window.removeEventListener('holva-chat-updated' as any, handleChatUpdated);
       window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
     };
   }, []);
 
@@ -672,6 +691,21 @@ export function AgentHome() {
       setOrdersList(mapped);
     }
 
+    // Serverdan eng yangi buyurtmalarni yuklash
+    syncOrdersFromServer().then((srv) => {
+      if (srv && srv.length > 0) {
+        const mapped: OrderItem[] = srv.map((o: MockOrder) => ({
+          id: o.order_number,
+          client: o.store_name,
+          time: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+          amount: o.total_amount,
+          status: o.status.toLowerCase(),
+          paidAmount: o.paid_amount || 0,
+        }));
+        setOrdersList(mapped);
+      }
+    });
+
     const handleVisitsUpdated = (e: CustomEvent<{ count: number }>) => {
       if (e.detail && typeof e.detail.count === 'number') {
         setVisits({ completed: e.detail.count, plan: 12 });
@@ -694,9 +728,28 @@ export function AgentHome() {
 
     window.addEventListener('visits-updated' as any, handleVisitsUpdated);
     window.addEventListener('orders-updated' as any, handleOrdersUpdated);
+
+    // Cross-device server polling har 2 soniyada
+    const interval = setInterval(() => {
+      syncOrdersFromServer().then((srv) => {
+        if (srv && srv.length > 0) {
+          const mapped: OrderItem[] = srv.map((o: MockOrder) => ({
+            id: o.order_number,
+            client: o.store_name,
+            time: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+            amount: o.total_amount,
+            status: o.status.toLowerCase(),
+            paidAmount: o.paid_amount || 0,
+          }));
+          setOrdersList(mapped);
+        }
+      });
+    }, 2000);
+
     return () => {
       window.removeEventListener('visits-updated' as any, handleVisitsUpdated);
       window.removeEventListener('orders-updated' as any, handleOrdersUpdated);
+      clearInterval(interval);
     };
   }, []);
 
