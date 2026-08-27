@@ -10,15 +10,31 @@ if (!globalThis.__HOLVA_SERVER_CHAT_MESSAGES) {
   globalThis.__HOLVA_SERVER_CHAT_MESSAGES = [...INITIAL_CHAT_MESSAGES];
 }
 
-function mergeArrays(a: RealtimeChatMessage[], b: RealtimeChatMessage[]): RealtimeChatMessage[] {
-  const map = new Map<string, RealtimeChatMessage>();
-  for (const m of a || []) {
-    if (m && m.id) map.set(m.id, m);
+function mergeAndDeduplicate(a: RealtimeChatMessage[], b: RealtimeChatMessage[]): RealtimeChatMessage[] {
+  const combined = [...(a || []), ...(b || [])].filter((m) => Boolean(m && m.id && m.text));
+  combined.sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
+
+  const result: RealtimeChatMessage[] = [];
+  const seenIds = new Set<string>();
+
+  for (const msg of combined) {
+    if (seenIds.has(msg.id)) continue;
+
+    const isDuplicate = result.some(
+      (existing) =>
+        (existing.agentId || "sardor") === (msg.agentId || "sardor") &&
+        existing.sender === msg.sender &&
+        existing.text.trim() === msg.text.trim() &&
+        Math.abs((existing.timestamp || 0) - (msg.timestamp || 0)) < 120000
+    );
+
+    if (!isDuplicate) {
+      seenIds.add(msg.id);
+      result.push(msg);
+    }
   }
-  for (const m of b || []) {
-    if (m && m.id) map.set(m.id, m);
-  }
-  return Array.from(map.values()).sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
+
+  return result;
 }
 
 // GET /api/sync/chat?agentId=sardor
@@ -28,12 +44,17 @@ export async function GET(request: NextRequest) {
     const agentId = searchParams.get("agentId");
 
     const all = globalThis.__HOLVA_SERVER_CHAT_MESSAGES || [...INITIAL_CHAT_MESSAGES];
-    const filtered = agentId ? all.filter((m) => (m.agentId || "sardor") === agentId) : all;
+    const dedupedAll = mergeAndDeduplicate(INITIAL_CHAT_MESSAGES, all);
+    globalThis.__HOLVA_SERVER_CHAT_MESSAGES = dedupedAll;
+
+    const filtered = agentId
+      ? dedupedAll.filter((m) => (m.agentId || "sardor") === agentId)
+      : dedupedAll;
 
     return NextResponse.json({
       success: true,
       messages: filtered,
-      allMessages: all,
+      allMessages: dedupedAll,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -44,22 +65,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agentId, sender, senderName, text, clientMessages } = body;
+    const { agentId, sender, senderName, text, clientMessages, newMessage } = body;
 
     let currentServer = globalThis.__HOLVA_SERVER_CHAT_MESSAGES || [...INITIAL_CHAT_MESSAGES];
 
-    // Agar client o'zidagi xabarlar ro'yxatini yuborgan bo'lsa, server bilan birlashtirish
-    if (Array.isArray(clientMessages) && clientMessages.length > 0) {
-      currentServer = mergeArrays(currentServer, clientMessages);
+    // 1. Agar tayyor yangi xabar obyekti berilgan bo'lsa
+    if (newMessage && newMessage.id) {
+      currentServer = mergeAndDeduplicate(currentServer, [newMessage]);
     }
-
-    let newMsg: RealtimeChatMessage | null = null;
-
-    if (text && agentId && sender) {
+    // 2. Agar clientMessages berilgan bo'lsa
+    else if (Array.isArray(clientMessages) && clientMessages.length > 0) {
+      currentServer = mergeAndDeduplicate(currentServer, clientMessages);
+    }
+    // 3. Agar faqat oddiy matn kelgan bo'lsa
+    else if (text && agentId && sender) {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-      newMsg = {
+      const created: RealtimeChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         agentId: agentId || "sardor",
         sender,
@@ -69,7 +92,7 @@ export async function POST(request: NextRequest) {
         timestamp: Date.now(),
       };
 
-      currentServer = mergeArrays(currentServer, [newMsg]);
+      currentServer = mergeAndDeduplicate(currentServer, [created]);
     }
 
     globalThis.__HOLVA_SERVER_CHAT_MESSAGES = currentServer;
@@ -80,7 +103,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      newMessage: newMsg,
       messages: agentMessages,
       allMessages: currentServer,
     });

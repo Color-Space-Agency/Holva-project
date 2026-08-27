@@ -828,14 +828,32 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
 ]
 
 export function mergeChatMessages(listA: RealtimeChatMessage[], listB: RealtimeChatMessage[]): RealtimeChatMessage[] {
-  const map = new Map<string, RealtimeChatMessage>()
-  for (const m of listA || []) {
-    if (m && m.id) map.set(m.id, m)
+  const combined = [...(listA || []), ...(listB || [])].filter((m) => Boolean(m && m.id && m.text))
+  combined.sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0))
+
+  const result: RealtimeChatMessage[] = []
+  const seenIds = new Set<string>()
+
+  for (const msg of combined) {
+    if (seenIds.has(msg.id)) continue
+
+    // Matn va yuboruvchi bo'yicha takroriylikni (duplicate) tekshirish:
+    // Agar 2 daqiqa ichida bir xil agent, bir xil sender va bir xil matn kelsa, bitta deb olinadi
+    const isDuplicate = result.some(
+      (existing) =>
+        (existing.agentId || "sardor") === (msg.agentId || "sardor") &&
+        existing.sender === msg.sender &&
+        existing.text.trim() === msg.text.trim() &&
+        Math.abs((existing.timestamp || 0) - (msg.timestamp || 0)) < 120000
+    )
+
+    if (!isDuplicate) {
+      seenIds.add(msg.id)
+      result.push(msg)
+    }
   }
-  for (const m of listB || []) {
-    if (m && m.id) map.set(m.id, m)
-  }
-  return Array.from(map.values()).sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0))
+
+  return result
 }
 
 export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
@@ -869,7 +887,7 @@ export async function syncChatMessagesFromServer(agentId?: string): Promise<Real
     if (res.ok) {
       const data = await res.json()
       if (data.success && Array.isArray(data.allMessages)) {
-        // Local va server xabarlarini doim ID bo'yicha birlashtiramiz (Hech qachon o'chmaydi!)
+        // Local va server xabarlarini doim birlashtiramiz va takroriylardan tozalaymiz
         const merged = mergeChatMessages(currentLocal, data.allMessages)
         localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(merged))
         window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: merged, agentId } }))
@@ -909,7 +927,7 @@ export function sendStoredChatMessage(
     window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated, agentId } }))
   } catch {}
 
-  // Serverga cross-device sync yuborish (o'zining yangi xabari va barcha local xabarlarini yuboradi)
+  // Serverga yagona yangi xabarni va birlashgan ro'yxatni yuborish (ikkilanmasdan bitta nusxada)
   try {
     fetch("/api/sync/chat", {
       method: "POST",
@@ -918,7 +936,7 @@ export function sendStoredChatMessage(
         agentId,
         sender,
         senderName,
-        text: text.trim(),
+        newMessage: newMsg,
         clientMessages: updated,
       }),
     }).then(async (res) => {
