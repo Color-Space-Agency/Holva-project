@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_PRODUCTS } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_PRODUCTS, createStoredOrder, MockOrder } from "@/lib/mock-data"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatCurrency } from "@/lib/utils"
-import { Trash, Plus, ChevronRight, Check } from "lucide-react"
+import { Trash, Plus, ChevronRight } from "lucide-react"
 
 interface OrderFormDialogProps {
   open: boolean
@@ -42,38 +42,48 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { data: stores = [] } = useQuery({
-    queryKey: ["stores-list"],
+  const { data: stores } = useQuery({
+    queryKey: ["stores-select"],
     queryFn: async () => {
       if (isRealSupabaseConfigured()) {
         try {
           const { data } = await supabase.from("stores").select("id, name").eq("status", "ACTIVE")
           if (data && data.length > 0) return data
-        } catch {
-          // Fallback
-        }
+        } catch {}
       }
       return INITIAL_STORES.map((s) => ({ id: s.id, name: s.name }))
     },
     enabled: open,
   })
 
-  const agents = [
-    { id: "agent-1", first_name: "Sardor", last_name: "Rahimov" },
-    { id: "agent-2", first_name: "Jasur", last_name: "Bekmirzayev" },
-    { id: "agent-3", first_name: "Shavkat", last_name: "Ergashev" },
-  ]
+  const { data: agents } = useQuery({
+    queryKey: ["agents-select"],
+    queryFn: async () => {
+      if (isRealSupabaseConfigured()) {
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .eq("role", "SALES_AGENT")
+          if (data && data.length > 0) return data
+        } catch {}
+      }
+      return [
+        { id: "agent-1", first_name: "Sardor", last_name: "Rahimov" },
+        { id: "agent-2", first_name: "Jasur", last_name: "Qodirov" },
+      ]
+    },
+    enabled: open,
+  })
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["products-list"],
+  const { data: products } = useQuery({
+    queryKey: ["products-select"],
     queryFn: async () => {
       if (isRealSupabaseConfigured()) {
         try {
           const { data } = await supabase.from("products").select("id, name, price").eq("status", "ACTIVE")
           if (data && data.length > 0) return data
-        } catch {
-          // Fallback
-        }
+        } catch {}
       }
       return INITIAL_PRODUCTS.map((p) => ({ id: p.id, name: p.name, price: p.price }))
     },
@@ -81,7 +91,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
   })
 
   const handleAddItem = () => {
-    const defaultProduct = products[0] || { id: "p-1", price: 38000 }
+    const defaultProduct = products?.[0] || { id: "p-1", price: 38000 }
     setItems([
       ...items,
       {
@@ -120,12 +130,17 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
 
     setIsSubmitting(true)
     try {
+      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`
+      const selectedStore = stores?.find((s) => s.id === storeId)
+      const selectedAgent = agents?.find((a) => a.id === agentId)
+      const agentName = selectedAgent ? `${selectedAgent.first_name} ${selectedAgent.last_name || ""}`.trim() : "Sardor Rahimov"
+      const storeName = selectedStore?.name || "Do'kon"
+
       if (isRealSupabaseConfigured()) {
         try {
           const {
             data: { user },
           } = await supabase.auth.getUser()
-          const orderNumber = `ORD-${Date.now()}`
 
           await supabase.from("orders").insert({
             store_id: storeId,
@@ -146,6 +161,21 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
           // Fallback
         }
       }
+
+      // Synchronize in local/shared state so Sales Agent sees it immediately
+      const newMockOrder: MockOrder = {
+        id: `ord-${Date.now()}`,
+        order_number: orderNumber,
+        store_name: storeName,
+        agent_name: agentName,
+        total_amount: totalAmount,
+        paid_amount: paidAmount || 0,
+        status: "CONFIRMED",
+        payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
+        created_at: new Date().toISOString(),
+        items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+      }
+      createStoredOrder(newMockOrder)
 
       toast.success("Yangi buyurtma muvaffaqiyatli saqlandi!")
       onSuccess()

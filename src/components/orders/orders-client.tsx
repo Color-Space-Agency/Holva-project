@@ -27,9 +27,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { OrderFormDialog } from "./order-form-dialog"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
+import { useEffect } from "react"
 import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
 import { toast } from "sonner"
 import Link from "next/link"
+import { getStoredOrders, deleteStoredOrder, isRealSupabaseConfigured } from "@/lib/mock-data"
 
 export function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -40,8 +42,6 @@ export function OrdersClient() {
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ["orders", searchQuery],
     queryFn: async () => {
-      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
-
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -64,7 +64,8 @@ export function OrdersClient() {
         }
       }
 
-      let res = INITIAL_ORDERS.map((o) => ({
+      const stored = getStoredOrders()
+      let res = stored.map((o) => ({
         id: o.id,
         order_number: o.order_number,
         total_amount: o.total_amount,
@@ -82,21 +83,37 @@ export function OrdersClient() {
     },
   })
 
-  const handleDelete = async () => {
-    if (!deletingOrder) return
-    if (deletingOrder.status !== 'DRAFT') {
-      toast.error("Faqat DRAFT holatidagi buyurtmalarni o'chirish mumkin")
-      return
+  // Real-time synchronization with Sales Agent orders & payments
+  useEffect(() => {
+    const handleOrdersUpdated = () => {
+      refetch()
+    }
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_stored_orders") {
+        refetch()
+      }
     }
 
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .delete()
-        .eq("id", deletingOrder.id)
+    window.addEventListener("orders-updated", handleOrdersUpdated)
+    window.addEventListener("storage", handleStorage)
 
-      if (error) throw error
+    return () => {
+      window.removeEventListener("orders-updated", handleOrdersUpdated)
+      window.removeEventListener("storage", handleStorage)
+    }
+  }, [refetch])
+
+  const handleDelete = async () => {
+    if (!deletingOrder) return
+
+    try {
+      if (isRealSupabaseConfigured()) {
+        try {
+          await supabase.from("orders").delete().eq("id", deletingOrder.id)
+        } catch {}
+      }
       
+      deleteStoredOrder(deletingOrder.id)
       toast.success("Buyurtma o'chirildi")
       refetch()
     } catch (error) {

@@ -1,14 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Eye, Clock, CheckCircle2, Package, Truck, ArrowRight, Store } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { OrderStatusBadge, OrderPaymentStatusBadge } from "@/components/orders/order-status-badge"
-import { INITIAL_ORDERS } from "@/lib/mock-data"
+import { getStoredOrders, MockOrder } from "@/lib/mock-data"
 
 export function RecentOrders() {
-  const [orders] = useState(INITIAL_ORDERS.slice(0, 5))
+  const [orders, setOrders] = useState<MockOrder[]>([])
+
+  useEffect(() => {
+    setOrders(getStoredOrders().slice(0, 5))
+
+    const handleOrdersUpdated = (e: CustomEvent<{ orders: MockOrder[] }>) => {
+      if (e.detail?.orders) {
+        setOrders(e.detail.orders.slice(0, 5))
+      } else {
+        setOrders(getStoredOrders().slice(0, 5))
+      }
+    }
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_stored_orders") {
+        setOrders(getStoredOrders().slice(0, 5))
+      }
+    }
+
+    window.addEventListener("orders-updated" as any, handleOrdersUpdated)
+    window.addEventListener("storage", handleStorage)
+
+    return () => {
+      window.removeEventListener("orders-updated" as any, handleOrdersUpdated)
+      window.removeEventListener("storage", handleStorage)
+    }
+  }, [])
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm h-full flex flex-col justify-between animate-fade-in-up">

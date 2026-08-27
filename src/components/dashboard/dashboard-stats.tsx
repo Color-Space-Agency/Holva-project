@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { formatCurrency, formatNumber } from "@/lib/utils"
@@ -16,7 +17,7 @@ import {
   TrendingDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isRealSupabaseConfigured } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, getStoredOrders, getStoredProducts, getStoredEmployees } from "@/lib/mock-data"
 
 interface StatCardProps {
   title: string
@@ -160,25 +161,48 @@ async function fetchStats() {
     }
   }
 
-  // Instant fallback demo metrics
+  // Stored live sync state
+  const storedOrders = getStoredOrders()
+  const storedProducts = getStoredProducts()
+  const storedEmployees = getStoredEmployees()
+
+  const todayOrders = storedOrders.length || 24
+  const totalPaid = storedOrders.reduce((sum, o) => sum + (o.paid_amount || 0), 0)
+  const todayRevenue = totalPaid > 0 ? (120000000 + totalPaid) : 128500000
+  const totalDebt = storedOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
+
   return {
-    todayOrders: 24,
-    todayRevenue: 128500000,
-    totalProducts: 12,
-    presentEmployees: 18,
+    todayOrders,
+    todayRevenue,
+    totalProducts: storedProducts.length || 12,
+    presentEmployees: storedEmployees.filter((e) => e.employment_status === "ACTIVE").length || 18,
     absentEmployees: 2,
     pendingDeliveries: 4,
     producedKg: 4200,
-    totalDebt: 14200000,
+    totalDebt: totalDebt || 14200000,
   }
 }
 
 export function DashboardStats() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: fetchStats,
     staleTime: 60 * 1000,
   })
+
+  // Real-time synchronization
+  useEffect(() => {
+    const handleSync = () => {
+      refetch()
+    }
+    window.addEventListener("orders-updated", handleSync)
+    window.addEventListener("storage", handleSync)
+
+    return () => {
+      window.removeEventListener("orders-updated", handleSync)
+      window.removeEventListener("storage", handleSync)
+    }
+  }, [refetch])
 
   if (isLoading) {
     return (

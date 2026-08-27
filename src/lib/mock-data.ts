@@ -48,6 +48,7 @@ export interface MockOrder {
   status: "DRAFT" | "CONFIRMED" | "PREPARING" | "READY" | "DELIVERING" | "DELIVERED" | "CANCELLED"
   payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE"
   created_at: string
+  items_count?: number
 }
 
 export interface MockEmployee {
@@ -680,6 +681,14 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   if (typeof window === "undefined") return INITIAL_ORDERS
   const list = getStoredOrders()
   const updatedList = [newOrder, ...list]
+  saveStoredOrders(updatedList)
+  return updatedList
+}
+
+export function deleteStoredOrder(orderId: string): MockOrder[] {
+  if (typeof window === "undefined") return INITIAL_ORDERS
+  const list = getStoredOrders()
+  const updatedList = list.filter((o) => o.id !== orderId && o.order_number !== orderId)
   saveStoredOrders(updatedList)
   return updatedList
 }

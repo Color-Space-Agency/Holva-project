@@ -36,6 +36,8 @@ const STATUS_COLORS: Record<string, string> = {
   INACTIVE: "bg-gray-500/10 text-gray-500",
   BLOCKED: "bg-red-500/10 text-red-500",
 }
+import { useEffect } from "react"
+import { INITIAL_STORES, getStoredOrders, isRealSupabaseConfigured } from "@/lib/mock-data"
 
 export function StoresClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -47,8 +49,6 @@ export function StoresClient() {
   const { data: stores, isLoading, refetch } = useQuery({
     queryKey: ["stores", searchQuery],
     queryFn: async () => {
-      const { INITIAL_STORES, isRealSupabaseConfigured } = await import("@/lib/mock-data")
-
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -67,16 +67,36 @@ export function StoresClient() {
         }
       }
 
-      let res = INITIAL_STORES.map((s) => ({
-        ...s,
-        created_at: new Date().toISOString(),
-      }))
+      const storedOrders = getStoredOrders()
+      let res = INITIAL_STORES.map((s) => {
+        const storeOrders = storedOrders.filter((o) => o.store_name === s.name)
+        const debt = storeOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
+        return {
+          ...s,
+          current_balance: debt > 0 ? -debt : (s.current_balance || 0),
+          created_at: new Date().toISOString(),
+        }
+      })
       if (searchQuery) {
         res = res.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.phone.includes(searchQuery))
       }
       return res
     },
   })
+
+  // Real-time synchronization with orders & payments
+  useEffect(() => {
+    const handleSync = () => {
+      refetch()
+    }
+    window.addEventListener("orders-updated", handleSync)
+    window.addEventListener("storage", handleSync)
+
+    return () => {
+      window.removeEventListener("orders-updated", handleSync)
+      window.removeEventListener("storage", handleSync)
+    }
+  }, [refetch])
 
   const handleDelete = async () => {
     if (!deletingStore) return
