@@ -195,11 +195,11 @@ export function StoreActReconciliationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[98vw] max-w-5xl max-h-[90vh] overflow-y-auto p-2 sm:p-6 print:p-0 print:max-w-full print:shadow-none print:border-none">
+      <DialogContent className="w-[96vw] sm:max-w-5xl max-h-[92vh] overflow-y-auto p-3 sm:p-6 print:p-0 print:max-w-full print:shadow-none print:border-none">
         <DialogHeader className="print:hidden border-b pb-4 flex flex-row items-center justify-between">
           <div>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <FileCheck2 className="w-6 h-6 text-amber-600" />
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <FileCheck2 className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
               Solishtirma Dalolatnoma (Akt Sverka)
             </DialogTitle>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -213,13 +213,13 @@ export function StoreActReconciliationDialog({
             </Button>
             <Button size="sm" onClick={handlePrint} className="bg-amber-600 hover:bg-amber-700 text-white cursor-pointer gap-1.5 shadow-sm">
               <Printer className="w-4 h-4" />
-              <span>Chop etish</span>
+              <span className="hidden sm:inline">Chop etish</span>
             </Button>
           </div>
         </DialogHeader>
 
         {/* Filtr paneli (Faqat ekranda ko'rinadi, printda yashiriladi) */}
-        <div className="print:hidden bg-gray-50 dark:bg-gray-800/50 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 mt-2">
+        <div className="print:hidden bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 mt-1">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Label className="text-xs font-semibold text-gray-500">Davr:</Label>
@@ -227,14 +227,14 @@ export function StoreActReconciliationDialog({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-8 text-xs w-34 bg-white dark:bg-gray-900"
+                className="h-8 text-xs w-32 sm:w-36 bg-white dark:bg-gray-900"
               />
               <span className="text-xs text-gray-400">—</span>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-8 text-xs w-34 bg-white dark:bg-gray-900"
+                className="h-8 text-xs w-32 sm:w-36 bg-white dark:bg-gray-900"
               />
             </div>
           </div>
@@ -267,11 +267,11 @@ export function StoreActReconciliationDialog({
         {/* ============================================================ */}
         {/* AKT SVERKA ASOSIY HUJJAT BLOKI (PRINT VA PDF UCHUN TOZA FORMAT) */}
         {/* ============================================================ */}
-        <div className="space-y-6 pt-2 text-gray-900 dark:text-gray-100 print:text-black">
+        <div className="space-y-5 pt-1 text-gray-900 dark:text-gray-100 print:text-black">
           
           {/* Hujjat bosh sarlavhasi */}
-          <div className="text-center space-y-1 border-b pb-4">
-            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-gray-900 dark:text-white print:text-black">
+          <div className="text-center space-y-1 border-b pb-3">
+            <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900 dark:text-white print:text-black">
               O&apos;ZARO HISOB-KITOBLARNI SOLISHTIRISH DALOLATNOMASI
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-medium">
@@ -283,22 +283,22 @@ export function StoreActReconciliationDialog({
           </div>
 
           {/* Tomonlar ma'lumotlari */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-amber-50/50 dark:bg-gray-800/40 border border-amber-200/60 dark:border-gray-700 text-xs sm:text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-amber-50/50 dark:bg-gray-800/40 border border-amber-200/60 dark:border-gray-700 text-xs sm:text-sm">
             <div className="space-y-1">
-              <span className="font-bold text-amber-900 dark:text-amber-400 block text-xs uppercase tracking-wider">
+              <span className="font-bold text-amber-900 dark:text-amber-400 block text-[11px] uppercase tracking-wider">
                 YETKAZIB BERUVCHI:
               </span>
-              <div className="font-bold text-base text-gray-900 dark:text-white">&ldquo;HOLVA FACTORY&rdquo; MCHJ</div>
+              <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">&ldquo;HOLVA FACTORY&rdquo; MCHJ</div>
               <div>Manzil: Toshkent sh., Chilonzor tumani, Sanoat hududi 12</div>
               <div>Tel: +998 (71) 200-00-55</div>
               <div>Hisob raqam: 20208000900000123456</div>
             </div>
 
             <div className="space-y-1 border-t sm:border-t-0 sm:border-l sm:pl-4 border-amber-200/60 dark:border-gray-700 pt-2 sm:pt-0">
-              <span className="font-bold text-amber-900 dark:text-amber-400 block text-xs uppercase tracking-wider">
+              <span className="font-bold text-amber-900 dark:text-amber-400 block text-[11px] uppercase tracking-wider">
                 XARIDOR (DO&apos;KON):
               </span>
-              <div className="font-bold text-base text-gray-900 dark:text-white">{store.name}</div>
+              <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">{store.name}</div>
               <div>Manzil: {store.address || "Toshkent shahri"}</div>
               <div>Mas&apos;ul: {store.contact_person || "Do'kon mudiri"}</div>
               <div>Tel: {store.phone || "+998 90 000 00 00"}</div>
@@ -306,44 +306,44 @@ export function StoreActReconciliationDialog({
           </div>
 
           {/* Qisqacha Xulosa Kartochkalari */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/80 rounded-xl border">
-              <span className="text-[11px] text-gray-500 font-medium block">Boshlang&apos;ich Qoldiq</span>
-              <span className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/80 rounded-xl border">
+              <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium block">Boshlang&apos;ich Qoldiq</span>
+              <span className="text-xs sm:text-base font-bold text-gray-800 dark:text-gray-200">
                 {formatCurrency(initialBalance)}
               </span>
             </div>
-            <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900">
-              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium block">Jami Tovar Berildi</span>
-              <span className="text-sm sm:text-base font-bold text-blue-700 dark:text-blue-300">
+            <div className="p-2.5 sm:p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900">
+              <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 font-medium block">Jami Tovar Berildi</span>
+              <span className="text-xs sm:text-base font-bold text-blue-700 dark:text-blue-300">
                 +{formatCurrency(totalDebit)}
               </span>
             </div>
-            <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Jami To&apos;lov Qilindi</span>
-              <span className="text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-300">
+            <div className="p-2.5 sm:p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900">
+              <span className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Jami To&apos;lov Qilindi</span>
+              <span className="text-xs sm:text-base font-bold text-emerald-700 dark:text-emerald-300">
                 -{formatCurrency(totalCredit)}
               </span>
             </div>
-            <div className={`p-3 rounded-xl border ${finalBalance > 0 ? "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-700 dark:text-red-400" : "bg-green-50 dark:bg-green-950/20 border-green-200 text-green-700 dark:text-green-400"}`}>
-              <span className="text-[11px] font-medium block">Yakuniy Qoldiq Qarz</span>
-              <span className="text-sm sm:text-base font-bold">
+            <div className={`p-2.5 sm:p-3 rounded-xl border ${finalBalance > 0 ? "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-700 dark:text-red-400" : "bg-green-50 dark:bg-green-950/20 border-green-200 text-green-700 dark:text-green-400"}`}>
+              <span className="text-[10px] sm:text-[11px] font-medium block">Yakuniy Qoldiq Qarz</span>
+              <span className="text-xs sm:text-base font-bold">
                 {formatCurrency(finalBalance)}
               </span>
             </div>
           </div>
 
           {/* Solishtirma Amallari Jadvali */}
-          <div className="border rounded-2xl overflow-x-auto shadow-xs">
-            <table className="w-full text-[10px] sm:text-xs md:text-sm text-left border-collapse">
+          <div className="border rounded-2xl overflow-x-auto shadow-xs bg-white dark:bg-gray-900">
+            <table className="w-full text-xs sm:text-sm text-left border-collapse min-w-full">
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b">
                 <tr>
-                  <th className="p-2.5 sm:p-3 w-10 text-center">№</th>
-                  <th className="p-2.5 sm:p-3 w-24">Sana</th>
-                  <th className="p-2.5 sm:p-3">Hujjat / Amal</th>
-                  <th className="p-2.5 sm:p-3 text-right">Tovar berildi (Debet)</th>
-                  <th className="p-2.5 sm:p-3 text-right">To&apos;lov qilindi (Kredit)</th>
-                  <th className="p-2.5 sm:p-3 text-right">Qoldiq (Qarz)</th>
+                  <th className="p-2 sm:p-3 w-8 text-center whitespace-nowrap">№</th>
+                  <th className="p-2 sm:p-3 w-20 sm:w-28 whitespace-nowrap">Sana</th>
+                  <th className="p-2 sm:p-3 whitespace-nowrap">Hujjat / Amal</th>
+                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">Tovar berildi (Debet)</th>
+                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">To&apos;lov qilindi (Kredit)</th>
+                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">Qoldiq (Qarz)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
