@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -287,10 +288,15 @@ export function ProductsClient() {
             >
               <div className="flex items-start gap-3">
                 {/* Image / Icon */}
-                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center">
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center">
                   {product.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    <Image
+                      src={product.image_url}
+                      alt={product.name}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
                   ) : (
                     <Package size={24} className="text-violet-400" />
                   )}

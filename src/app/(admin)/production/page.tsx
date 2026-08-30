@@ -1,5 +1,11 @@
 import { ProductionClient } from "@/components/production/production-client";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Ishlab chiqarish",
+};
+
 export default function ProductionPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

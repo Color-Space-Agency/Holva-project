@@ -1,7 +1,7 @@
 import { AktSverkaClient } from "@/components/finance/akt-sverka-client"
 
 export const metadata = {
-  title: "Akt Sverka - Holva Factory CRM",
+  title: "Akt Sverka",
 }
 
 export default function AktSverkaPage() {

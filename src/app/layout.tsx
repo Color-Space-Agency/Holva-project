@@ -33,8 +33,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom ataylab bloklanmagan — ko'zi past ko'radigan foydalanuvchilar
+  // sahifani kattalashtira olishi kerak (accessibility talabi).
 }
 
 export default function RootLayout({

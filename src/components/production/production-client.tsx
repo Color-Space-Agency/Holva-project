@@ -157,16 +157,16 @@ export function ProductionClient() {
                   <TableCell>{getStatusBadge(batch.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => setViewBatch(batch)} title="Ko'rish">
+                      <Button variant="ghost" size="icon" onClick={() => setViewBatch(batch)} title="Ko'rish" aria-label="Partiyani ko'rish">
                         <Eye className="h-4 w-4" />
                       </Button>
                       
                       {batch.status === "PLANNED" && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => updateStatusMutation.mutate({ id: batch.id, status: "IN_PROGRESS" })} title="Boshlash">
+                          <Button variant="ghost" size="icon" onClick={() => updateStatusMutation.mutate({ id: batch.id, status: "IN_PROGRESS" })} title="Boshlash" aria-label="Ishlab chiqarishni boshlash">
                             <Play className="h-4 w-4 text-blue-500" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => updateStatusMutation.mutate({ id: batch.id, status: "CANCELLED" })} title="Bekor qilish">
+                          <Button variant="ghost" size="icon" onClick={() => updateStatusMutation.mutate({ id: batch.id, status: "CANCELLED" })} title="Bekor qilish" aria-label="Partiyani bekor qilish">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>

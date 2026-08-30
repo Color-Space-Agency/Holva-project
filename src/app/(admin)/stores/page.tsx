@@ -1,7 +1,7 @@
 import { StoresClient } from "@/components/stores/stores-client"
 
 export const metadata = {
-  title: "Mijozlar (Do'konlar) - Holva Factory CRM",
+  title: "Mijozlar (Do'konlar)",
 }
 
 export default function StoresPage() {

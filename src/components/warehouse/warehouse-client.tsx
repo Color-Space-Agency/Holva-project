@@ -133,7 +133,7 @@ export function WarehouseClient() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => setAdjustItem(item)} title="Korrektirovka">
+                      <Button variant="ghost" size="icon" onClick={() => setAdjustItem(item)} title="Korrektirovka" aria-label="Qoldiqni korrektirovka qilish">
                         <ArrowRightLeft className="h-4 w-4" />
                       </Button>
                     </div>

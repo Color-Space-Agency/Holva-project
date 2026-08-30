@@ -1,7 +1,7 @@
 import { DeliveriesClient } from "@/components/delivery/deliveries-client"
 
 export const metadata = {
-  title: "Yetkazmalar - Holva Factory CRM",
+  title: "Yetkazmalar",
 }
 
 export default function DeliveriesPage() {

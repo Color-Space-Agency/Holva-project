@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { AttendanceClient } from "@/components/hr/attendance-client";
 
 export const metadata: Metadata = {
-  title: "Attendance | Holva Factory CRM",
+  title: "Davomat",
   description: "Manage HR employee attendance",
 };
 

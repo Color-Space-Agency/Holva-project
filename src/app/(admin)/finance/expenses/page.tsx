@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { ExpensesClient } from "@/components/finance/expenses-client";
 
 export const metadata: Metadata = {
-  title: "Xarajatlar | Holva Factory CRM",
+  title: "Xarajatlar",
   description: "Zavod xarajatlarini boshqarish",
 };
 

@@ -194,10 +194,10 @@ export function EmployeesClient() {
                       {formatCurrency(emp.salary_amount)} <span className="text-xs text-gray-400 font-normal">/{emp.salary_type === "MONTHLY" ? "oy" : "soat"}</span>
                     </td>
                     <td className="px-4 py-3.5 text-right space-x-1">
-                      <Button variant="ghost" size="icon" className="rounded-xl text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-gray-800" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }} title="Tahrirlash">
+                      <Button variant="ghost" size="icon" className="rounded-xl text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-gray-800" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }} title="Tahrirlash" aria-label="Xodimni tahrirlash">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" onClick={() => setDeletingId(emp.id)} title="O'chirish">
+                      <Button variant="ghost" size="icon" className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" onClick={() => setDeletingId(emp.id)} title="O'chirish" aria-label="Xodimni o'chirish">
                         <Trash className="h-4 w-4" />
                       </Button>
                     </td>

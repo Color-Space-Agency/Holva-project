@@ -321,6 +321,7 @@ export function RecipeFormDialog({ open, onOpenChange }: { open: boolean; onOpen
                       size="icon"
                       onClick={() => remove(index)}
                       className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-xl"
+                      aria-label="Ingredientni o'chirish"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -379,6 +379,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                       size="icon"
                       className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
                       onClick={() => removeItem(index)}
+                      aria-label="Mahsulotni buyurtmadan o'chirish"
                     >
                       <Trash className="h-4 w-4" />
                     </Button>

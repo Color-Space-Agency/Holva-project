@@ -55,7 +55,7 @@ export function AgentStoreDetail({ storeId }: { storeId: string }) {
     <div className="relative min-h-screen pb-24 max-w-lg mx-auto">
       <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-5 pt-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center gap-3 mb-5">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl" onClick={() => router.back()} aria-label="Orqaga qaytish">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-bold truncate">{store.name}</h1>

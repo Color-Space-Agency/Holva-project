@@ -5,6 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isRealSupabaseConfigured, INITIAL_PRODUCTS } from "@/lib/mock-data";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Retsept tafsilotlari",
+};
+
 export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   

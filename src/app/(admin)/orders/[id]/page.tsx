@@ -3,7 +3,7 @@ import { isRealSupabaseConfigured } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata = {
-  title: "Sotuv Hujjati - Holva Factory CRM",
+  title: "Sotuv Hujjati",
 }
 
 export default async function OrderDetailPage(props: { params: Promise<{ id: string }> }) {

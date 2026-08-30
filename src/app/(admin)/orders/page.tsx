@@ -1,7 +1,7 @@
 import { OrdersClient } from "@/components/orders/orders-client"
 
 export const metadata = {
-  title: "Sotuv bo'limi - Holva Factory CRM",
+  title: "Sotuv bo'limi",
 }
 
 export default function OrdersPage() {

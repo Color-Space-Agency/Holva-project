@@ -3,7 +3,7 @@ import { INITIAL_STORES } from "@/lib/mock-data"
 import { notFound } from "next/navigation"
 
 export const metadata = {
-  title: "Akt Sverka Batafsil - Holva Factory CRM",
+  title: "Akt Sverka Batafsil",
 }
 
 export default async function AktSverkaDetailPage({ params }: { params: Promise<{ id: string }> }) {

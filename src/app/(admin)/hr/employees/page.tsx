@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { EmployeesClient } from "@/components/hr/employees-client";
 
 export const metadata: Metadata = {
-  title: "Employees | Holva Factory CRM",
+  title: "Xodimlar",
   description: "Manage HR employees",
 };
 

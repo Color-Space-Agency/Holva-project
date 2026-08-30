@@ -1,5 +1,11 @@
 import { RecipesClient } from "@/components/recipes/recipes-client";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Retseptlar",
+};
+
 export default function RecipesPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

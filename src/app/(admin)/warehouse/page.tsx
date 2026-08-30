@@ -1,5 +1,11 @@
 import { WarehouseClient } from "@/components/warehouse/warehouse-client";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Ombor",
+};
+
 export default function WarehousePage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

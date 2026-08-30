@@ -10,17 +10,21 @@ export async function POST(request: NextRequest) {
     const cleanUser = username.trim().toLowerCase();
     const cleanPass = password.trim();
 
-    if (!cleanUser || (!cleanPass && !(cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz"))) {
+    // Faqat development/preview muhitida ishlaydigan vaqtinchalik parolsiz kirish.
+    // Production'da (NODE_ENV=production) bu yo'l butunlay yopiladi.
+    const isDevBypassAllowed = process.env.NODE_ENV !== "production";
+    const isSuperAdminUsername =
+      cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz";
+
+    if (!cleanUser || (!cleanPass && !(isDevBypassAllowed && isSuperAdminUsername))) {
       return NextResponse.json(
         { error: "Foydalanuvchi nomi va parol majburiy" },
         { status: 400 }
       );
     }
 
-    // 1. Super Admin (SUPER ADMIN / 0321 yoki admin / Admin123! - Vaqtinchalik parolsiz ruxsat)
-    if (
-      cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz"
-    ) {
+    // 1. Super Admin (SUPER ADMIN / 0321 yoki admin / Admin123! - Vaqtinchalik parolsiz ruxsat, faqat dev/preview'da)
+    if (isDevBypassAllowed && isSuperAdminUsername) {
       const response = NextResponse.json({
         success: true,
         user: {

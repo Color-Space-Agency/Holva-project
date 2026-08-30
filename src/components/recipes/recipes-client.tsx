@@ -212,10 +212,10 @@ export function RecipesClient() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" asChild>
+                      <Button variant="ghost" size="icon" asChild aria-label="Retseptni ko'rish">
                         <Link href={`/recipes/${recipe.id}`}><Eye className="h-4 w-4" /></Link>
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(recipe.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(recipe.id)} aria-label="Retseptni o'chirish">
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
