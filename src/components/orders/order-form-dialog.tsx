@@ -189,7 +189,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-3xl p-6">
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto rounded-3xl p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
             Yangi Sotuv Rasmiylashtirish (1C Faktura)

@@ -64,14 +64,14 @@ const navItems: NavItem[] = [
   {
     label: "Retseptlar",
     href: "/recipes",
-    icon: FlaskConical,
+    icon: ClipboardList,
   },
   {
     label: "Xomashyo",
     icon: Boxes,
     children: [
       { label: "Xomashyolar", href: "/raw-materials", icon: Boxes },
-      { label: "Ta'minotchilar", href: "/raw-materials/suppliers", icon: Store },
+      { label: "Ta'minotchilar", href: "/raw-materials/suppliers", icon: Truck },
     ],
   },
   {
@@ -96,7 +96,7 @@ const navItems: NavItem[] = [
     icon: ShoppingCart,
     children: [
       { label: "Sotuvlar", href: "/orders", icon: ShoppingCart },
-      { label: "Mijozlar (Do'konlar)", href: "/stores", icon: Store },
+      { label: "Mijozlar (Do'konlar)", href: "/stores", icon: Truck },
       { label: "Akt Sverka", href: "/akt-sverka", icon: FileCheck2 },
     ],
   },
@@ -119,12 +119,12 @@ const navItems: NavItem[] = [
   },
   {
     label: "Moliya",
-    icon: DollarSign,
+    icon: Banknote,
     roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
     children: [
       { label: "Kassa", href: "/finance/cash", icon: Banknote },
       { label: "Kirim", href: "/finance/income", icon: TrendingUp },
-      { label: "Chiqim", href: "/finance/expenses", icon: DollarSign },
+      { label: "Chiqim", href: "/finance/expenses", icon: Banknote },
       { label: "Sotuv to'lovlari", href: "/finance/payments", icon: Receipt },
     ],
   },
@@ -199,7 +199,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
         {(!collapsed || isMobile) && (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="flex-shrink-0 w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center shadow-sm">
+            <div className="flex-shrink-0 w-8 h-8 bg-amber-600 rounded-xl flex items-center justify-center shadow-sm">
               <span className="text-sm font-bold text-white">H</span>
             </div>
             <div className="min-w-0">
@@ -212,7 +212,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
         )}
 
         {collapsed && !isMobile && (
-          <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center shadow-sm mx-auto">
+          <div className="w-8 h-8 bg-amber-600 rounded-xl flex items-center justify-center shadow-sm mx-auto">
             <span className="text-sm font-bold text-white">H</span>
           </div>
         )}
@@ -252,7 +252,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-left",
                     hasActive
-                      ? "text-violet-600 dark:text-violet-400 bg-violet-50/50 dark:bg-violet-950/20"
+                      ? "text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50",
                     collapsed && !isMobile && "justify-center px-2"
                   )}
@@ -262,7 +262,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
                     size={18}
                     className={cn(
                       "flex-shrink-0",
-                      hasActive ? "text-violet-600 dark:text-violet-400" : "text-gray-400"
+                      hasActive ? "text-amber-600 dark:text-amber-400" : "text-gray-400"
                     )}
                   />
                   {(!collapsed || isMobile) && (
@@ -291,7 +291,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
                           className={cn(
                             "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150",
                             isActive
-                              ? "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 font-semibold"
+                              ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 font-semibold"
                               : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/30"
                           )}
                         >
@@ -316,7 +316,7 @@ export function AdminSidebar({ profile, mobileOpen, onCloseMobile }: AdminSideba
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-violet-600 text-white shadow-sm shadow-violet-500/20"
+                  ? "bg-amber-600 text-white shadow-sm shadow-amber-500/20"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50",
                 collapsed && !isMobile && "justify-center px-2"
               )}

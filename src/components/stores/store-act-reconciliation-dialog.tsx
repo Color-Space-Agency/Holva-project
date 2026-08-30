@@ -334,8 +334,8 @@ export function StoreActReconciliationDialog({
           </div>
 
           {/* Solishtirma Amallari Jadvali */}
-          <div className="border rounded-2xl overflow-hidden shadow-xs">
-            <table className="w-full text-xs sm:text-sm text-left border-collapse">
+          <div className="border rounded-2xl overflow-x-auto shadow-xs">
+            <table className="w-full min-w-[800px] text-xs sm:text-sm text-left border-collapse">
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b">
                 <tr>
                   <th className="p-2.5 sm:p-3 w-10 text-center">№</th>

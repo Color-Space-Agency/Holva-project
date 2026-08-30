@@ -221,7 +221,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
           </div>
 
           {/* Desktop Tezkor Qidiruv */}
-          <div className="hidden xl:flex items-center bg-gray-50 dark:bg-gray-800/60 rounded-xl px-3.5 py-1.5 border border-gray-100 dark:border-gray-800 text-xs w-64 focus-within:ring-2 focus-within:ring-violet-500 transition-all">
+          <div className="hidden xl:flex items-center bg-gray-50 dark:bg-gray-800/60 rounded-xl px-3.5 py-1.5 border border-gray-100 dark:border-gray-800 text-xs w-64 focus-within:ring-2 focus-within:ring-amber-500 transition-all">
             <Search size={14} className="text-gray-400 flex-shrink-0 mr-2" />
             <input
               type="text"
@@ -281,7 +281,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
 
           {/* Profil ma'lumotlari */}
           <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-gray-100 dark:border-gray-800">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-violet-500/20">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-amber-500/20">
               {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : "A"}
             </div>
             <div className="hidden sm:block text-left">

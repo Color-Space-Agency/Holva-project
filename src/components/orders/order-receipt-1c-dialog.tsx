@@ -53,7 +53,7 @@ export function OrderReceipt1CDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[96vw] sm:max-w-3xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
+      <DialogContent className="max-w-[96vw] sm:max-w-3xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
         <DialogHeader className="print:hidden border-b pb-4 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
