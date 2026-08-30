@@ -221,7 +221,7 @@ export function DashboardStats() {
 
   const stats: StatCardProps[] = [
     {
-      title: "Bugungi buyurtmalar",
+      title: "Bugungi sotuvlar",
       value: `${data?.todayOrders ?? 24} ta`,
       icon: ShoppingCart,
       color: "text-blue-600 dark:text-blue-400",

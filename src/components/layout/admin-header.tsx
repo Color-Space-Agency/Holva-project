@@ -98,7 +98,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
     production: "Ishlab chiqarish",
     planning: "Rejalashtirish",
     stores: "Do'konlar",
-    orders: "Sotuv bo'limi",
+    orders: "Sotuvlar",
     delivery: "Yetkazib berish",
     hr: "Ishxona",
     employees: "Ishchilar",

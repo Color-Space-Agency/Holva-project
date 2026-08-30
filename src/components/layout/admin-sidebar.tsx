@@ -95,7 +95,7 @@ const navItems: NavItem[] = [
     icon: Store,
   },
   {
-    label: "Sotuv bo'limi",
+    label: "Sotuvlar",
     href: "/orders",
     icon: ShoppingCart,
   },
