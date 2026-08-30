@@ -92,14 +92,13 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Do'konlar",
-    href: "/stores",
-    icon: Store,
-  },
-  {
     label: "Sotuv bo'limi",
-    href: "/orders",
     icon: ShoppingCart,
+    children: [
+      { label: "Sotuvlar", href: "/orders", icon: ShoppingCart },
+      { label: "Mijozlar (Do'konlar)", href: "/stores", icon: Store },
+      { label: "Akt Sverka", href: "/akt-sverka", icon: FileCheck2 },
+    ],
   },
   {
     label: "Yetkazib berish",
@@ -124,7 +123,6 @@ const navItems: NavItem[] = [
     roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
     children: [
       { label: "Kassa", href: "/finance/cash", icon: Banknote },
-      { label: "Akt Sverka", href: "/akt-sverka", icon: FileCheck2 },
       { label: "Kirim", href: "/finance/income", icon: TrendingUp },
       { label: "Chiqim", href: "/finance/expenses", icon: DollarSign },
       { label: "Sotuv to'lovlari", href: "/finance/payments", icon: Receipt },
