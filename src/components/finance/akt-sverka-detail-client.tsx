@@ -47,9 +47,21 @@ export function AktSverkaDetailClient({ store }: Props) {
       
       orders.forEach((ord: any) => {
         const ordDate = ord.created_at ? ord.created_at.split("T")[0] : "2026-08-29"
-        const agentName = ord.agent_name || (ord.profiles?.first_name ? `${ord.profiles.first_name} ${ord.profiles.last_name || ''}`.trim() : "Sardor Rahimov")
-        const isEdited = Boolean(ord.updated_at && ord.created_at && ord.updated_at !== ord.created_at && !isNaN(new Date(ord.updated_at).getTime()))
-        const editedAtStr = isEdited ? new Date(ord.updated_at).toLocaleString('uz-UZ') : null
+        const agentName = ord.agent_name || (ord.profiles?.first_name ? `${ord.profiles.first_name} ${ord.profiles.last_name || ''}`.trim() : null) || "Sardor Rahimov"
+        
+        let editedAtStr: string | null = null
+        if (ord.updated_at && ord.created_at && ord.updated_at !== ord.created_at) {
+          try {
+            const cTime = new Date(ord.created_at).getTime()
+            const uTime = new Date(ord.updated_at).getTime()
+            if (!isNaN(cTime) && !isNaN(uTime) && uTime > cTime) {
+              const formatted = formatDateTime(ord.updated_at)
+              if (formatted && !formatted.toLowerCase().includes("invalid") && formatted !== "—") {
+                editedAtStr = formatted
+              }
+            }
+          } catch {}
+        }
         
         // Debit
         if (ord.order_items && ord.order_items.length > 0) {
@@ -59,7 +71,7 @@ export function AktSverkaDetailClient({ store }: Props) {
               list.push({
                 id: `ord-${ord.id}-item-${idx}`,
                 date: ordDate,
-                fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+                fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
                 timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + idx,
                 docNumber: ord.order_number,
                 docType: "Mahsulot xaridi",
@@ -68,7 +80,7 @@ export function AktSverkaDetailClient({ store }: Props) {
                 debit: itemTotal,
                 credit: 0,
                 editedAt: editedAtStr,
-                editedBy: isEdited ? "Super Admin" : null,
+                editedBy: editedAtStr ? "Super Admin" : null,
               })
             }
           })
@@ -76,7 +88,7 @@ export function AktSverkaDetailClient({ store }: Props) {
           list.push({
             id: `ord-${ord.id}`,
             date: ordDate,
-            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
             timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()),
             docNumber: ord.order_number,
             docType: "Umumiy xarid",
@@ -85,7 +97,7 @@ export function AktSverkaDetailClient({ store }: Props) {
             debit: ord.total_amount,
             credit: 0,
             editedAt: editedAtStr,
-            editedBy: isEdited ? "Super Admin" : null,
+            editedBy: editedAtStr ? "Super Admin" : null,
           })
         }
         
@@ -94,7 +106,7 @@ export function AktSverkaDetailClient({ store }: Props) {
           list.push({
             id: `pay-${ord.id}`,
             date: ordDate,
-            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
             timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + 1000,
             docNumber: `TOL-${ord.order_number.split("-").pop()}`,
             docType: "To'lov qabuli",
@@ -253,7 +265,9 @@ export function AktSverkaDetailClient({ store }: Props) {
                     </TableCell>
                     <TableCell>
                       <div className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">{item.description}</div>
-                      <Badge variant="outline" className="mt-1 text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">{item.docType}</Badge>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                        {item.docType || "Harakat"}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right font-medium text-red-600 dark:text-red-400 whitespace-nowrap">
                       {item.debit > 0 ? formatCurrency(item.debit) : "-"}
