@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Bell, CheckCheck, AlertTriangle, ShoppingCart, DollarSign, Package, Factory, Trash2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +19,7 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-1",
     title: "Yangi sotuv qabul qilindi",
-    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi buyurtma yaratildi.",
+    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi sotuv rasmiylashtirildi.",
     type: "ORDER",
     time: "10 daqiqa oldin",
     read: false,
@@ -27,7 +27,7 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-2",
     title: "Xomashyo kam qoldi ogohlantirishi!",
-    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya buyurtma qilish tavsiya etiladi.",
+    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya sotib olish tavsiya etiladi.",
     type: "STOCK",
     time: "45 daqiqa oldin",
     read: false,
@@ -50,28 +50,118 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   },
 ]
 
-export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(DEFAULT_NOTIFICATIONS)
+const STORAGE_KEY = "holva_crm_notifications"
+const READ_IDS_KEY = "holva_crm_notifications_read"
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch("/api/sync/notifications", { cache: "no-store" })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && Array.isArray(data.notifications)) {
-          setNotifications(data.notifications)
-        }
-      }
-    } catch (e) {
-      console.error("fetchNotifications error:", e)
+function getStoredNotifications(): NotificationItem[] {
+  if (typeof window === "undefined") return DEFAULT_NOTIFICATIONS
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored) as NotificationItem[]
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
     }
-  }
+  } catch {}
+  return DEFAULT_NOTIFICATIONS
+}
 
+function getReadIds(): Set<string> {
+  if (typeof window === "undefined") return new Set()
+  try {
+    const stored = localStorage.getItem(READ_IDS_KEY)
+    if (stored) {
+      return new Set(JSON.parse(stored))
+    }
+  } catch {}
+  return new Set()
+}
+
+function saveNotifications(notifications: NotificationItem[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications))
+    // Also save read IDs separately for cross-tab consistency
+    const readIds = notifications.filter(n => n.read).map(n => n.id)
+    localStorage.setItem(READ_IDS_KEY, JSON.stringify(readIds))
+    // Dispatch event for header badge sync
+    window.dispatchEvent(new CustomEvent("notifications-updated", { detail: { notifications } }))
+  } catch {}
+}
+
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const initializedRef = useRef(false)
+
+  // Initialize from localStorage once on mount
   useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 3000)
-    return () => clearInterval(interval)
+    if (initializedRef.current) return
+    initializedRef.current = true
+    
+    const stored = getStoredNotifications()
+    const readIds = getReadIds()
+    // Apply read state from localStorage
+    const merged = stored.map(n => ({
+      ...n,
+      read: readIds.has(n.id) ? true : n.read,
+    }))
+    setNotifications(merged)
+    saveNotifications(merged)
   }, [])
+
+  // Listen for cross-tab storage events
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (Array.isArray(parsed)) setNotifications(parsed)
+        } catch {}
+      }
+    }
+    window.addEventListener("storage", handleStorage)
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [])
+
+  // Sync with server — but NEVER overwrite local read state
+  useEffect(() => {
+    const fetchAndMerge = async () => {
+      try {
+        const res = await fetch("/api/sync/notifications", { cache: "no-store" })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.notifications)) {
+            const readIds = getReadIds()
+            // Merge server notifications but preserve local read state
+            const serverNotifs = data.notifications as NotificationItem[]
+            const localMap = new Map(notifications.map(n => [n.id, n]))
+            
+            // Find truly NEW notifications from server (not in local)
+            const newFromServer = serverNotifs.filter(sn => !localMap.has(sn.id))
+            
+            if (newFromServer.length > 0) {
+              const merged = [...newFromServer, ...notifications]
+              // Apply read IDs 
+              const final = merged.map(n => ({
+                ...n,
+                read: readIds.has(n.id) ? true : n.read,
+              }))
+              setNotifications(final)
+              saveNotifications(final)
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // Only poll every 10 seconds (not 3s) to reduce server thrashing
+    const interval = setInterval(fetchAndMerge, 10000)
+    // Initial fetch after 2 seconds
+    const timeout = setTimeout(fetchAndMerge, 2000)
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [notifications])
 
   const getIcon = (type: NotificationItem["type"]) => {
     switch (type) {
@@ -87,7 +177,9 @@ export default function NotificationsPage() {
   }
 
   const markAllAsRead = async () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })))
+    const updated = notifications.map((n) => ({ ...n, read: true }))
+    setNotifications(updated)
+    saveNotifications(updated)
     toast.success("Barcha bildirishnomalar o'qilgan deb belgilandi")
     try {
       await fetch("/api/sync/notifications", {
@@ -99,7 +191,9 @@ export default function NotificationsPage() {
   }
 
   const markAsRead = async (id: string) => {
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    const updated = notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
+    setNotifications(updated)
+    saveNotifications(updated)
     try {
       await fetch("/api/sync/notifications", {
         method: "POST",
@@ -111,6 +205,7 @@ export default function NotificationsPage() {
 
   const clearAll = async () => {
     setNotifications([])
+    saveNotifications([])
     toast.success("Bildirishnomalar tozalandi")
     try {
       await fetch("/api/sync/notifications", {
@@ -121,6 +216,8 @@ export default function NotificationsPage() {
     } catch {}
   }
 
+  const unreadCount = notifications.filter(n => !n.read).length
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -128,6 +225,11 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Bell className="h-7 w-7 text-amber-600" />
             Tizim Bildirishnomalari
+            {unreadCount > 0 && (
+              <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">
+                {unreadCount}
+              </Badge>
+            )}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Yangi sotuvlar, ombor qoldiqlari, to&apos;lovlar va muhim zavod voqealari

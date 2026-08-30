@@ -50,8 +50,37 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
 
   useEffect(() => setMounted(true), [])
 
+  // Notification badge count — reads from localStorage first, then server as fallback
   useEffect(() => {
-    const fetchNotifCount = async () => {
+    const getLocalUnreadCount = (): number => {
+      try {
+        const stored = localStorage.getItem("holva_crm_notifications")
+        if (stored) {
+          const notifications = JSON.parse(stored)
+          if (Array.isArray(notifications)) {
+            const readIds = new Set<string>()
+            try {
+              const readStored = localStorage.getItem("holva_crm_notifications_read")
+              if (readStored) {
+                const parsed = JSON.parse(readStored)
+                if (Array.isArray(parsed)) parsed.forEach((id: string) => readIds.add(id))
+              }
+            } catch {}
+            return notifications.filter((n: any) => !n.read && !readIds.has(n.id)).length
+          }
+        }
+      } catch {}
+      return -1 // -1 means no local data, will fallback to server
+    }
+
+    const refreshBadge = async () => {
+      // Try localStorage first (instant, matches notifications page state)
+      const localCount = getLocalUnreadCount()
+      if (localCount >= 0) {
+        setUnreadNotifCount(localCount)
+        return
+      }
+      // Fallback to server
       try {
         const res = await fetch("/api/sync/notifications", { cache: "no-store" })
         if (res.ok) {
@@ -62,9 +91,37 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
         }
       } catch {}
     }
-    fetchNotifCount()
-    const interval = setInterval(fetchNotifCount, 5000)
-    return () => clearInterval(interval)
+
+    refreshBadge()
+    const interval = setInterval(refreshBadge, 5000)
+
+    // Listen for notifications-updated custom event from notifications page
+    const handleNotifUpdate = (e: CustomEvent<{ notifications: any[] }>) => {
+      if (e.detail?.notifications) {
+        const readIds = new Set<string>()
+        try {
+          const readStored = localStorage.getItem("holva_crm_notifications_read")
+          if (readStored) JSON.parse(readStored).forEach((id: string) => readIds.add(id))
+        } catch {}
+        const count = e.detail.notifications.filter((n: any) => !n.read && !readIds.has(n.id)).length
+        setUnreadNotifCount(count)
+      }
+    }
+    window.addEventListener("notifications-updated" as any, handleNotifUpdate)
+
+    // Listen for cross-tab storage changes
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_notifications" || e.key === "holva_crm_notifications_read") {
+        refreshBadge()
+      }
+    }
+    window.addEventListener("storage", handleStorage)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener("notifications-updated" as any, handleNotifUpdate)
+      window.removeEventListener("storage", handleStorage)
+    }
   }, [])
 
   useEffect(() => {
@@ -98,7 +155,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
     production: "Ishlab chiqarish",
     planning: "Rejalashtirish",
     stores: "Do'konlar",
-    orders: "Sotuvlar",
+    orders: "Sotuv bo'limi",
     delivery: "Yetkazib berish",
     hr: "Ishxona",
     employees: "Ishchilar",

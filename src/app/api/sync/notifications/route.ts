@@ -14,7 +14,7 @@ const DEFAULT_SERVER_NOTIFICATIONS: ServerNotificationItem[] = [
   {
     id: "notif-1",
     title: "Yangi sotuv qabul qilindi",
-    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi buyurtma yaratildi.",
+    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi sotuv rasmiylashtirildi.",
     type: "ORDER",
     time: "10 daqiqa oldin",
     read: false,
@@ -23,7 +23,7 @@ const DEFAULT_SERVER_NOTIFICATIONS: ServerNotificationItem[] = [
   {
     id: "notif-2",
     title: "Xomashyo kam qoldi ogohlantirishi!",
-    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya buyurtma qilish tavsiya etiladi.",
+    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya sotib olish tavsiya etiladi.",
     type: "STOCK",
     time: "45 daqiqa oldin",
     read: false,

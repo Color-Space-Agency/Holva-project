@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Search, MoreHorizontal, Eye, Edit, Trash, Pencil } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Eye, Edit, Trash, Pencil, FileCheck2, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -32,11 +32,14 @@ import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
 import { toast } from "sonner"
 import Link from "next/link"
 import { getStoredOrders, deleteStoredOrder, isRealSupabaseConfigured, syncOrdersFromServer } from "@/lib/mock-data"
+import { StoreActReconciliationDialog } from "@/components/stores/store-act-reconciliation-dialog"
 
 export function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deletingOrder, setDeletingOrder] = useState<any>(null)
+  const [isAktSverkaOpen, setIsAktSverkaOpen] = useState(false)
+  const [aktSverkaStore, setAktSverkaStore] = useState<{ id: string; name: string } | null>(null)
   const supabase = createClient()
 
   const { data: orders, isLoading, refetch } = useQuery({
@@ -170,6 +173,7 @@ export function OrdersClient() {
               <TableHead>Summa</TableHead>
               <TableHead>Holat</TableHead>
               <TableHead>To&apos;lov</TableHead>
+              <TableHead>Qarzdorlik</TableHead>
               <TableHead className="text-right">Amallar</TableHead>
             </TableRow>
           </TableHeader>
@@ -204,9 +208,27 @@ export function OrdersClient() {
                 <TableCell>
                   <OrderPaymentStatusBadge status={order.payment_status} />
                 </TableCell>
+                <TableCell>
+                  {(() => {
+                    const debt = (order.total_amount || 0) - (order.paid_amount || 0)
+                    if (debt <= 0) return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px]">Qarz yo&apos;q</Badge>
+                    return (
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                        <span className="text-xs font-bold text-red-600 dark:text-red-400">{formatCurrency(debt)}</span>
+                      </div>
+                    )
+                  })()}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs text-amber-600 hover:bg-amber-50 cursor-pointer">
+                      <Link href={`/orders/${order.id}`}>
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        Ko&apos;rish
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs text-blue-600 hover:bg-blue-50 cursor-pointer">
                       <Link href={`/orders/${order.id}`}>
                         <Pencil className="w-3.5 h-3.5 mr-1" />
                         Tahrirlash
@@ -233,6 +255,18 @@ export function OrdersClient() {
                             Tahrirlash
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setAktSverkaStore({
+                              id: order.stores?.name || order.id,
+                              name: order.stores?.name || "Do'kon",
+                            })
+                            setIsAktSverkaOpen(true)
+                          }}
+                        >
+                          <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
+                          Akt Sverka (Solishtirma)
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
                           <Trash className="mr-2 h-4 w-4" />
@@ -246,7 +280,7 @@ export function OrdersClient() {
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   Sotuvlar topilmadi
                 </TableCell>
               </TableRow>
@@ -265,8 +299,15 @@ export function OrdersClient() {
         onOpenChange={(open) => !open && setDeletingOrder(null)}
         onConfirm={handleDelete}
         title="Sotuvni o'chirish"
-        description="Haqiqatan ham bu sotuv buyurtmasini o'chirmoqchimisiz?"
+        description="Haqiqatan ham bu sotuv hujjatini o'chirmoqchimisiz?"
       />
+      {aktSverkaStore && (
+        <StoreActReconciliationDialog
+          open={isAktSverkaOpen}
+          onOpenChange={setIsAktSverkaOpen}
+          store={{ id: aktSverkaStore.id, name: aktSverkaStore.name }}
+        />
+      )}
     </div>
   )
 }
