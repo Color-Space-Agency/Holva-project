@@ -10,17 +10,16 @@ export async function POST(request: NextRequest) {
     const cleanUser = username.trim().toLowerCase();
     const cleanPass = password.trim();
 
-    if (!cleanUser || !cleanPass) {
+    if (!cleanUser || (!cleanPass && !(cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz"))) {
       return NextResponse.json(
         { error: "Foydalanuvchi nomi va parol majburiy" },
         { status: 400 }
       );
     }
 
-    // 1. Super Admin (SUPER ADMIN / 0321 yoki admin / Admin123!)
+    // 1. Super Admin (SUPER ADMIN / 0321 yoki admin / Admin123! - Vaqtinchalik parolsiz ruxsat)
     if (
-      ((cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz") && cleanPass === "0321") ||
-      (cleanUser === "admin" && cleanPass === "Admin123!")
+      cleanUser === "super admin" || cleanUser === "superadmin" || cleanUser === "admin" || cleanUser === "admin@holva.uz"
     ) {
       const response = NextResponse.json({
         success: true,
