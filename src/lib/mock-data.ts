@@ -403,7 +403,7 @@ export function getStoredProducts(): MockProduct[] {
     const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
     }
   } catch (e) {
     console.error("Error reading stored products:", e)
@@ -414,13 +414,59 @@ export function getStoredProducts(): MockProduct[] {
   return INITIAL_PRODUCTS
 }
 
+export async function syncProductsFromServer(): Promise<MockProduct[]> {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  try {
+    const res = await fetch("/api/sync/products", { cache: "no-store" })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+        const local = getStoredProducts()
+        // Merge: agar localda rasm o'zgargan bo'lsa uni ustun qo'yish
+        const map = new Map<string, MockProduct>()
+        data.products.forEach((p: MockProduct) => map.set(p.id, p))
+        local.forEach((p: MockProduct) => {
+          if (map.has(p.id)) {
+            const serverItem = map.get(p.id)!
+            map.set(p.id, {
+              ...serverItem,
+              ...p,
+              image_url: p.image_url || serverItem.image_url,
+            })
+          } else {
+            map.set(p.id, p)
+          }
+        })
+        const merged = Array.from(map.values())
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(merged))
+        window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: merged } }))
+        return merged
+      }
+    }
+  } catch (e) {
+    console.error("syncProductsFromServer error:", e)
+  }
+  return getStoredProducts()
+}
+
 export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }): MockProduct[] {
   if (typeof window === "undefined") return INITIAL_PRODUCTS
   const list = getStoredProducts()
   const updatedList = list.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
   try {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+    window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
+
+  // Serverga yuborish
+  try {
+    fetch("/api/sync/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", product: updated }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -434,7 +480,18 @@ export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: st
   const updatedList = [product, ...list]
   try {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+    window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
+
+  // Serverga yuborish
+  try {
+    fetch("/api/sync/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", product }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -444,7 +501,18 @@ export function deleteStoredProduct(id: string): MockProduct[] {
   const updatedList = list.filter((item) => item.id !== id)
   try {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
+    window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
+
+  // Serverga yuborish
+  try {
+    fetch("/api/sync/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", productId: id }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 

@@ -44,10 +44,28 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [unreadNotifCount, setUnreadNotifCount] = useState(2)
   const pathname = usePathname()
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    const fetchNotifCount = async () => {
+      try {
+        const res = await fetch("/api/sync/notifications", { cache: "no-store" })
+        if (res.ok) {
+          const data = await res.json()
+          if (typeof data.unreadCount === "number") {
+            setUnreadNotifCount(data.unreadCount)
+          }
+        }
+      } catch {}
+    }
+    fetchNotifCount()
+    const interval = setInterval(fetchNotifCount, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -80,7 +98,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
     production: "Ishlab chiqarish",
     planning: "Rejalashtirish",
     stores: "Do'konlar",
-    orders: "Buyurtmalar",
+    orders: "Sotuv bo'limi",
     delivery: "Yetkazib berish",
     hr: "Ishxona",
     employees: "Ishchilar",
@@ -185,7 +203,11 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
             aria-label="Bildirishnomalar"
           >
             <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
+                {unreadNotifCount}
+              </span>
+            )}
           </Link>
 
           {/* Tun / Kun Rejimi */}

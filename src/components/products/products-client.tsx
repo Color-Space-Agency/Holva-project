@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { Plus, Search, Edit2, Trash2, Archive, Copy, Package, Filter, MoreVertical } from "lucide-react"
+import { Plus, Search, Edit2, Trash2, Archive, Copy, Package, Filter, MoreVertical, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,7 @@ import {
   saveStoredProduct,
   createStoredProduct,
   deleteStoredProduct,
+  syncProductsFromServer,
 } from "@/lib/mock-data"
 
 async function fetchProducts(): Promise<Product[]> {
@@ -62,11 +63,13 @@ async function fetchProducts(): Promise<Product[]> {
     minimum_order_qty: 1,
     weight_gross: null,
     weight_net: null,
-    image_url: p.image_url,
-    status: p.status,
+    packaging_type: "Korobka",
+    package_weight: 0.5,
     shelf_life_days: 180,
     storage_conditions: "Salqin va quruq joyda",
     notes: null,
+    image_url: p.image_url || null,
+    status: p.status,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     created_by: null,
@@ -92,15 +95,43 @@ const statusLabels = {
 export function ProductsClient() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("ALL")
+  const [statusFilter, setStatusFilter] = useState("ALL")
   const [createOpen, setCreateOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
 
-  const { data: products = [], isLoading, error } = useQuery({
+  const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
+    staleTime: 30 * 1000,
   })
+
+  // Real-time server synchronization for products and images
+  useEffect(() => {
+    syncProductsFromServer().then(() => refetch())
+
+    const handleProductsUpdated = () => {
+      refetch()
+    }
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_stored_products") {
+        refetch()
+      }
+    }
+
+    window.addEventListener("products-updated", handleProductsUpdated)
+    window.addEventListener("storage", handleStorage)
+
+    const interval = setInterval(() => {
+      syncProductsFromServer().then(() => refetch())
+    }, 3000)
+
+    return () => {
+      window.removeEventListener("products-updated", handleProductsUpdated)
+      window.removeEventListener("storage", handleStorage)
+      clearInterval(interval)
+    }
+  }, [refetch])
 
   const deleteMutation = useMutation({
     mutationFn: async (product: Product) => {
@@ -268,7 +299,16 @@ export function ProductsClient() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{product.name}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">{product.name}</h3>
+                        <button
+                          onClick={() => setEditProduct(product)}
+                          className="p-1 hover:bg-amber-100 dark:hover:bg-amber-950/50 rounded-md text-gray-400 hover:text-amber-600 transition cursor-pointer"
+                          title="Mahsulotni tahrirlash"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-400 mt-0.5">SKU: {product.sku}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${statusColors[product.status]}`}>
@@ -309,10 +349,10 @@ export function ProductsClient() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 gap-1.5 text-xs"
+                  className="flex-1 gap-1.5 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100"
                   onClick={() => setEditProduct(product)}
                 >
-                  <Edit2 size={13} />
+                  <Pencil size={13} className="text-amber-600" />
                   Tahrirlash
                 </Button>
                 <Button

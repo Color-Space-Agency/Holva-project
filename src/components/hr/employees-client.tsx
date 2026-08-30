@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Edit, Trash, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash, Eye, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -169,7 +169,16 @@ export function EmployeesClient() {
                           <AvatarFallback className="bg-violet-100 text-violet-700 font-bold">{emp.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-white">{emp.full_name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-gray-900 dark:text-white">{emp.full_name}</p>
+                            <button
+                              onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }}
+                              className="p-1 hover:bg-amber-100 dark:hover:bg-amber-950/50 rounded-md text-gray-400 hover:text-amber-600 transition cursor-pointer"
+                              title="Xodimni tahrirlash"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          </div>
                           <p className="text-xs text-gray-400">{emp.phone}</p>
                         </div>
                       </div>
@@ -185,10 +194,10 @@ export function EmployeesClient() {
                       {formatCurrency(emp.salary_amount)} <span className="text-xs text-gray-400 font-normal">/{emp.salary_type === "MONTHLY" ? "oy" : "soat"}</span>
                     </td>
                     <td className="px-4 py-3.5 text-right space-x-1">
-                      <Button variant="ghost" size="icon" className="rounded-xl hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-gray-800" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }}>
-                        <Edit className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="rounded-xl text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-gray-800" onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }} title="Tahrirlash">
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" onClick={() => setDeletingId(emp.id)}>
+                      <Button variant="ghost" size="icon" className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" onClick={() => setDeletingId(emp.id)} title="O'chirish">
                         <Trash className="h-4 w-4" />
                       </Button>
                     </td>

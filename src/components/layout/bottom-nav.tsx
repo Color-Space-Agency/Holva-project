@@ -7,7 +7,7 @@ import { useState } from "react";
 
 const items = [
   { icon: LayoutDashboard, label: "Bosh sahifa", href: "/dashboard", activeColor: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40" },
-  { icon: ShoppingCart, label: "Buyurtmalar", href: "/orders", activeColor: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40" },
+  { icon: ShoppingCart, label: "Sotuv", href: "/orders", activeColor: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40" },
   { icon: Store, label: "Do'konlar", href: "/stores", activeColor: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40" },
   { icon: Package, label: "Mahsulotlar", href: "/products", activeColor: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40" },
   { icon: Settings, label: "Sozlamalar", href: "/settings", activeColor: "text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800" },

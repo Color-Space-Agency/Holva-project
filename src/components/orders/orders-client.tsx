@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Search, MoreHorizontal, Eye, Edit, Trash } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Eye, Edit, Trash, Pencil } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -122,7 +122,7 @@ export function OrdersClient() {
       }
       
       deleteStoredOrder(deletingOrder.id)
-      toast.success("Buyurtma o'chirildi")
+      toast.success("Sotuv buyurtmasi o'chirildi")
       refetch()
     } catch (error) {
       toast.error("Xatolik yuz berdi")
@@ -144,18 +144,18 @@ export function OrdersClient() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative w-full sm:w-[300px]">
+        <div className="relative w-full sm:w-[320px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Qidirish (buyurtma raqami)..."
+            placeholder="Qidirish (raqam yoki do'kon)..."
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => setIsFormOpen(true)} className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white cursor-pointer shadow-sm">
           <Plus className="mr-2 h-4 w-4" />
-          Buyurtma qo'shish
+          Yangi sotuv yaratish
         </Button>
       </div>
 
@@ -165,20 +165,35 @@ export function OrdersClient() {
             <TableRow>
               <TableHead>Raqam</TableHead>
               <TableHead>Sana</TableHead>
-              <TableHead>Do'kon</TableHead>
-              <TableHead>Agent</TableHead>
+              <TableHead>Do&apos;kon</TableHead>
+              <TableHead>Sotuv Agenti</TableHead>
               <TableHead>Summa</TableHead>
               <TableHead>Holat</TableHead>
-              <TableHead>To'lov</TableHead>
+              <TableHead>To&apos;lov</TableHead>
               <TableHead className="text-right">Amallar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders?.map((order: any) => (
               <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.order_number}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <span>{order.order_number}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
+                      title="Tahrirlash / ko'rish"
+                    >
+                      <Link href={`/orders/${order.id}`}>
+                        <Pencil className="w-3 h-3" />
+                      </Link>
+                    </Button>
+                  </div>
+                </TableCell>
                 <TableCell>{formatDate(order.created_at)}</TableCell>
-                <TableCell>{order.stores?.name}</TableCell>
+                <TableCell className="font-medium">{order.stores?.name}</TableCell>
                 <TableCell>{order.profiles?.first_name} {order.profiles?.last_name}</TableCell>
                 <TableCell className="font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(order.total_amount)}
@@ -190,39 +205,49 @@ export function OrdersClient() {
                   <OrderPaymentStatusBadge status={order.payment_status} />
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Menyu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Amallar</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/orders/${order.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ko'rish
-                        </Link>
-                      </DropdownMenuItem>
-                      {order.status === 'DRAFT' && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
-                            <Trash className="mr-2 h-4 w-4" />
-                            O'chirish
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs text-amber-600 hover:bg-amber-50 cursor-pointer">
+                      <Link href={`/orders/${order.id}`}>
+                        <Pencil className="w-3.5 h-3.5 mr-1" />
+                        Tahrirlash
+                      </Link>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Menyu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Amallar</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/orders/${order.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Batafsil ko&apos;rish
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/orders/${order.id}`}>
+                            <Pencil className="mr-2 h-4 w-4 text-amber-600" />
+                            Tahrirlash
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
+                          <Trash className="mr-2 h-4 w-4" />
+                          O&apos;chirish
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
-                  Ma'lumot topilmadi
+                  Sotuvlar topilmadi
                 </TableCell>
               </TableRow>
             )}
@@ -239,8 +264,8 @@ export function OrdersClient() {
         open={!!deletingOrder}
         onOpenChange={(open) => !open && setDeletingOrder(null)}
         onConfirm={handleDelete}
-        title="Buyurtmani o'chirish"
-        description="Haqiqatan ham bu buyurtmani o'chirmoqchimisiz?"
+        title="Sotuvni o'chirish"
+        description="Haqiqatan ham bu sotuv buyurtmasini o'chirmoqchimisiz?"
       />
     </div>
   )

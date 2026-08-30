@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Bell, CheckCheck, AlertTriangle, ShoppingCart, DollarSign, Package, Factory, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Bell, CheckCheck, AlertTriangle, ShoppingCart, DollarSign, Package, Factory, Trash2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -18,8 +18,8 @@ interface NotificationItem {
 const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-1",
-    title: "Yangi buyurtma qabul qilindi",
-    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi buyurtma #104 yaratildi.",
+    title: "Yangi sotuv qabul qilindi",
+    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi buyurtma yaratildi.",
     type: "ORDER",
     time: "10 daqiqa oldin",
     read: false,
@@ -53,6 +53,26 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>(DEFAULT_NOTIFICATIONS)
 
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/sync/notifications", { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && Array.isArray(data.notifications)) {
+          setNotifications(data.notifications)
+        }
+      }
+    } catch (e) {
+      console.error("fetchNotifications error:", e)
+    }
+  }
+
+  useEffect(() => {
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
   const getIcon = (type: NotificationItem["type"]) => {
     switch (type) {
       case "ORDER":
@@ -66,14 +86,39 @@ export default function NotificationsPage() {
     }
   }
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications(notifications.map((n) => ({ ...n, read: true })))
     toast.success("Barcha bildirishnomalar o'qilgan deb belgilandi")
+    try {
+      await fetch("/api/sync/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_all_read" }),
+      })
+    } catch {}
   }
 
-  const clearAll = () => {
+  const markAsRead = async (id: string) => {
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    try {
+      await fetch("/api/sync/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_read", notificationId: id }),
+      })
+    } catch {}
+  }
+
+  const clearAll = async () => {
     setNotifications([])
     toast.success("Bildirishnomalar tozalandi")
+    try {
+      await fetch("/api/sync/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_all" }),
+      })
+    } catch {}
   }
 
   return (
@@ -81,18 +126,19 @@ export default function NotificationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Bell className="h-7 w-7 text-violet-600" />
+            <Bell className="h-7 w-7 text-amber-600" />
             Tizim Bildirishnomalari
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Yangi buyurtmalar, ombor qoldiqlari va muhim voqealar xabarnomalari
+            Yangi sotuvlar, ombor qoldiqlari, to&apos;lovlar va muhim zavod voqealari
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={markAllAsRead} variant="outline" size="sm" className="rounded-xl gap-1 text-xs">
+          <Button onClick={markAllAsRead} variant="outline" size="sm" className="rounded-xl gap-1 text-xs cursor-pointer">
             <CheckCheck className="h-4 w-4" /> Barchasini o&apos;qilgan qilish
           </Button>
-          <Button onClick={clearAll} variant="ghost" size="sm" className="rounded-xl text-red-500 text-xs">
+          <Button onClick={clearAll} variant="ghost" size="sm" className="rounded-xl text-red-500 text-xs cursor-pointer hover:bg-red-50">
+            <Trash2 className="h-4 w-4 mr-1" />
             Tozalash
           </Button>
         </div>
@@ -107,10 +153,11 @@ export default function NotificationsPage() {
           notifications.map((n) => (
             <div
               key={n.id}
-              className={`p-4 rounded-2xl border transition-all flex items-start gap-4 ${
+              onClick={() => !n.read && markAsRead(n.id)}
+              className={`p-4 rounded-2xl border transition-all flex items-start gap-4 cursor-pointer ${
                 n.read
-                  ? "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 opacity-80"
-                  : "bg-violet-50/40 dark:bg-violet-950/20 border-violet-200/60 dark:border-violet-800/40 shadow-sm"
+                  ? "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 opacity-80 hover:opacity-100"
+                  : "bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/40 shadow-xs"
               }`}
             >
               <div className="p-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex-shrink-0">
@@ -118,7 +165,12 @@ export default function NotificationsPage() {
               </div>
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{n.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{n.title}</h3>
+                    {!n.read && (
+                      <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                    )}
+                  </div>
                   <span className="text-[11px] text-gray-400 whitespace-nowrap">{n.time}</span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{n.message}</p>

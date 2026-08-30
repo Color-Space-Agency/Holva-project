@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Search, MoreHorizontal, Eye, Edit, Trash } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Eye, Edit, Trash, Pencil, FileCheck2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { StoreFormDialog } from "./store-form-dialog"
+import { StoreActReconciliationDialog } from "./store-act-reconciliation-dialog"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -44,6 +45,8 @@ export function StoresClient() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingStore, setEditingStore] = useState<any>(null)
   const [deletingStore, setDeletingStore] = useState<any>(null)
+  const [actStore, setActStore] = useState<any>(null)
+  const [isActOpen, setIsActOpen] = useState(false)
   const supabase = createClient()
 
   const { data: stores, isLoading, refetch } = useQuery({
@@ -169,18 +172,41 @@ export function StoresClient() {
               </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" asChild className="flex-1">
-                  <Link href={`/stores/${store.id}`}>Ko'rish</Link>
+                  <Link href={`/stores/${store.id}`}>
+                    <Eye className="w-3.5 h-3.5 mr-1" />
+                    Ko&apos;rish
+                  </Link>
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => {
-                  setEditingStore(store)
-                  setIsFormOpen(true)
-                }} className="flex-1">Tahrirlash</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setActStore(store)
+                    setIsActOpen(true)
+                  }}
+                  className="flex-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100"
+                >
+                  <FileCheck2 className="w-3.5 h-3.5 mr-1" />
+                  Akt Sverka
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setEditingStore(store)
+                    setIsFormOpen(true)
+                  }}
+                  className="px-3"
+                  title="Tahrirlash"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
         {stores?.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">Ma'lumot topilmadi</div>
+          <div className="text-center py-8 text-muted-foreground">Ma&apos;lumot topilmadi</div>
         )}
       </div>
 
@@ -191,7 +217,7 @@ export function StoresClient() {
               <TableHead>Nomi</TableHead>
               <TableHead>Telefon</TableHead>
               <TableHead>Manzil</TableHead>
-              <TableHead>Mas'ul shaxs</TableHead>
+              <TableHead>Mas&apos;ul shaxs</TableHead>
               <TableHead>Balans</TableHead>
               <TableHead>Holat</TableHead>
               <TableHead className="text-right">Amallar</TableHead>
@@ -200,7 +226,21 @@ export function StoresClient() {
           <TableBody>
             {stores?.map((store) => (
               <TableRow key={store.id}>
-                <TableCell className="font-medium">{store.name}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <span>{store.name}</span>
+                    <button
+                      onClick={() => {
+                        setEditingStore(store)
+                        setIsFormOpen(true)
+                      }}
+                      className="p-1 hover:bg-amber-100 dark:hover:bg-amber-950/50 rounded-md text-gray-400 hover:text-amber-600 transition cursor-pointer"
+                      title="Nomni tahrirlash"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
+                </TableCell>
                 <TableCell>{store.phone}</TableCell>
                 <TableCell>{store.address}</TableCell>
                 <TableCell>{store.contact_person}</TableCell>
@@ -213,42 +253,75 @@ export function StoresClient() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Menyu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Amallar</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/stores/${store.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ko'rish
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
+                  <div className="flex items-center justify-end gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setActStore(store)
+                        setIsActOpen(true)
+                      }}
+                      className="h-8 px-2.5 text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100 cursor-pointer"
+                    >
+                      <FileCheck2 className="mr-1 h-3.5 w-3.5" />
+                      Akt Sverka
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
                         setEditingStore(store)
                         setIsFormOpen(true)
-                      }}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Tahrirlash
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setDeletingStore(store)} className="text-red-600">
-                        <Trash className="mr-2 h-4 w-4" />
-                        O'chirish
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      }}
+                      className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50 cursor-pointer"
+                      title="Tahrirlash"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Menyu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Amallar</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/stores/${store.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ko&apos;rish
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setEditingStore(store)
+                          setIsFormOpen(true)
+                        }}>
+                          <Pencil className="mr-2 h-4 w-4 text-amber-600" />
+                          Tahrirlash
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setActStore(store)
+                          setIsActOpen(true)
+                        }}>
+                          <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
+                          Akt Sverka ko&apos;rish
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setDeletingStore(store)} className="text-red-600">
+                          <Trash className="mr-2 h-4 w-4" />
+                          O&apos;chirish
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
             {stores?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  Ma'lumot topilmadi
+                  Ma&apos;lumot topilmadi
                 </TableCell>
               </TableRow>
             )}
@@ -262,6 +335,13 @@ export function StoresClient() {
         initialData={editingStore}
         onSuccess={refetch}
       />
+      {actStore && (
+        <StoreActReconciliationDialog
+          open={isActOpen}
+          onOpenChange={setIsActOpen}
+          store={actStore}
+        />
+      )}
       <DeleteConfirmDialog
         open={!!deletingStore}
         onOpenChange={(open) => !open && setDeletingStore(null)}
