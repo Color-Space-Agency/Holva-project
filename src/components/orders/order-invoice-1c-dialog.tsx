@@ -109,7 +109,7 @@ export function OrderInvoice1CDialog({
         {/* 1C RASMIY YUK XATI FORMALARI (A4 PRINT UCHUN TOZA DIZAYN) */}
         {/* ============================================================ */}
         <div className="overflow-x-auto print:overflow-visible">
-          <div className="min-w-[800px] mt-6 print:mt-0 font-serif text-sm bg-white text-black p-4 sm:p-8 rounded-sm shadow-sm print:shadow-none">
+          <div className="min-w-[800px] mt-6 print:mt-0 font-sans text-sm bg-white text-black p-4 sm:p-8 rounded-sm shadow-sm print:shadow-none">
           
           {/* Yuqori 1C form kodi */}
           <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 text-[11px] text-gray-500">

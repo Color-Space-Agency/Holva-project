@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { FileCheck2, Pencil, Printer, Download } from "lucide-react"
 import { StoreActReconciliationDialog } from "./store-act-reconciliation-dialog"
 import { StoreFormDialog } from "./store-form-dialog"
+import { AktSverkaDetailClient } from "../finance/akt-sverka-detail-client"
 
 interface StoreDetailClientProps {
   storeId: string
@@ -184,46 +185,7 @@ export function StoreDetailClient({ storeId }: StoreDetailClientProps) {
         </TabsContent>
 
         <TabsContent value="aksverka" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileCheck2 className="w-5 h-5 text-amber-600" />
-                  <span>Solishtirma Dalolatnoma (Akt Sverka)</span>
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Ushbu do&apos;kon bilan barcha o&apos;zaro hisob-kitoblar va qarzlar tarixi
-                </p>
-              </div>
-              <Button
-                onClick={() => setIsActOpen(true)}
-                className="bg-amber-600 hover:bg-amber-700 text-white cursor-pointer gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                <span>To&apos;liq Akt Sverka Ochish va Chop etish</span>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl border">
-                <div>
-                  <span className="text-xs text-muted-foreground block">Boshlang&apos;ich Qoldiq</span>
-                  <span className="text-base font-bold text-gray-800 dark:text-gray-200">0 so&apos;m</span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Jami Berilgan Tovar (Debet)</span>
-                  <span className="text-base font-bold text-blue-600">
-                    +{formatCurrency(orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Joriy Yakuniy Qoldiq Qarz</span>
-                  <span className={`text-base font-bold ${store.current_balance < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                    {formatCurrency(store.current_balance)}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AktSverkaDetailClient store={store} />
         </TabsContent>
 
         <TabsContent value="Sotuvlar" className="space-y-4">
