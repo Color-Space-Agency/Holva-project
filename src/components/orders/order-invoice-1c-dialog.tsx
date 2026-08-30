@@ -73,7 +73,7 @@ export function OrderInvoice1CDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
+      <DialogContent className="max-w-[96vw] xl:max-w-5xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
         <DialogHeader className="print:hidden border-b pb-4 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -108,10 +108,11 @@ export function OrderInvoice1CDialog({
         {/* ============================================================ */}
         {/* 1C RASMIY YUK XATI FORMALARI (A4 PRINT UCHUN TOZA DIZAYN) */}
         {/* ============================================================ */}
-        <div className="space-y-5 text-gray-900 dark:text-gray-100 print:text-black font-sans text-xs sm:text-sm">
+        <div className="overflow-x-auto print:overflow-visible">
+          <div className="min-w-[800px] mt-6 print:mt-0 font-serif text-sm bg-white text-black p-4 sm:p-8 rounded-sm shadow-sm print:shadow-none">
           
           {/* Yuqori 1C form kodi */}
-          <div className="flex justify-between items-start text-[11px] text-gray-500 border-b pb-2">
+          <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 text-[11px] text-gray-500">
             <div>
               <span>Shakl: <strong>1C ТОРГ-12 / ЭСФ</strong></span>
             </div>
@@ -245,6 +246,7 @@ export function OrderInvoice1CDialog({
             </div>
           </div>
 
+        </div>
         </div>
       </DialogContent>
     </Dialog>

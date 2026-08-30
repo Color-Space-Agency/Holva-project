@@ -53,7 +53,7 @@ export function OrderReceipt1CDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
+      <DialogContent className="max-w-[96vw] sm:max-w-3xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 print:p-0 print:max-w-full print:border-none print:shadow-none">
         <DialogHeader className="print:hidden border-b pb-4 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -86,8 +86,9 @@ export function OrderReceipt1CDialog({
         </DialogHeader>
 
         {/* 1C PKO Format */}
-        <div className="space-y-4 text-gray-900 dark:text-gray-100 print:text-black font-sans text-xs sm:text-sm border p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 print:border-none">
-          <div className="flex justify-between items-start border-b pb-3">
+        <div className="overflow-x-auto print:overflow-visible">
+          <div className="min-w-[600px] space-y-4 text-gray-900 dark:text-gray-100 print:text-black font-sans text-xs sm:text-sm border p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 print:border-none">
+            <div className="flex justify-between items-start border-b pb-3">
             <div>
               <div className="font-bold text-base">&ldquo;HOLVA FACTORY&rdquo; MCHJ</div>
               <div className="text-xs text-gray-500">INN: 308945120 &bull; Kassa bo&apos;limi</div>
@@ -144,6 +145,7 @@ export function OrderReceipt1CDialog({
           <div className="text-center pt-2 text-[11px] text-gray-400">
             M.O&apos;. (Kassa muhri o&apos;rni) &bull; To&apos;lov to&apos;liq qabul qilindi
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
