@@ -51,7 +51,7 @@ export function StoreActReconciliationDialog({
   const [startDate, setStartDate] = useState<string>("2026-08-01")
   const [endDate, setEndDate] = useState<string>("2026-08-30")
 
-  // Do'konning buyurtmalari va to'lovlari
+  // Do'konning Sotuvlari va to'lovlari
   const { entries, totalDebit, totalCredit, initialBalance, finalBalance } = useMemo(() => {
     const orders = getStoredOrders().filter(
       (o) => o.store_name.toLowerCase().includes(store.name.toLowerCase()) || store.name.toLowerCase().includes(o.store_name.toLowerCase())
@@ -65,14 +65,14 @@ export function StoreActReconciliationDialog({
       id: string
       date: string
       docNumber: string
-      docType: "BUYURTMA" | "TOLOV"
+      docType: "Sotuv" | "TOLOV"
       description: string
       debit: number // Berilgan tovar summasi
       credit: number // To'langan summa
       balance: number // Shu kungi qoldiq
     }> = []
 
-    // Buyurtmalarni vaqti bo'yicha tartiblash
+    // Sotuvlarni vaqti bo'yicha tartiblash
     const sorted = [...orders].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     for (const ord of sorted) {
@@ -82,7 +82,7 @@ export function StoreActReconciliationDialog({
         id: `ord-${ord.id}`,
         date: ord.created_at.split("T")[0] || "2026-08-15",
         docNumber: ord.order_number,
-        docType: "BUYURTMA",
+        docType: "Sotuv",
         description: `Tayyor holva mahsulotlari partiyasi (#${ord.order_number})`,
         debit: ord.total_amount,
         credit: 0,
@@ -112,7 +112,7 @@ export function StoreActReconciliationDialog({
           id: "demo-1",
           date: "2026-08-10",
           docNumber: "HLV-2026-00104",
-          docType: "BUYURTMA",
+          docType: "Sotuv",
           description: "Kunjutli va Yong'oqli premium holvalar partiyasi",
           debit: 14800000,
           credit: 0,
@@ -132,7 +132,7 @@ export function StoreActReconciliationDialog({
           id: "demo-3",
           date: "2026-08-20",
           docNumber: "HLV-2026-00108",
-          docType: "BUYURTMA",
+          docType: "Sotuv",
           description: "Shokoladli va Samarqand holvalari",
           debit: 8200000,
           credit: 0,
@@ -363,7 +363,7 @@ export function StoreActReconciliationDialog({
                     <td className="p-2.5 sm:p-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{item.date}</td>
                     <td className="p-2.5 sm:p-3">
                       <div className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                        {item.docType === "BUYURTMA" ? (
+                        {item.docType === "Sotuv" ? (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-blue-200">Yuk xati</Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-50 text-emerald-600 border-emerald-200">To&apos;lov cheki</Badge>

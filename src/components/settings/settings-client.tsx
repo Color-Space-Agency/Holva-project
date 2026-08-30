@@ -294,8 +294,8 @@ export function SettingsClient() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Yangi buyurtma tushganda</Label>
-                  <p className="text-sm text-muted-foreground">Mijozlardan yangi buyurtma kelganda</p>
+                  <Label>Yangi Sotuv tushganda</Label>
+                  <p className="text-sm text-muted-foreground">Mijozlardan yangi Sotuv kelganda</p>
                 </div>
                 <Switch 
                   checked={notifications.new_order} 

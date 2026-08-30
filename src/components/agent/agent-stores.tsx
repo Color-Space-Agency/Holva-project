@@ -98,7 +98,7 @@ export function AgentStores() {
                     size="sm"
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold gap-1.5 h-9"
                   >
-                    <ShoppingCart className="h-3.5 w-3.5" /> Buyurtma olish
+                    <ShoppingCart className="h-3.5 w-3.5" /> Sotuv olish
                   </Button>
                 </Link>
                 <Link href={`/agent/visits?store=${store.id}`} className="w-full">

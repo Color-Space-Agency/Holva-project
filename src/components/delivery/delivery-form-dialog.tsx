@@ -154,11 +154,11 @@ export function DeliveryFormDialog({ open, onOpenChange, onSuccess }: DeliveryFo
 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-              Biriktirilgan Buyurtma (Ixtiyoriy)
+              Biriktirilgan Sotuv (Ixtiyoriy)
             </label>
             <Select value={orderId} onValueChange={setOrderId}>
               <SelectTrigger className="h-11 rounded-2xl">
-                <SelectValue placeholder="Buyurtma raqamini tanlang" />
+                <SelectValue placeholder="Sotuv raqamini tanlang" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
                 {orders?.map((o) => (

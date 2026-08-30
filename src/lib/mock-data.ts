@@ -593,7 +593,7 @@ export const INITIAL_VISITS: MockVisit[] = [
     status: "COMPLETED",
     start_time: "Bugun 10:15",
     duration: "25 daqiqa",
-    notes: "Yangi 14.8 mln so'mlik buyurtma rasmiylashtirildi va vitrina tekshirildi",
+    notes: "Yangi 14.8 mln so'mlik Sotuv rasmiylashtirildi va vitrina tekshirildi",
   },
   {
     id: "vis-2",
@@ -688,7 +688,7 @@ export function setStoredCompletedVisitsCount(count: number): void {
 }
 
 // ==========================================
-// BUYURTMALAR (ORDERS) LOCALSTORAGE PERSISTENCE
+// Sotuvlar (ORDERS) LOCALSTORAGE PERSISTENCE
 // ==========================================
 const STORAGE_KEY_ORDERS = "holva_crm_stored_orders"
 
@@ -831,7 +831,7 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
     agentId: "sardor",
     sender: "admin",
     senderName: "Super Admin",
-    text: "Assalomu alaykum Sardor! Bugungi buyurtmalar va do'konlar rejasi qanday ketyapti?",
+    text: "Assalomu alaykum Sardor! Bugungi Sotuvlar va do'konlar rejasi qanday ketyapti?",
     time: "08:30",
     timestamp: Date.now() - 3600000 * 3,
   },
@@ -869,7 +869,7 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
     agentId: "jasur",
     sender: "agent",
     senderName: "Jasur Qodirov",
-    text: "Assalomu alaykum! Sergeli bo'yicha 5 ta yangi buyurtma oldim, shokoladli holvaga talab juda yuqori.",
+    text: "Assalomu alaykum! Sergeli bo'yicha 5 ta yangi Sotuv oldim, shokoladli holvaga talab juda yuqori.",
     time: "09:20",
     timestamp: Date.now() - 3600000 * 2.2,
   },
@@ -889,7 +889,7 @@ export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
     agentId: "alisher",
     sender: "agent",
     senderName: "Alisher Vohidov",
-    text: "Rahmat! Samarqand va Jizzax yo'nalishida 10 ta do'kondan buyurtma shakllantirdim.",
+    text: "Rahmat! Samarqand va Jizzax yo'nalishida 10 ta do'kondan Sotuv shakllantirdim.",
     time: "10:05",
     timestamp: Date.now() - 3600000 * 1.2,
   },

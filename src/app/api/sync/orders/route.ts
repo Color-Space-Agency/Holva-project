@@ -10,7 +10,7 @@ if (!globalThis.__HOLVA_SERVER_ORDERS) {
   globalThis.__HOLVA_SERVER_ORDERS = [...INITIAL_ORDERS];
 }
 
-// GET /api/sync/orders — Barcha buyurtmalarni olish
+// GET /api/sync/orders — Barcha Sotuvlarni olish
 export async function GET(request: NextRequest) {
   try {
     const orders = globalThis.__HOLVA_SERVER_ORDERS || [...INITIAL_ORDERS];
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/sync/orders — Yangi buyurtma yoki to'lov qo'shish
+// POST /api/sync/orders — Yangi Sotuv yoki to'lov qo'shish
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create" && order) {
-      // Yangi buyurtma
+      // Yangi Sotuv
       const newOrder: MockOrder = {
         id: order.id || `ord-${Date.now()}`,
         order_number: order.order_number || `ORD-${Date.now().toString().slice(-6)}`,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete" && orderId) {
-      // Buyurtmani o'chirish
+      // Sotuvni o'chirish
       globalThis.__HOLVA_SERVER_ORDERS = globalThis.__HOLVA_SERVER_ORDERS.filter(
         (o) => o.id !== orderId && o.order_number !== orderId
       );

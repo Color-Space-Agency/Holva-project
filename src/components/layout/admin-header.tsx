@@ -156,6 +156,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
     planning: "Rejalashtirish",
     stores: "Do'konlar",
     orders: "Sotuv bo'limi",
+    "akt-sverka": "Akt Sverka (Solishtirma)",
     delivery: "Yetkazib berish",
     hr: "Ishxona",
     employees: "Ishchilar",
@@ -311,7 +312,7 @@ export function AdminHeader({ profile, onToggleMobileSidebar }: AdminHeaderProps
             <Search size={16} className="text-gray-400 mr-2 flex-shrink-0" />
             <input
               type="text"
-              placeholder="Mahsulot, do'kon yoki buyurtma qidirish..."
+              placeholder="Mahsulot, do'kon yoki Sotuv qidirish..."
               className="bg-transparent border-none outline-none text-xs w-full text-gray-800 dark:text-gray-100 placeholder-gray-400"
               autoFocus
             />

@@ -32,7 +32,7 @@ import {
 import { toast } from 'sonner';
 
 // ============================================================
-// KOMPONENT: Buyurtma To'lovini Qabul Qilish Modali
+// KOMPONENT: Sotuv To'lovini Qabul Qilish Modali
 // ============================================================
 interface OrderItem {
   id: string;
@@ -119,7 +119,7 @@ function PaymentModal({
         {/* Scrollable Content */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 mobile-scroll">
-            {/* Buyurtma hisob-kitobi */}
+            {/* Sotuv hisob-kitobi */}
             <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-2">
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Umumiy summa:</span>
@@ -225,7 +225,7 @@ function PaymentModal({
 }
 
 // ============================================================
-// KOMPONENT: Buyurtma kartochkasi (Kengaytirilgan To'lov Bilan)
+// KOMPONENT: Sotuv kartochkasi (Kengaytirilgan To'lov Bilan)
 // ============================================================
 function OrderCard({ 
   order, 
@@ -666,7 +666,7 @@ export function AgentHome() {
   const [toDate, setToDate] = useState<string>('2026-08-26');
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
-  // Buyurtmalar ro'yxati (To'langan summasi bilan)
+  // Sotuvlar ro'yxati (To'langan summasi bilan)
   const [ordersList, setOrdersList] = useState<OrderItem[]>([
     { id: 'HLV-2026-00104', client: 'Korzinka — Chilonzor', time: '05:21', amount: 14800000, status: 'delivered', phone: '+998711401414', paidAmount: 14800000 },
     { id: 'HLV-2026-00105', client: 'Makro Supermarket — Sergeli', time: '00:21', amount: 9200000, status: 'accepted', phone: '+998712051222', paidAmount: 5000000 },
@@ -695,7 +695,7 @@ export function AgentHome() {
       setOrdersList(mapped);
     }
 
-    // Serverdan eng yangi buyurtmalarni yuklash
+    // Serverdan eng yangi Sotuvlarni yuklash
     syncOrdersFromServer().then((srv) => {
       if (srv && srv.length > 0) {
         const mapped: OrderItem[] = srv.map((o: MockOrder) => ({
@@ -774,7 +774,7 @@ export function AgentHome() {
       { name: 'Kungaboqar Klassik Holvasi', sales: 54, revenue: 10800000, growth: 5 },
     ],
     recommendations: [
-      { store: 'Korzinka — Chilonzor', suggestion: 'Shokoladli Yong\'oqli Holvadan ko\'proq buyurtma qiling — talab 15% ga oshdi' },
+      { store: 'Korzinka — Chilonzor', suggestion: 'Shokoladli Yong\'oqli Holvadan ko\'proq Sotuv qiling — talab 15% ga oshdi' },
       { store: 'Makro Supermarket — Sergeli', suggestion: 'Kichik qadoqli holvalardan qo\'shing — kassa zonasida tez sotiladi' },
       { store: 'Havas Diskaunter — Qo\'yliq', suggestion: 'Klassik holva zaxirasini oshiring — xaridorlar talabi yuqori' },
     ],
@@ -1113,7 +1113,7 @@ export function AgentHome() {
 
       {/* 4. Statistika Kartochkalari (Real-Vaqtda 10/12 Reja bilan) */}
       <div className="grid grid-cols-2 gap-3">
-        {/* Buyurtmalar */}
+        {/* Sotuvlar */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-50 dark:bg-blue-950/50 rounded-xl">
@@ -1121,7 +1121,7 @@ export function AgentHome() {
             </div>
             <div>
               <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{agentData.orders}</p>
-              <p className="text-xs text-gray-400">Buyurtmalar</p>
+              <p className="text-xs text-gray-400">Sotuvlar</p>
             </div>
           </div>
           <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-2.5 flex items-center gap-1">
@@ -1259,7 +1259,7 @@ export function AgentHome() {
         )}
       </div>
 
-      {/* 7. Oxirgi Buyurtmalar (To'lov Qabul Qilish Bilan) */}
+      {/* 7. Oxirgi Sotuvlar (To'lov Qabul Qilish Bilan) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

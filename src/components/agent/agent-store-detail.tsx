@@ -101,13 +101,13 @@ export function AgentStoreDetail({ storeId }: { storeId: string }) {
           </CardContent>
         </Card>
 
-        {/* Buyurtmalar tarixi */}
+        {/* Sotuvlar tarixi */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalar</h2>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Oxirgi Sotuvlar</h2>
             <Link href={`/agent/orders?new=true&store=${store.id}`}>
               <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold gap-1 h-8">
-                <Plus className="h-3.5 w-3.5" /> Buyurtma olish
+                <Plus className="h-3.5 w-3.5" /> Sotuv olish
               </Button>
             </Link>
           </div>

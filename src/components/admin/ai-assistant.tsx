@@ -80,7 +80,7 @@ export function AIAssistant({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         suggestions: [
           `💰 Jami oylik tushum: ${formatCurrency(analyticsData.totalRevenue)}`,
           `📈 O'sish sur'ati: +${analyticsData.revenueGrowth}% (o'tgan davrga nisbatan)`,
-          `📦 Buyurtmalar soni: ${analyticsData.totalOrders} ta (+${analyticsData.orderGrowth}%)`,
+          `📦 Sotuvlar soni: ${analyticsData.totalOrders} ta (+${analyticsData.orderGrowth}%)`,
           `🏪 Faol savdo nuqtalari: ${analyticsData.stores.active} ta (${analyticsData.stores.new} ta yangi do'kon)`
         ]
       };
@@ -111,7 +111,7 @@ export function AIAssistant({ isOpen, onClose }: { isOpen: boolean; onClose: () 
     // Agentlar reytingi
     if (query.includes('agent') || query.includes('xodim') || query.includes('reyting') || query.includes('sotuvchi')) {
       const agentsList = analyticsData.topAgents.map((a, i) => 
-        `${i+1}. ${a.name} — ${formatCurrency(a.revenue)} (${a.orders} ta buyurtma, +${a.growth}%)`
+        `${i+1}. ${a.name} — ${formatCurrency(a.revenue)} (${a.orders} ta Sotuv, +${a.growth}%)`
       );
       return {
         text: "👨💼 Sotuv agentlari bo'yicha yetakchilar reytingi:",
@@ -139,7 +139,7 @@ export function AIAssistant({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         suggestions: [
           `🏢 Do'konlar: ${analyticsData.stores.total} ta (faol: ${analyticsData.stores.active})`,
           `📦 Mahsulot turlari: ${analyticsData.totalProducts} xil holvalar`,
-          `📈 O'rtacha buyurtma cheki: 3.7 mln so'm`,
+          `📈 O'rtacha Sotuv cheki: 3.7 mln so'm`,
           `⏰ Agentlar tashrif rejasi: 75% bajarildi`
         ]
       };

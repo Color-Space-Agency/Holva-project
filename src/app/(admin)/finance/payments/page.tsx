@@ -135,7 +135,7 @@ export default function FinancePaymentsPage() {
             <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 text-xs uppercase border-b border-gray-100 dark:border-gray-800">
               <tr>
                 <th className="px-5 py-3.5 font-semibold">Sana</th>
-                <th className="px-5 py-3.5 font-semibold">Buyurtma #</th>
+                <th className="px-5 py-3.5 font-semibold">Sotuv #</th>
                 <th className="px-5 py-3.5 font-semibold">Do&apos;kon / Mijoz</th>
                 <th className="px-5 py-3.5 font-semibold">To&apos;lov Usuli</th>
                 <th className="px-5 py-3.5 font-semibold">Holat</th>
@@ -203,7 +203,7 @@ export default function FinancePaymentsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Buyurtma raqami</label>
+              <label className="text-xs font-medium">Sotuv raqami</label>
               <Input
                 value={formData.order_number}
                 onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}

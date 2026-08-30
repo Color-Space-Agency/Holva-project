@@ -140,7 +140,7 @@ export function StoreDetailClient({ storeId }: StoreDetailClientProps) {
             <FileCheck2 className="w-3.5 h-3.5 text-amber-600" />
             <span>Akt Sverka</span>
           </TabsTrigger>
-          <TabsTrigger value="buyurtmalar">Sotuvlar</TabsTrigger>
+          <TabsTrigger value="Sotuvlar">Sotuvlar</TabsTrigger>
           <TabsTrigger value="tolovlar">To&apos;lovlar</TabsTrigger>
           <TabsTrigger value="yetkazmalar">Yetkazmalar</TabsTrigger>
         </TabsList>
@@ -226,7 +226,7 @@ export function StoreDetailClient({ storeId }: StoreDetailClientProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="buyurtmalar" className="space-y-4">
+        <TabsContent value="Sotuvlar" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Sotuvlar tarixi</CardTitle>

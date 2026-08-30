@@ -31,6 +31,8 @@ import {
   Banknote,
   ChevronDown,
   X,
+  FileCheck2,
+  Receipt,
 } from "lucide-react"
 import { LogoutDialog } from "@/components/shared/logout-dialog"
 
@@ -122,9 +124,10 @@ const navItems: NavItem[] = [
     roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
     children: [
       { label: "Kassa", href: "/finance/cash", icon: Banknote },
-      { label: "Daromadlar", href: "/finance/income", icon: TrendingUp },
-      { label: "Xarajatlar", href: "/finance/expenses", icon: DollarSign },
-      { label: "To'lovlar", href: "/finance/payments", icon: DollarSign },
+      { label: "Akt Sverka", href: "/akt-sverka", icon: FileCheck2 },
+      { label: "Kirim", href: "/finance/income", icon: TrendingUp },
+      { label: "Chiqim", href: "/finance/expenses", icon: DollarSign },
+      { label: "Sotuv to'lovlari", href: "/finance/payments", icon: Receipt },
     ],
   },
   {

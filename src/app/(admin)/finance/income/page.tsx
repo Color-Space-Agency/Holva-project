@@ -20,7 +20,7 @@ interface IncomeItem {
 const DEFAULT_INCOMES: IncomeItem[] = [
   {
     id: "inc-1",
-    source: "Buyurtma to'lovi",
+    source: "Sotuv to'lovi",
     store_name: "Korzinka — Chilonzor filiali",
     amount: 14800000,
     payment_method: "Bank o'tkazmasi",
@@ -29,7 +29,7 @@ const DEFAULT_INCOMES: IncomeItem[] = [
   },
   {
     id: "inc-2",
-    source: "Buyurtma to'lovi",
+    source: "Sotuv to'lovi",
     store_name: "Makro Supermarket",
     amount: 9200000,
     payment_method: "Bank o'tkazmasi",

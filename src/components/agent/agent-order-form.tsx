@@ -72,7 +72,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
       created_at: new Date().toISOString(),
     };
 
-    toast.success(`Buyurtma ${newOrder.order_number} muvaffaqiyatli rasmiylashtirildi!`);
+    toast.success(`Sotuv ${newOrder.order_number} muvaffaqiyatli rasmiylashtirildi!`);
     onSuccess(newOrder);
   };
 
@@ -82,7 +82,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
             <ShoppingCart className="h-5 w-5 text-emerald-600" />
-            Yangi Buyurtma Olish
+            Yangi Sotuv Olish
           </DialogTitle>
         </DialogHeader>
 

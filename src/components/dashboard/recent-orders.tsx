@@ -112,7 +112,7 @@ export function RecentOrders() {
           href="/orders"
           className="w-full py-2.5 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center justify-center gap-2 transition-all"
         >
-          Yangi Buyurtma Yaratish <ArrowRight size={14} />
+          Yangi Sotuv Yaratish <ArrowRight size={14} />
         </Link>
       </div>
     </div>

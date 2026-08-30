@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isRealSupabaseConfigured, INITIAL_ORDERS } from "@/lib/mock-data";
 
-// GET /api/orders — Buyurtmalarni filtrlash va paginatsiya bilan olish
+// GET /api/orders — Sotuvlarni filtrlash va paginatsiya bilan olish
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -101,13 +101,13 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(
-      { error: "Buyurtmalarni olishda xatolik yuz berdi" },
+      { error: "Sotuvlarni olishda xatolik yuz berdi" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/orders — Yangi buyurtma yaratish
+// POST /api/orders — Yangi Sotuv yaratish
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error creating order:", error);
     return NextResponse.json(
-      { error: "Buyurtma yaratishda xatolik yuz berdi" },
+      { error: "Sotuv yaratishda xatolik yuz berdi" },
       { status: 500 }
     );
   }

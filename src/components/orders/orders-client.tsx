@@ -102,7 +102,7 @@ export function OrdersClient() {
     window.addEventListener("orders-updated", handleOrdersUpdated)
     window.addEventListener("storage", handleStorage)
 
-    // Cross-device polling har 2 soniyada serverdan yangi buyurtmalarni tekshiradi
+    // Cross-device polling har 2 soniyada serverdan yangi Sotuvlarni tekshiradi
     const interval = setInterval(() => {
       syncOrdersFromServer().then(() => refetch())
     }, 2000)
@@ -125,7 +125,7 @@ export function OrdersClient() {
       }
       
       deleteStoredOrder(deletingOrder.id)
-      toast.success("Sotuv buyurtmasi o'chirildi")
+      toast.success("Sotuv Sotuvsi o'chirildi")
       refetch()
     } catch (error) {
       toast.error("Xatolik yuz berdi")

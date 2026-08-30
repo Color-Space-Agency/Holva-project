@@ -16,7 +16,7 @@ interface AgentVisitFormProps {
 
 export function AgentVisitForm({ open, onOpenChange, onSuccess }: AgentVisitFormProps) {
   const [storeId, setStoreId] = useState(INITIAL_STORES[0]?.id || '');
-  const [purpose, setPurpose] = useState('Buyurtma olish');
+  const [purpose, setPurpose] = useState('Sotuv olish');
   const [notes, setNotes] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,7 +74,7 @@ export function AgentVisitForm({ open, onOpenChange, onSuccess }: AgentVisitForm
               onChange={(e) => setPurpose(e.target.value)}
               className="w-full h-11 px-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
             >
-              <option value="Yangi buyurtma olish">Yangi buyurtma olish</option>
+              <option value="Yangi Sotuv olish">Yangi Sotuv olish</option>
               <option value="Qarzdorlik / to'lov qabul qilish">Qarzdorlik / to&apos;lov qabul qilish</option>
               <option value="Vitrina va qoldiqlarni tekshirish">Vitrina va qoldiqlarni tekshirish</option>
               <option value="Yangi mahsulot taqdimoti">Yangi mahsulot taqdimoti</option>

@@ -24,7 +24,7 @@ import { OrderStatusBadge, OrderPaymentStatusBadge } from '@/components/orders/o
 import { toast } from 'sonner';
 
 // ============================================================
-// KOMPONENT: Buyurtma To'lovini Qabul Qilish Modali (Fixed Frame UI/UX)
+// KOMPONENT: Sotuv To'lovini Qabul Qilish Modali (Fixed Frame UI/UX)
 // ============================================================
 function PaymentModal({
   isOpen,
@@ -102,7 +102,7 @@ function PaymentModal({
         {/* Modal Scrollable Content */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 mobile-scroll">
-            {/* Buyurtma hisob-kitobi */}
+            {/* Sotuv hisob-kitobi */}
             <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-2">
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Umumiy summa:</span>
@@ -224,10 +224,10 @@ export function AgentOrders() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   useEffect(() => {
-    // LocalStorage dan buyurtmalarni yuklash
+    // LocalStorage dan Sotuvlarni yuklash
     setOrders(getStoredOrders());
 
-    // Serverdan eng so'nggi buyurtmalarni yuklash
+    // Serverdan eng so'nggi Sotuvlarni yuklash
     syncOrdersFromServer().then((srv) => {
       if (srv && srv.length > 0) setOrders(srv);
     });
@@ -268,7 +268,7 @@ export function AgentOrders() {
     const updated = createStoredOrder(newOrder);
     setOrders(updated);
     setIsFormOpen(false);
-    toast.success("✅ Yangi buyurtma yaratildi!");
+    toast.success("✅ Yangi Sotuv yaratildi!");
   };
 
   const handlePaymentSuccess = (paymentData: { orderId: string; amount: number; method: string }) => {
@@ -353,7 +353,7 @@ export function AgentOrders() {
               {/* Summa va To'langan miqdorlar bloki */}
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-3 space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500 dark:text-gray-400">Jami buyurtma:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Jami Sotuv:</span>
                   <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -398,12 +398,12 @@ export function AgentOrders() {
 
         {filteredOrders.length === 0 && (
           <div className="text-center py-12 text-gray-400 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
-            Buyurtmalar topilmadi
+            Sotuvlar topilmadi
           </div>
         )}
       </div>
 
-      {/* Buyurtma Yaratish Modali */}
+      {/* Sotuv Yaratish Modali */}
       <AgentOrderForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}

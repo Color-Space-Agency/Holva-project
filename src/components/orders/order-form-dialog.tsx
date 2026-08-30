@@ -444,7 +444,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
                 disabled={isSubmitting}
                 className="h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-bold"
               >
-                {isSubmitting ? "Saqlanmoqda..." : "Buyurtmani Tasdiqlash"}
+                {isSubmitting ? "Saqlanmoqda..." : "Sotuvni Tasdiqlash"}
               </Button>
             </div>
           </div>

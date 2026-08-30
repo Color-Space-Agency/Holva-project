@@ -77,7 +77,7 @@ async function fetchChartData(range: DateRange) {
           .map(([date, data]) => ({
             date: new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
             Tushum: data.revenue,
-            Buyurtmalar: data.orders,
+            Sotuvlar: data.orders,
           }))
           .sort((a, b) => a.date.localeCompare(b.date))
       }
@@ -88,12 +88,12 @@ async function fetchChartData(range: DateRange) {
 
   // Demo trend ma'lumotlari
   const demoPoints = [
-    { date: "01/08", Tushum: 18500000, Buyurtmalar: 12 },
-    { date: "05/08", Tushum: 24200000, Buyurtmalar: 16 },
-    { date: "10/08", Tushum: 21800000, Buyurtmalar: 14 },
-    { date: "15/08", Tushum: 32000000, Buyurtmalar: 22 },
-    { date: "20/08", Tushum: 29400000, Buyurtmalar: 19 },
-    { date: "24/08", Tushum: 38600000, Buyurtmalar: 25 },
+    { date: "01/08", Tushum: 18500000, Sotuvlar: 12 },
+    { date: "05/08", Tushum: 24200000, Sotuvlar: 16 },
+    { date: "10/08", Tushum: 21800000, Sotuvlar: 14 },
+    { date: "15/08", Tushum: 32000000, Sotuvlar: 22 },
+    { date: "20/08", Tushum: 29400000, Sotuvlar: 19 },
+    { date: "24/08", Tushum: 38600000, Sotuvlar: 25 },
   ]
   return demoPoints
 }
@@ -124,7 +124,7 @@ export function DashboardCharts() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white">Sotuv trendi</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Tushum va buyurtmalar dinamikasi</p>
+          <p className="text-xs text-gray-400 mt-0.5">Tushum va Sotuvlar dinamikasi</p>
         </div>
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 self-start sm:self-auto overflow-x-auto">
           {ranges.map((r) => (
@@ -205,7 +205,7 @@ export function DashboardCharts() {
             <Line
               yAxisId="right"
               type="monotone"
-              dataKey="Buyurtmalar"
+              dataKey="Sotuvlar"
               stroke="#10b981"
               strokeWidth={2}
               dot={false}

@@ -29,7 +29,7 @@ const DEFAULT_DEPARTMENTS: Department[] = [
     name: "Sotuv va Marketing",
     head: "Sardor Rahimov",
     employee_count: 8,
-    description: "Savdo agentlari, do'konlar bilan ishlash va buyurtmalar qabuli",
+    description: "Savdo agentlari, do'konlar bilan ishlash va Sotuvlar qabuli",
   },
   {
     id: "dep-3",
