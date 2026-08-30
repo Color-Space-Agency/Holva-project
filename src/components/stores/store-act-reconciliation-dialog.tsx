@@ -195,7 +195,7 @@ export function StoreActReconciliationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 print:p-0 print:max-w-full print:shadow-none print:border-none">
+      <DialogContent className="w-[98vw] max-w-5xl max-h-[90vh] overflow-y-auto p-2 sm:p-6 print:p-0 print:max-w-full print:shadow-none print:border-none">
         <DialogHeader className="print:hidden border-b pb-4 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -335,7 +335,7 @@ export function StoreActReconciliationDialog({
 
           {/* Solishtirma Amallari Jadvali */}
           <div className="border rounded-2xl overflow-x-auto shadow-xs">
-            <table className="w-full min-w-[800px] text-xs sm:text-sm text-left border-collapse">
+            <table className="w-full text-[10px] sm:text-xs md:text-sm text-left border-collapse">
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b">
                 <tr>
                   <th className="p-2.5 sm:p-3 w-10 text-center">№</th>

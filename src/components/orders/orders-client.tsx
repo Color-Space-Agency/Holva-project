@@ -37,6 +37,7 @@ import { StoreActReconciliationDialog } from "@/components/stores/store-act-reco
 export function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<any>(null)
   const [deletingOrder, setDeletingOrder] = useState<any>(null)
   const [isAktSverkaOpen, setIsAktSverkaOpen] = useState(false)
   const [aktSverkaStore, setAktSverkaStore] = useState<{ id: string; name: string } | null>(null)
@@ -156,7 +157,13 @@ export function OrdersClient() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white cursor-pointer shadow-sm">
+        <Button 
+          onClick={() => {
+            setEditingOrder(null)
+            setIsFormOpen(true)
+          }} 
+          className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white cursor-pointer shadow-sm"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Yangi sotuv yaratish
         </Button>
@@ -232,11 +239,14 @@ export function OrdersClient() {
                           Batafsil ko&apos;rish
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/orders/${order.id}`}>
-                          <Pencil className="mr-2 h-4 w-4 text-amber-600" />
-                          Tahrirlash
-                        </Link>
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setEditingOrder(order)
+                          setIsFormOpen(true)
+                        }}
+                      >
+                        <Pencil className="mr-2 h-4 w-4 text-amber-600" />
+                        Tahrirlash
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
@@ -273,7 +283,11 @@ export function OrdersClient() {
 
       <OrderFormDialog 
         open={isFormOpen} 
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open)
+          if (!open) setEditingOrder(null)
+        }}
+        initialData={editingOrder}
         onSuccess={refetch}
       />
       <DeleteConfirmDialog

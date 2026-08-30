@@ -1021,3 +1021,5 @@ export function sendStoredChatMessage(
   return updated
 }
 
+
+export function updateStoredOrder(id: string, updates: Partial<MockOrder>): MockOrder[] { if (typeof window === 'undefined') return INITIAL_ORDERS; const list = getStoredOrders(); const updatedList = list.map(o => o.id === id ? { ...o, ...updates } : o); saveStoredOrders(updatedList); return updatedList; }

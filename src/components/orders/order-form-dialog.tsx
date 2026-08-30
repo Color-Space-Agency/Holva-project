@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_PRODUCTS, createStoredOrder, MockOrder } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_PRODUCTS, createStoredOrder, updateStoredOrder, MockOrder } from "@/lib/mock-data"
 import { toast } from "sonner"
+import { useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -27,9 +28,10 @@ interface OrderFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  initialData?: any
 }
 
-export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDialogProps) {
+export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: OrderFormDialogProps) {
   const supabase = createClient()
   const [step, setStep] = useState(1)
   const [storeId, setStoreId] = useState("")
@@ -41,6 +43,26 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
   const [paidAmount, setPaidAmount] = useState(0)
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setStoreId(initialData.stores?.name ? INITIAL_STORES.find(s => s.name === initialData.stores.name)?.id || "" : (initialData.store_name ? INITIAL_STORES.find(s => s.name === initialData.store_name)?.id || "" : ""))
+        setPaidAmount(initialData.paid_amount || 0)
+        setNotes(initialData.notes || "")
+        // Mock items for edit if real items are not present
+        setItems(initialData.order_items?.length ? initialData.order_items : [
+          { product_id: "p-1", quantity: initialData.items_count || 1, unit_price: (initialData.total_amount || 0) / (initialData.items_count || 1), discount_amount: 0 }
+        ])
+      } else {
+        setStoreId("")
+        setItems([{ product_id: "p-1", quantity: 5, unit_price: 38000, discount_amount: 0 }])
+        setPaidAmount(0)
+        setNotes("")
+      }
+      setStep(1)
+    }
+  }, [open, initialData])
 
   const { data: stores } = useQuery({
     queryKey: ["stores-select"],
@@ -130,7 +152,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
 
     setIsSubmitting(true)
     try {
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`
+      const orderNumber = initialData?.order_number || `ORD-${Date.now().toString().slice(-6)}`
       const selectedStore = stores?.find((s) => s.id === storeId)
       const selectedAgent = agents?.find((a) => a.id === agentId)
       const agentName = selectedAgent ? `${selectedAgent.first_name} ${selectedAgent.last_name || ""}`.trim() : "Sardor Rahimov"
@@ -142,42 +164,59 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
             data: { user },
           } = await supabase.auth.getUser()
 
-          await supabase.from("orders").insert({
-            store_id: storeId,
-            agent_id: agentId,
-            order_number: orderNumber,
-            total_amount: totalAmount,
-            notes,
-            status: "CONFIRMED",
-            payment_status:
-              paidAmount > 0
-                ? paidAmount >= totalAmount
-                  ? "PAID"
-                  : "PARTIAL"
-                : "PENDING",
-            created_by: user?.id,
-          })
+          if (initialData) {
+            await supabase.from("orders").update({
+              store_id: storeId,
+              agent_id: agentId,
+              total_amount: totalAmount,
+              notes,
+              payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
+            }).eq("id", initialData.id)
+          } else {
+            await supabase.from("orders").insert({
+              store_id: storeId,
+              agent_id: agentId,
+              order_number: orderNumber,
+              total_amount: totalAmount,
+              notes,
+              status: "CONFIRMED",
+              payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
+              created_by: user?.id,
+            })
+          }
         } catch {
           // Fallback
         }
       }
 
       // Synchronize in local/shared state so Sales Agent sees it immediately
-      const newMockOrder: MockOrder = {
-        id: `ord-${Date.now()}`,
-        order_number: orderNumber,
-        store_name: storeName,
-        agent_name: agentName,
-        total_amount: totalAmount,
-        paid_amount: paidAmount || 0,
-        status: "CONFIRMED",
-        payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
-        created_at: new Date().toISOString(),
-        items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+      if (initialData) {
+        updateStoredOrder(initialData.id, {
+          store_name: storeName,
+          agent_name: agentName,
+          total_amount: totalAmount,
+          paid_amount: paidAmount || 0,
+          payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
+          items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+        })
+        toast.success("Sotuv muvaffaqiyatli tahrirlandi!")
+      } else {
+        const newMockOrder: MockOrder = {
+          id: `ord-${Date.now()}`,
+          order_number: orderNumber,
+          store_name: storeName,
+          agent_name: agentName,
+          total_amount: totalAmount,
+          paid_amount: paidAmount || 0,
+          status: "CONFIRMED",
+          payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
+          created_at: new Date().toISOString(),
+          items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+        }
+        createStoredOrder(newMockOrder)
+        toast.success("Yangi sotuv muvaffaqiyatli rasmiylashtirildi!")
       }
-      createStoredOrder(newMockOrder)
 
-      toast.success("Yangi sotuv muvaffaqiyatli rasmiylashtirildi!")
       onSuccess()
       onOpenChange(false)
     } catch (error: any) {
