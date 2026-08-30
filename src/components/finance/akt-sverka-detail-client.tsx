@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { getStoredOrders, MockStore } from "@/lib/mock-data"
-import { formatCurrency, formatNumber } from "@/lib/utils"
+import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2, 
   Clock, Edit, FileCheck2
