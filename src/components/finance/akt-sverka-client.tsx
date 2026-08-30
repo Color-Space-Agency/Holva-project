@@ -57,7 +57,10 @@ export function AktSverkaClient() {
       const list: any[] = []
       
       orders.forEach((ord: any) => {
-        const ordDate = ord.created_at.split("T")[0]
+        const ordDate = ord.created_at ? ord.created_at.split("T")[0] : "2026-08-29"
+        const agentName = ord.agent_name || (ord.profiles?.first_name ? `${ord.profiles.first_name} ${ord.profiles.last_name || ''}`.trim() : "Sardor Rahimov")
+        const isEdited = Boolean(ord.updated_at && ord.created_at && ord.updated_at !== ord.created_at && !isNaN(new Date(ord.updated_at).getTime()))
+        const editedAtStr = isEdited ? new Date(ord.updated_at).toLocaleString('uz-UZ') : null
         
         // Products Bought (Debit)
         if (ord.order_items && ord.order_items.length > 0) {
@@ -67,17 +70,17 @@ export function AktSverkaClient() {
               list.push({
                 id: `ord-${ord.id}-item-${idx}`,
                 date: ordDate,
-                fullDate: new Date(ord.created_at).toLocaleString('uz-UZ'),
-                timestamp: new Date(ord.created_at).getTime() + idx,
+                fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+                timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + idx,
                 docNumber: ord.order_number,
                 storeName: ord.stores?.name || ord.store_name,
                 docType: "Mahsulot xaridi",
                 description: `${item.products?.name || 'Mahsulot'} - ${formatNumber(item.quantity || 0)} ${item.products?.unit || 'dona'} x ${formatCurrency(item.price || 0)}`,
-                receiver: `${ord.profiles?.first_name || ''} ${ord.profiles?.last_name || ''}`,
+                receiver: agentName,
                 debit: itemTotal,
                 credit: 0,
-                editedAt: ord.updated_at !== ord.created_at ? new Date(ord.updated_at).toLocaleString('uz-UZ') : null,
-                editedBy: ord.updated_at !== ord.created_at ? "Super Admin" : null,
+                editedAt: editedAtStr,
+                editedBy: isEdited ? "Super Admin" : null,
               })
             }
           })
@@ -85,17 +88,17 @@ export function AktSverkaClient() {
           list.push({
             id: `ord-${ord.id}`,
             date: ordDate,
-            fullDate: new Date(ord.created_at).toLocaleString('uz-UZ'),
-            timestamp: new Date(ord.created_at).getTime(),
+            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+            timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()),
             docNumber: ord.order_number,
             storeName: ord.stores?.name || ord.store_name,
             docType: "Umumiy xarid",
             description: "Mahsulotlar xaridi (qisqacha)",
-            receiver: `${ord.profiles?.first_name || ''} ${ord.profiles?.last_name || ''}`,
+            receiver: agentName,
             debit: ord.total_amount,
             credit: 0,
-            editedAt: ord.updated_at !== ord.created_at ? new Date(ord.updated_at).toLocaleString('uz-UZ') : null,
-            editedBy: ord.updated_at !== ord.created_at ? "Super Admin" : null,
+            editedAt: editedAtStr,
+            editedBy: isEdited ? "Super Admin" : null,
           })
         }
         
@@ -104,13 +107,13 @@ export function AktSverkaClient() {
           list.push({
             id: `pay-${ord.id}`,
             date: ordDate,
-            fullDate: new Date(ord.created_at).toLocaleString('uz-UZ'),
-            timestamp: new Date(ord.created_at).getTime() + 1000,
+            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).toLocaleString('uz-UZ') : ordDate,
+            timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + 1000,
             docNumber: `TOL-${ord.order_number.split("-").pop()}`,
             storeName: ord.stores?.name || ord.store_name,
             docType: "To'lov qabuli",
             description: "Mijoz tomonidan to'lov amalga oshirildi",
-            receiver: `${ord.profiles?.first_name || ''} ${ord.profiles?.last_name || ''}`,
+            receiver: agentName,
             debit: 0,
             credit: ord.paid_amount,
             editedAt: null,
@@ -292,13 +295,13 @@ export function AktSverkaClient() {
               <Table className="min-w-[900px]">
                 <TableHeader className="bg-gray-100/50 dark:bg-gray-800/80">
                   <TableRow>
-                    <TableHead>Sana va vaqt</TableHead>
-                    {selectedStoreId === "all" && <TableHead>Mijoz</TableHead>}
-                    <TableHead>Hujjat / Qabul qildi</TableHead>
-                    <TableHead>Mahsulot / Harakat batafsil</TableHead>
-                    <TableHead className="text-right text-red-600 dark:text-red-400">Xarid (Qarzga)</TableHead>
-                    <TableHead className="text-right text-emerald-600 dark:text-emerald-400">To'lov qildi</TableHead>
-                    <TableHead className="text-right font-bold">Joriy qoldiq</TableHead>
+                    <TableHead className="whitespace-nowrap">Sana va vaqt</TableHead>
+                    {selectedStoreId === "all" && <TableHead className="whitespace-nowrap">Mijoz</TableHead>}
+                    <TableHead className="whitespace-nowrap">Hujjat / Qabul qildi</TableHead>
+                    <TableHead className="whitespace-nowrap">Mahsulot / Harakat batafsil</TableHead>
+                    <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">Xarid (Qarzga)</TableHead>
+                    <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">To'lov qildi</TableHead>
+                    <TableHead className="text-right font-bold whitespace-nowrap">Joriy qoldiq</TableHead>
                     <TableHead className="w-[50px] print:hidden"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -310,36 +313,36 @@ export function AktSverkaClient() {
                   ) : (
                     entries?.entries.map((item) => (
                       <TableRow key={item.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-800/50">
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="font-medium text-[13px]">{item.fullDate}</div>
                           {item.editedAt && (
-                            <div className="flex items-center text-[10px] text-amber-600 mt-0.5 font-medium" title={`O'zgartirgan: ${item.editedBy}`}>
+                            <div className="flex items-center text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium" title={`O'zgartirgan: ${item.editedBy}`}>
                               <Clock className="w-3 h-3 mr-1" />
                               Tahrirlangan: {item.editedAt}
                             </div>
                           )}
                         </TableCell>
                         {selectedStoreId === "all" && (
-                          <TableCell className="font-medium">{item.storeName}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{item.storeName}</TableCell>
                         )}
-                        <TableCell>
-                          <div className="font-semibold">{item.docNumber}</div>
-                          <div className="text-xs text-gray-500">Agent: {item.receiver}</div>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="font-semibold text-gray-900 dark:text-gray-100">{item.docNumber}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Agent: {item.receiver}</div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-[13px] text-gray-700 dark:text-gray-300">
+                          <div className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">
                             {item.description}
                           </div>
-                          <Badge variant="outline" className="mt-1 text-[10px] bg-gray-50">{item.docType}</Badge>
+                          <Badge variant="outline" className="mt-1 text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">{item.docType}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
+                        <TableCell className="text-right font-medium text-red-600 dark:text-red-400 whitespace-nowrap">
                           {item.debit > 0 ? formatCurrency(item.debit) : "-"}
                         </TableCell>
-                        <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                        <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                           {item.credit > 0 ? formatCurrency(item.credit) : "-"}
                         </TableCell>
-                        <TableCell className="text-right font-bold">
-                          <Badge variant="outline" className={item.balance > 0 ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}>
+                        <TableCell className="text-right font-bold whitespace-nowrap">
+                          <Badge variant="outline" className={item.balance > 0 ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900" : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"}>
                             {formatCurrency(Math.abs(item.balance))}
                             {item.balance > 0 ? " (Qarz)" : ""}
                           </Badge>
