@@ -162,126 +162,108 @@ export function OrdersClient() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-xl border bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gray-50/50 dark:bg-gray-800/50">
             <TableRow>
-              <TableHead>Raqam</TableHead>
-              <TableHead>Sana</TableHead>
-              <TableHead>Do&apos;kon</TableHead>
-              <TableHead>Sotuv Agenti</TableHead>
+              <TableHead className="w-[180px]">Hujjat</TableHead>
+              <TableHead>Mijoz (Do&apos;kon)</TableHead>
               <TableHead>Summa</TableHead>
               <TableHead>Holat</TableHead>
-              <TableHead>To&apos;lov</TableHead>
               <TableHead>Qarzdorlik</TableHead>
-              <TableHead className="text-right">Amallar</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders?.map((order: any) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <span>{order.order_number}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
-                      title="Tahrirlash / ko'rish"
-                    >
-                      <Link href={`/orders/${order.id}`}>
-                        <Pencil className="w-3 h-3" />
-                      </Link>
-                    </Button>
+              <TableRow 
+                key={order.id} 
+                className="cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors group"
+                onClick={() => window.location.href = `/orders/${order.id}`}
+              >
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 transition-colors">
+                      {order.order_number}
+                    </span>
+                    <span className="text-xs text-gray-500">{formatDate(order.created_at)}</span>
                   </div>
                 </TableCell>
-                <TableCell>{formatDate(order.created_at)}</TableCell>
-                <TableCell className="font-medium">{order.stores?.name}</TableCell>
-                <TableCell>{order.profiles?.first_name} {order.profiles?.last_name}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-gray-900 dark:text-white">{order.stores?.name}</span>
+                    <span className="text-[11px] text-gray-500">Agent: {order.profiles?.first_name} {order.profiles?.last_name}</span>
+                  </div>
+                </TableCell>
                 <TableCell className="font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(order.total_amount)}
                 </TableCell>
                 <TableCell>
-                  <OrderStatusBadge status={order.status} />
-                </TableCell>
-                <TableCell>
-                  <OrderPaymentStatusBadge status={order.payment_status} />
+                  <div className="flex flex-col items-start gap-1.5">
+                    <OrderStatusBadge status={order.status} />
+                    <OrderPaymentStatusBadge status={order.payment_status} />
+                  </div>
                 </TableCell>
                 <TableCell>
                   {(() => {
                     const debt = (order.total_amount || 0) - (order.paid_amount || 0)
-                    if (debt <= 0) return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px]">Qarz yo&apos;q</Badge>
+                    if (debt <= 0) return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 text-[10px]">Qarz yo&apos;q</Badge>
                     return (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-2 py-1 rounded-md w-fit">
                         <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                         <span className="text-xs font-bold text-red-600 dark:text-red-400">{formatCurrency(debt)}</span>
                       </div>
                     )
                   })()}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs text-amber-600 hover:bg-amber-50 cursor-pointer">
-                      <Link href={`/orders/${order.id}`}>
-                        <Eye className="w-3.5 h-3.5 mr-1" />
-                        Ko&apos;rish
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs text-blue-600 hover:bg-blue-50 cursor-pointer">
-                      <Link href={`/orders/${order.id}`}>
-                        <Pencil className="w-3.5 h-3.5 mr-1" />
-                        Tahrirlash
-                      </Link>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Menyu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Amallar</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/orders/${order.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Batafsil ko&apos;rish
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/orders/${order.id}`}>
-                            <Pencil className="mr-2 h-4 w-4 text-amber-600" />
-                            Tahrirlash
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setAktSverkaStore({
-                              id: order.stores?.name || order.id,
-                              name: order.stores?.name || "Do'kon",
-                            })
-                            setIsAktSverkaOpen(true)
-                          }}
-                        >
-                          <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
-                          Akt Sverka (Solishtirma)
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
-                          <Trash className="mr-2 h-4 w-4" />
-                          O&apos;chirish
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="sr-only">Menyu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Amallar</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Batafsil ko&apos;rish
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          <Pencil className="mr-2 h-4 w-4 text-amber-600" />
+                          Tahrirlash
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setAktSverkaStore({
+                            id: order.stores?.name || order.id,
+                            name: order.stores?.name || "Do'kon",
+                          })
+                          setIsAktSverkaOpen(true)
+                        }}
+                      >
+                        <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
+                        Akt Sverka (Solishtirma)
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
+                        <Trash className="mr-2 h-4 w-4" />
+                        O&apos;chirish
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  Sotuvlar topilmadi
+                <TableCell colSpan={6} className="h-32 text-center text-gray-500">
+                  Sotuv hujjatlari topilmadi
                 </TableCell>
               </TableRow>
             )}
