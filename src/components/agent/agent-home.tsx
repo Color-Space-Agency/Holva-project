@@ -889,7 +889,7 @@ export function AgentHome() {
       <div className="grid grid-cols-2 gap-3">
         <Link href="/agent/orders?new=true" className="w-full">
           <button className="w-full h-12 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-2xl text-xs font-bold gap-2 flex items-center justify-center shadow-md shadow-amber-500/20 cursor-pointer touch-friendly active:scale-95">
-            <Plus className="h-4 w-4" /> Yangi Buyurtma
+            <Plus className="h-4 w-4" /> Yangi Sotuv
           </button>
         </Link>
         <Link href="/agent/visits" className="w-full">
@@ -1263,7 +1263,7 @@ export function AgentHome() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Oxirgi Buyurtmalarim</h2>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Oxirgi Sotuvlarim</h2>
             <p className="text-xs text-gray-400">To&apos;lov holati bilan</p>
           </div>
           <Link href="/agent/orders" className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 transition touch-press">

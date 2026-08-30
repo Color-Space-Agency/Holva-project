@@ -9,7 +9,7 @@ import { LogoutDialog } from "@/components/shared/logout-dialog"
 const agentNavItems = [
   { label: "Asosiy", href: "/agent/home", icon: Home },
   { label: "Do'konlar", href: "/agent/stores", icon: Store },
-  { label: "Buyurtmalar", href: "/agent/orders", icon: ShoppingCart },
+  { label: "Sotuv", href: "/agent/orders", icon: ShoppingCart },
   { label: "Tashriflar", href: "/agent/visits", icon: MapPin },
   { label: "Profil", href: "/agent/profile", icon: User },
 ]

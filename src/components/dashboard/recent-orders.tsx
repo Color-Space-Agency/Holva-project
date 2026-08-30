@@ -53,9 +53,9 @@ export function RecentOrders() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="font-bold text-base text-gray-900 dark:text-white">
-              So&apos;nggi Buyurtmalar
+              So&apos;nggi Sotuvlar (Savdo)
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">Oxirgi qabul qilinganlar</p>
+            <p className="text-xs text-gray-400 mt-0.5">Oxirgi qabul qilingan sotuvlar</p>
           </div>
           <Link
             href="/orders"

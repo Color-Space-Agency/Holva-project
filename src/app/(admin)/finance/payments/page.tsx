@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
+import { DebtAgingAnalysis } from "@/components/finance/debt-aging-analysis"
 
 interface Payment {
   id: string
@@ -101,18 +102,20 @@ export default function FinancePaymentsPage() {
 
   return (
     <div className="space-y-6">
+      <DebtAgingAnalysis />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <DollarSign className="h-7 w-7 text-violet-600" />
-            Buyurtma To&apos;lovlari & Qarz Yopilishi
+            <DollarSign className="h-7 w-7 text-amber-600" />
+            Sotuv To&apos;lovlari & Qarz Yopilishi (1C Kassa)
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Do&apos;konlar va agentlardan tushgan buyurtma to&apos;lovlari nazorati
+            Do&apos;konlar va agentlardan tushgan savdo to&apos;lovlari va kassa kirimlari
           </p>
         </div>
-        <Button onClick={() => setIsOpen(true)} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl gap-2">
-          <Plus className="h-4 w-4" /> To&apos;lov qabul qilish
+        <Button onClick={() => setIsOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl gap-2 cursor-pointer shadow-sm">
+          <Plus className="h-4 w-4" /> Kassa to&apos;lovi qabul qilish
         </Button>
       </div>
 
@@ -121,7 +124,7 @@ export default function FinancePaymentsPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Do'kon yoki buyurtma # bo'yicha qidirish..."
+          placeholder="Do'kon yoki sotuv raqami bo'yicha qidirish..."
           className="pl-10 rounded-xl"
         />
       </div>

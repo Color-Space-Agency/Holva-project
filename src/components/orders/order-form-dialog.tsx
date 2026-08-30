@@ -177,7 +177,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
       }
       createStoredOrder(newMockOrder)
 
-      toast.success("Yangi buyurtma muvaffaqiyatli saqlandi!")
+      toast.success("Yangi sotuv muvaffaqiyatli rasmiylashtirildi!")
       onSuccess()
       onOpenChange(false)
     } catch (error: any) {
@@ -192,7 +192,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess }: OrderFormDial
       <DialogContent className="max-w-2xl rounded-3xl p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-            Yangi Buyurtma Yaratish
+            Yangi Sotuv Rasmiylashtirish (1C Faktura)
           </DialogTitle>
         </DialogHeader>
 

@@ -71,8 +71,8 @@ export default function DashboardPage() {
             className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-amber-500/20 touch-friendly active:scale-[0.98] flex items-center gap-1.5"
           >
             <Plus size={15} />
-            <span className="hidden xs:inline">Yangi buyurtma</span>
-            <span className="xs:hidden">Buyurtma</span>
+            <span className="hidden xs:inline">Yangi sotuv</span>
+            <span className="xs:hidden">Sotuv</span>
           </Link>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
       {/* Mobil Tezkor Kirish Vidjeti (4 ta yorqin tugma) */}
       <div className="grid grid-cols-4 gap-2 sm:hidden">
         {[
-          { icon: ShoppingCart, label: "Buyurtma", href: "/orders", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
+          { icon: ShoppingCart, label: "Sotuv", href: "/orders", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
           { icon: Store, label: "Do'konlar", href: "/stores", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50" },
           { icon: FileSpreadsheet, label: "Hisobot", href: "/reports", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50" },
           { icon: Settings, label: "Sozlamalar", href: "/settings", color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50" },

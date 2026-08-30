@@ -293,21 +293,21 @@ export function AgentOrders() {
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Buyurtmalarim</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Sotuvlarim (Savdo)</h1>
           </div>
           <Button
             size="sm"
             onClick={() => setIsFormOpen(true)}
             className="bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-xs gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> Yangi
+            <Plus className="h-4 w-4" /> Yangi Sotuv
           </Button>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Buyurtma yoki do'kon qidirish..."
+            placeholder="Sotuv yoki do'kon qidirish..."
             className="pl-10 h-11 rounded-2xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
