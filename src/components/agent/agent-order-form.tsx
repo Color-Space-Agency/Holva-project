@@ -150,28 +150,35 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
                       <div className="text-[10px] text-gray-400">{formatCurrency(item.price)}</div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleUpdateQty(idx, item.quantity - 1)}
-                        className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200"
+                        className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200"
                       >
                         <Minus className="h-3 w-3" />
                       </button>
-                      <span className="font-bold text-sm min-w-[20px] text-center">{item.quantity}</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        className="w-14 h-7 text-center text-xs font-black p-0 border border-violet-300 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-950/30 rounded-lg text-gray-900 dark:text-white"
+                        value={item.quantity === 0 ? "" : item.quantity}
+                        onChange={(e) => handleUpdateQty(idx, e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value) || 0))}
+                        onBlur={() => { if (!item.quantity || item.quantity <= 0) handleUpdateQty(idx, 1) }}
+                      />
                       <button
                         type="button"
                         onClick={() => handleUpdateQty(idx, item.quantity + 1)}
-                        className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200"
+                        className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200"
                       >
                         <Plus className="h-3 w-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(idx)}
-                        className="text-red-500 hover:text-red-600 p-1"
+                        className="text-red-500 hover:text-red-600 p-1 ml-1"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

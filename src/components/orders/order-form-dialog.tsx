@@ -13,6 +13,7 @@ import {
   MockOrder,
   createStoredStore,
   syncStoresFromServer,
+  syncProductsFromServer,
   syncOrdersFromServer,
 } from "@/lib/mock-data"
 import { toast } from "sonner"
@@ -59,14 +60,22 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
   useEffect(() => {
     if (open) {
-      syncStoresFromServer().then((st) => setAvailableStores(st))
-      syncOrdersFromServer()
-      const storedStores = getStoredStores()
-      const storedProds = getStoredProducts()
-      const storedEmps = getStoredEmployees()
+      const updateData = () => {
+        const storedStores = getStoredStores()
+        const storedProds = getStoredProducts()
+        if (storedStores.length > 0) setAvailableStores(storedStores)
+        if (storedProds.length > 0) setAvailableProducts(storedProds)
+      }
 
-      setAvailableStores(storedStores)
-      setAvailableProducts(storedProds)
+      syncStoresFromServer().then((st) => { if (st?.length) setAvailableStores(st) })
+      syncProductsFromServer().then((pr) => { if (pr?.length) setAvailableProducts(pr) })
+      syncOrdersFromServer()
+
+      updateData()
+
+      const storedProds = getStoredProducts()
+      const storedStores = getStoredStores()
+      const storedEmps = getStoredEmployees()
 
       if (initialData) {
         setSelectedStoreName(initialData.stores?.name || initialData.store_name || "")
@@ -78,7 +87,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
             ? initialData.order_items
             : [
                 {
-                  product_name: storedProds[0]?.name || "Kunjutli Premium Holva",
+                  product_name: storedProds[0]?.name || "Kunjutli Premium Holva (500g)",
                   quantity: initialData.items_count || 1,
                   unit_price: storedProds[0]?.price || (initialData.total_amount || 0) / (initialData.items_count || 1) || 38000,
                   discount_amount: 0,
@@ -101,17 +110,36 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
         setNotes("")
       }
       setStep(1)
+
+      window.addEventListener("products-updated", updateData)
+      window.addEventListener("stores-updated", updateData)
+      window.addEventListener("orders-updated", updateData)
+
+      const interval = setInterval(() => {
+        syncProductsFromServer().then((pr) => { if (pr?.length) setAvailableProducts(pr) })
+        syncStoresFromServer().then((st) => { if (st?.length) setAvailableStores(st) })
+      }, 3000)
+
+      return () => {
+        window.removeEventListener("products-updated", updateData)
+        window.removeEventListener("stores-updated", updateData)
+        window.removeEventListener("orders-updated", updateData)
+        clearInterval(interval)
+      }
     }
   }, [open, initialData])
 
   const handleAddItem = () => {
-    const defaultProd = availableProducts[0] || { name: "Kunjutli Premium Holva", price: 38000 }
+    const unselected = availableProducts.find(
+      (p) => !items.some((it) => it.product_name === p.name)
+    ) || availableProducts[0] || { name: "Kunjutli Premium Holva (500g)", price: 38000 }
+
     setItems([
       ...items,
       {
-        product_name: defaultProd.name,
+        product_name: unselected.name,
         quantity: 1,
-        unit_price: defaultProd.price || 38000,
+        unit_price: unselected.price || 38000,
         discount_amount: 0,
       },
     ])
@@ -405,95 +433,116 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
         {step === 2 && (
           <div className="space-y-6 pt-1">
             <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
-              {items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-gray-900 p-4 rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-sm"
-                >
-                  <div className="flex-1 w-full space-y-1">
-                    <label className="text-xs font-bold text-gray-500">Mahsulot Nomi</label>
-                    {availableProducts.length > 0 ? (
-                      <Select
-                        value={item.product_name}
-                        onValueChange={(val) => updateItem(index, "product_name", val)}
-                      >
-                        <SelectTrigger className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold border-gray-200">
-                          <SelectValue placeholder="Mahsulotni tanlang" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl max-h-56">
-                          {availableProducts.map((p) => (
-                            <SelectItem key={p.id} value={p.name} className="py-2 text-sm font-medium">
-                              {p.name} — {formatCurrency(p.price)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={item.product_name}
-                        onChange={(e) => updateItem(index, "product_name", e.target.value)}
-                        placeholder="Mahsulot nomi"
-                        className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
-                      />
-                    )}
-                  </div>
+              {items.map((item, index) => {
+                const rowSelectableProducts = availableProducts.filter(
+                  (p) => p.name === item.product_name || !items.some((it, i) => i !== index && it.product_name === p.name)
+                )
 
-                  <div className="w-full sm:w-32 space-y-1">
-                    <label className="text-xs font-bold text-gray-500">Soni (dona)</label>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-12 w-10 rounded-xl text-lg font-bold"
-                        onClick={() => updateItem(index, "quantity", Math.max(1, (Number(item.quantity) || 1) - 1))}
-                      >
-                        -
-                      </Button>
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-gray-900 p-4 rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-sm"
+                  >
+                    <div className="flex-1 w-full space-y-1">
+                      <label className="text-xs font-bold text-gray-500">Mahsulot Nomi</label>
+                      {availableProducts.length > 0 ? (
+                        <Select
+                          value={item.product_name}
+                          onValueChange={(val) => updateItem(index, "product_name", val)}
+                        >
+                          <SelectTrigger className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold border-gray-200">
+                            <SelectValue placeholder="Mahsulotni tanlang" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl max-h-56">
+                            {rowSelectableProducts.map((p) => (
+                              <SelectItem key={p.id} value={p.name} className="py-2 text-sm font-medium">
+                                {p.name} — {formatCurrency(p.price)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={item.product_name}
+                          onChange={(e) => updateItem(index, "product_name", e.target.value)}
+                          placeholder="Mahsulot nomi"
+                          className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
+                        />
+                      )}
+                    </div>
+
+                    <div className="w-full sm:w-44 space-y-1">
+                      <label className="text-xs font-bold text-violet-700 dark:text-violet-300">Soni (Klaviatura / dona)</label>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-12 w-10 shrink-0 rounded-2xl text-lg font-bold border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => {
+                            const currentQty = Number(item.quantity) || 1
+                            updateItem(index, "quantity", Math.max(1, currentQty - 1))
+                          }}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="1"
+                          className="h-12 w-20 sm:w-24 rounded-2xl bg-violet-50/80 dark:bg-violet-950/40 text-base font-black text-center border-2 border-violet-300 dark:border-violet-700 focus:ring-2 focus:ring-violet-500 text-gray-900 dark:text-white"
+                          value={item.quantity === 0 || item.quantity === "" ? "" : item.quantity}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            updateItem(index, "quantity", val === "" ? "" : Math.max(0, parseInt(val) || 0))
+                          }}
+                          onBlur={() => {
+                            if (!item.quantity || Number(item.quantity) <= 0) {
+                              updateItem(index, "quantity", 1)
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-12 w-10 shrink-0 rounded-2xl text-lg font-bold border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => {
+                            const currentQty = Number(item.quantity) || 0
+                            updateItem(index, "quantity", currentQty + 1)
+                          }}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="w-full sm:w-40 space-y-1">
+                      <label className="text-xs font-bold text-gray-500">Dona narxi (so'm)</label>
                       <Input
                         type="number"
-                        min="1"
-                        className="h-12 rounded-xl bg-gray-50 dark:bg-gray-800 text-base font-black text-center"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
+                        step="500"
+                        className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
+                        value={item.unit_price}
+                        onChange={(e) => updateItem(index, "unit_price", Number(e.target.value))}
                       />
+                    </div>
+
+                    <div className="self-end sm:self-center mt-2 sm:mt-6">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-12 w-10 rounded-xl text-lg font-bold"
-                        onClick={() => updateItem(index, "quantity", (Number(item.quantity) || 0) + 1)}
+                        className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-2xl cursor-pointer"
+                        onClick={() => removeItem(index)}
+                        aria-label="O'chirish"
                       >
-                        +
+                        <Trash className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
-
-                  <div className="w-full sm:w-40 space-y-1">
-                    <label className="text-xs font-bold text-gray-500">Dona narxi (so'm)</label>
-                    <Input
-                      type="number"
-                      step="500"
-                      className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
-                      value={item.unit_price}
-                      onChange={(e) => updateItem(index, "unit_price", Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="self-end sm:self-center mt-2 sm:mt-6">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-2xl cursor-pointer"
-                      onClick={() => removeItem(index)}
-                      aria-label="O'chirish"
-                    >
-                      <Trash className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <Button
