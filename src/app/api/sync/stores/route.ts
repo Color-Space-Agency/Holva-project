@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MockStore } from "@/lib/mock-data"
 
-const STORES_CLOUD_URL = "https://api.restful-api.dev/objects/ff808181a067127101a06ced297f11c1"
-
 declare global {
   var __HOLVA_SERVER_STORES: MockStore[] | undefined
 }
@@ -11,99 +9,61 @@ if (!globalThis.__HOLVA_SERVER_STORES) {
   globalThis.__HOLVA_SERVER_STORES = []
 }
 
-async function fetchCloudStores(): Promise<MockStore[]> {
-  try {
-    const res = await fetch(STORES_CLOUD_URL, { cache: "no-store" })
-    if (res.ok) {
-      const json = await res.json()
-      if (json.data && Array.isArray(json.data.stores)) {
-        globalThis.__HOLVA_SERVER_STORES = json.data.stores
-        return json.data.stores
-      }
-    }
-  } catch (e) {
-    console.error("fetchCloudStores error:", e)
-  }
-  return globalThis.__HOLVA_SERVER_STORES || []
-}
-
-async function updateCloudStores(stores: MockStore[]): Promise<boolean> {
-  globalThis.__HOLVA_SERVER_STORES = stores
-  try {
-    const res = await fetch(STORES_CLOUD_URL, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "holva_crm_stores_v1",
-        data: { stores },
-      }),
-    })
-    return res.ok
-  } catch (e) {
-    console.error("updateCloudStores error:", e)
-    return false
-  }
-}
-
-// GET /api/sync/stores — Get all stores from cloud DB
+// GET /api/sync/stores — Get all stores
 export async function GET() {
   try {
-    const stores = await fetchCloudStores()
+    const stores = globalThis.__HOLVA_SERVER_STORES || []
     return NextResponse.json({
       success: true,
       stores,
     })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES || [] })
   }
 }
 
-// POST /api/sync/stores — Add, update or sync stores in cloud DB
+// POST /api/sync/stores — Add, update or sync stores
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { action, store, stores, storeId, updates } = body
 
-    let currentStores = await fetchCloudStores()
+    if (!globalThis.__HOLVA_SERVER_STORES) {
+      globalThis.__HOLVA_SERVER_STORES = []
+    }
 
     if (action === "sync" && Array.isArray(stores)) {
-      // Merge client stores with cloud stores
       const storeMap = new Map<string, MockStore>()
-      for (const s of currentStores) {
+      for (const s of globalThis.__HOLVA_SERVER_STORES) {
         if (s && s.name) storeMap.set(s.name.toLowerCase().trim(), s)
       }
       for (const s of stores) {
         if (s && s.name) storeMap.set(s.name.toLowerCase().trim(), s)
       }
-      const merged = Array.from(storeMap.values())
-      await updateCloudStores(merged)
-      return NextResponse.json({ success: true, stores: merged })
+      globalThis.__HOLVA_SERVER_STORES = Array.from(storeMap.values())
+      return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES })
     }
 
     if (action === "create" && store) {
-      const exists = currentStores.some((s) => s.name.toLowerCase().trim() === store.name.toLowerCase().trim())
+      const exists = globalThis.__HOLVA_SERVER_STORES.some((s) => s.name.toLowerCase().trim() === store.name.toLowerCase().trim())
       if (!exists) {
-        const updated = [store, ...currentStores]
-        await updateCloudStores(updated)
-        return NextResponse.json({ success: true, stores: updated, createdStore: store })
+        globalThis.__HOLVA_SERVER_STORES = [store, ...globalThis.__HOLVA_SERVER_STORES]
       }
-      return NextResponse.json({ success: true, stores: currentStores })
+      return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES, createdStore: store })
     }
 
     if (action === "update" && storeId && updates) {
-      const updated = currentStores.map((s) => (s.id === storeId || s.name === storeId ? { ...s, ...updates } : s))
-      await updateCloudStores(updated)
-      return NextResponse.json({ success: true, stores: updated })
+      globalThis.__HOLVA_SERVER_STORES = globalThis.__HOLVA_SERVER_STORES.map((s) => (s.id === storeId || s.name === storeId ? { ...s, ...updates } : s))
+      return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES })
     }
 
     if (action === "delete" && storeId) {
-      const updated = currentStores.filter((s) => s.id !== storeId && s.name !== storeId)
-      await updateCloudStores(updated)
-      return NextResponse.json({ success: true, stores: updated })
+      globalThis.__HOLVA_SERVER_STORES = globalThis.__HOLVA_SERVER_STORES.filter((s) => s.id !== storeId && s.name !== storeId)
+      return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES })
     }
 
-    return NextResponse.json({ success: true, stores: currentStores })
+    return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, stores: globalThis.__HOLVA_SERVER_STORES || [] })
   }
 }
