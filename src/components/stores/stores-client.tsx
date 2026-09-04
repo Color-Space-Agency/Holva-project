@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
   BLOCKED: "bg-red-500/10 text-red-500",
 }
 import { useEffect } from "react"
-import { getStoredStores, getStoredOrders, deleteStoredStore, isRealSupabaseConfigured } from "@/lib/mock-data"
+import { getStoredStores, getStoredOrders, deleteStoredStore, isRealSupabaseConfigured, syncStoresFromServer, syncOrdersFromServer } from "@/lib/mock-data"
 
 export function StoresClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -52,6 +52,10 @@ export function StoresClient() {
   const { data: stores, isLoading, refetch } = useQuery({
     queryKey: ["stores", searchQuery],
     queryFn: async () => {
+      if (typeof window !== "undefined") {
+        await Promise.all([syncStoresFromServer(), syncOrdersFromServer()]).catch(() => {})
+      }
+
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -72,7 +76,7 @@ export function StoresClient() {
 
       const storedOrders = getStoredOrders()
       let res = getStoredStores().map((s) => {
-        const storeOrders = storedOrders.filter((o) => o.store_name === s.name)
+        const storeOrders = storedOrders.filter((o) => o.store_name.toLowerCase().trim() === s.name.toLowerCase().trim())
         const debt = storeOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
         return {
           ...s,
@@ -89,6 +93,9 @@ export function StoresClient() {
 
   // Real-time synchronization with orders & payments
   useEffect(() => {
+    syncStoresFromServer().then(() => refetch())
+    syncOrdersFromServer().then(() => refetch())
+
     const handleOrdersUpdated = () => refetch()
     const handleStoresUpdated = () => refetch()
     window.addEventListener("orders-updated", handleOrdersUpdated)

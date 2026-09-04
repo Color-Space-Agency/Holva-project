@@ -358,9 +358,6 @@ export function getStoredStores(): MockStore[] {
   } catch (e) {
     console.error("Error reading stored stores:", e)
   }
-  try {
-    localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(INITIAL_STORES))
-  } catch {}
   return INITIAL_STORES
 }
 
@@ -372,11 +369,38 @@ export function saveStoredStores(stores: MockStore[]): void {
   } catch {}
 }
 
+export async function syncStoresFromServer(): Promise<MockStore[]> {
+  if (typeof window === "undefined") return INITIAL_STORES
+  try {
+    const res = await fetch("/api/sync/stores", { cache: "no-store" })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.stores)) {
+        localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
+        window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
+        return data.stores
+      }
+    }
+  } catch (e) {
+    console.error("syncStoresFromServer error:", e)
+  }
+  return getStoredStores()
+}
+
 export function createStoredStore(newStore: MockStore): MockStore[] {
   if (typeof window === "undefined") return INITIAL_STORES
   const list = getStoredStores()
   const updatedList = [newStore, ...list]
   saveStoredStores(updatedList)
+
+  try {
+    fetch("/api/sync/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", store: newStore }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -385,6 +409,15 @@ export function updateStoredStore(id: string, updates: Partial<MockStore>): Mock
   const list = getStoredStores()
   const updatedList = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
   saveStoredStores(updatedList)
+
+  try {
+    fetch("/api/sync/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", storeId: id, updates }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -393,6 +426,15 @@ export function deleteStoredStore(id: string): MockStore[] {
   const list = getStoredStores()
   const updatedList = list.filter((s) => s.id !== id)
   saveStoredStores(updatedList)
+
+  try {
+    fetch("/api/sync/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", storeId: id }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 
@@ -412,9 +454,6 @@ export function getStoredOrders(): MockOrder[] {
   } catch (e) {
     console.error("Error reading stored orders:", e)
   }
-  try {
-    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(INITIAL_ORDERS))
-  } catch {}
   return INITIAL_ORDERS
 }
 
@@ -520,6 +559,15 @@ export function updateStoredOrder(id: string, updates: Partial<MockOrder>): Mock
   const list = getStoredOrders()
   const updatedList = list.map((o) => (o.id === id ? { ...o, ...updates } : o))
   saveStoredOrders(updatedList)
+
+  try {
+    fetch("/api/sync/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", orders: updatedList }),
+    }).catch(() => {})
+  } catch {}
+
   return updatedList
 }
 

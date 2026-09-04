@@ -12,6 +12,8 @@ import {
   updateStoredOrder,
   MockOrder,
   createStoredStore,
+  syncStoresFromServer,
+  syncOrdersFromServer,
 } from "@/lib/mock-data"
 import { toast } from "sonner"
 import {
@@ -30,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatCurrency } from "@/lib/utils"
-import { Trash, Plus, ChevronRight, Store, UserCheck, ShoppingBag, CreditCard, Building2 } from "lucide-react"
+import { Trash, Plus, ChevronRight, Store, UserCheck, ShoppingBag, CreditCard, Building2, Check, Sparkles } from "lucide-react"
 
 interface OrderFormDialogProps {
   open: boolean
@@ -57,6 +59,8 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
   useEffect(() => {
     if (open) {
+      syncStoresFromServer().then((st) => setAvailableStores(st))
+      syncOrdersFromServer()
       const storedStores = getStoredStores()
       const storedProds = getStoredProducts()
       const storedEmps = getStoredEmployees()
@@ -147,8 +151,8 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
     try {
       const orderNumber = initialData?.order_number || `ORD-${Date.now().toString().slice(-6)}`
 
-      // If new store was typed, save it to stored stores list too
-      if (!availableStores.some((s) => s.name.toLowerCase() === finalStore.toLowerCase())) {
+      // Save new store if written
+      if (!availableStores.some((s) => s.name.toLowerCase().trim() === finalStore.toLowerCase().trim())) {
         createStoredStore({
           id: `s-${Date.now()}`,
           name: finalStore,
@@ -221,126 +225,164 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 border-2 border-violet-100 dark:border-violet-950 shadow-2xl">
-        <DialogHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
+      <DialogContent className="w-[96vw] sm:max-w-4xl max-h-[94vh] overflow-y-auto rounded-3xl p-4 sm:p-8 border-2 border-violet-200 dark:border-violet-900 shadow-2xl space-y-6">
+        <DialogHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-violet-600 text-white flex items-center justify-center font-bold text-lg">
-              <ShoppingBag className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-violet-500/30">
+              <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                {initialData ? "Sotuvni Tahrirlash" : "Yangi Sotuv Rasmiylashtirish (Frame)"}
+              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                {initialData ? "Sotuvni Tahrirlash" : "Yangi Sotuv Yaratish (Sotuv Ramkasi)"}
               </DialogTitle>
-              <p className="text-xs text-gray-500 mt-0.5">Do'kon va agentga biriktirilgan sotuv hujjati</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                Do'konlar, mahsulotlar va to'lov ma'lumotlarini qulay boshqarish oynasi
+              </p>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Structured Step Progress Bar */}
-        <div className="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-900 p-2 rounded-2xl border border-gray-100 dark:border-gray-800 my-2">
+        {/* Navigation Step Tabs */}
+        <div className="grid grid-cols-3 gap-2 bg-violet-50/80 dark:bg-gray-900 p-2 rounded-2xl border border-violet-100 dark:border-gray-800">
           <button
             type="button"
             onClick={() => setStep(1)}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               step === 1
-                ? "bg-violet-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30 scale-[1.01]"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-violet-100/50"
             }`}
           >
-            <Store className="w-3.5 h-3.5" /> 1. Do'kon
+            <Store className="w-4 h-4" /> 1. Do'kon tanlash
           </button>
           <button
             type="button"
             onClick={() => setStep(2)}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               step === 2
-                ? "bg-violet-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30 scale-[1.01]"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-violet-100/50"
             }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" /> 2. Mahsulotlar
+            <ShoppingBag className="w-4 h-4" /> 2. Mahsulotlar ({items.length})
           </button>
           <button
             type="button"
             onClick={() => setStep(3)}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               step === 3
-                ? "bg-violet-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30 scale-[1.01]"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-violet-100/50"
             }`}
           >
-            <CreditCard className="w-3.5 h-3.5" /> 3. To'lov
+            <CreditCard className="w-4 h-4" /> 3. To'lov va Qabul
           </button>
         </div>
 
         {/* STEP 1: STORE & AGENT */}
         {step === 1 && (
-          <div className="space-y-4 pt-2">
-            <div className="bg-violet-50/50 dark:bg-violet-950/20 p-4 rounded-2xl border border-violet-100 dark:border-violet-900/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-violet-900 dark:text-violet-300 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Building2 className="w-4 h-4 text-violet-600" />
-                  Do&apos;kon (Mijoz) *
-                </label>
-                <span className="text-[11px] text-gray-500">Mavjud: {availableStores.length} ta do'kon</span>
-              </div>
+          <div className="space-y-6 pt-1">
+            {/* Quick Store Selection Pills */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-violet-900 dark:text-violet-300 flex items-center justify-between uppercase tracking-wider">
+                <span className="flex items-center gap-2 text-sm">
+                  <Building2 className="w-5 h-5 text-violet-600" />
+                  Mavjud Do'konlar (Tezkor tanlov):
+                </span>
+                <span className="text-xs font-normal text-gray-500">Jami: {availableStores.length} ta do'kon</span>
+              </label>
 
-              {availableStores.length > 0 ? (
-                <div className="space-y-2">
-                  <Select value={selectedStoreName} onValueChange={setSelectedStoreName}>
-                    <SelectTrigger className="h-12 rounded-xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm font-semibold">
-                      <SelectValue placeholder="Do'konni ro'yxatdan tanlang..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl max-h-56">
-                      {availableStores.map((s) => (
-                        <SelectItem key={s.id} value={s.name} className="py-2 text-sm font-medium">
-                          {s.name} ({s.address || "Manzil ko'rsatilmadi"})
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new" className="text-violet-600 font-bold border-t">
-                        + Yangi do'kon nomi yozish...
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {selectedStoreName === "new" && (
-                    <Input
-                      value={customStoreInput}
-                      onChange={(e) => setCustomStoreInput(e.target.value)}
-                      placeholder="Do'kon nomini kiriting (masalan: Korzinka Chilonzor)"
-                      className="h-11 rounded-xl bg-white dark:bg-gray-900 text-sm"
-                    />
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <Input
-                    value={customStoreInput}
-                    onChange={(e) => setCustomStoreInput(e.target.value)}
-                    placeholder="Do'kon nomini kiriting (masalan: Korzinka Chilonzor)"
-                    className="h-12 rounded-xl bg-white dark:bg-gray-900 text-sm"
-                  />
-                  <p className="text-[11px] text-amber-600 font-medium">
-                    Hozircha do'konlar bazasi bo'sh. Yuqorida nomini kiriting, avtomatik biriktiriladi.
-                  </p>
+              {availableStores.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1 border rounded-2xl bg-gray-50/50 dark:bg-gray-900/40">
+                  {availableStores.map((s) => {
+                    const isSelected = selectedStoreName === s.name
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStoreName(s.name)
+                          setCustomStoreInput("")
+                        }}
+                        className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? "bg-violet-600 text-white border-violet-600 shadow-md ring-2 ring-violet-400"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-violet-300 hover:bg-violet-50/30"
+                        }`}
+                      >
+                        <div className="truncate mr-2">
+                          <div className="font-bold text-sm truncate">{s.name}</div>
+                          <div className={`text-xs truncate ${isSelected ? "text-violet-100" : "text-gray-500"}`}>
+                            {s.address || "Toshkent"}
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-5 h-5 shrink-0 text-white" />}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-900/60 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 uppercase tracking-wider">
+            {/* Dropdown & Direct Write-in Input */}
+            <div className="bg-violet-50/60 dark:bg-violet-950/20 p-4 sm:p-5 rounded-3xl border border-violet-200/80 dark:border-violet-900/60 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                  Do'konni Ro'yxatdan Tanlash yoki Yangi Nom Kiritish:
+                </label>
+                <Select
+                  value={selectedStoreName}
+                  onValueChange={(val) => {
+                    setSelectedStoreName(val)
+                    if (val !== "new") setCustomStoreInput("")
+                  }}
+                >
+                  <SelectTrigger className="h-13 rounded-2xl bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-base font-semibold px-4">
+                    <SelectValue placeholder="Do'konni tanlang..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl max-h-60">
+                    {availableStores.map((s) => (
+                      <SelectItem key={s.id} value={s.name} className="py-2.5 text-sm font-medium">
+                        {s.name} ({s.address || "Toshkent"})
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="new" className="text-violet-600 font-bold border-t py-2.5">
+                      + Yangi do'kon nomi yozish...
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(selectedStoreName === "new" || availableStores.length === 0) && (
+                <div className="space-y-1.5 animate-in fade-in">
+                  <label className="text-xs font-bold text-violet-800 dark:text-violet-300">
+                    Yangi Do'kon Nomi (Ruchnoy kiritish):
+                  </label>
+                  <Input
+                    value={customStoreInput}
+                    onChange={(e) => setCustomStoreInput(e.target.value)}
+                    placeholder="Masalan: Fayz Supermarket, Chilonzor 19"
+                    className="h-13 rounded-2xl bg-white dark:bg-gray-900 text-base font-medium px-4 border-violet-300 focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Sales Agent Field */}
+            <div className="bg-gray-50 dark:bg-gray-900/60 p-4 sm:p-5 rounded-3xl border border-gray-200 dark:border-gray-800 space-y-2">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2 uppercase tracking-wider">
                 <UserCheck className="w-4 h-4 text-violet-600" />
-                Mas&apos;ul Sotuv Agenti
+                Mas'ul Sotuv Agenti
               </label>
               <Input
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
-                placeholder="Agent ismi familiyasi"
-                className="h-11 rounded-xl bg-white dark:bg-gray-900 text-sm"
+                placeholder="Agent F.I.SH."
+                className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold px-4"
               />
             </div>
 
-            <div className="flex justify-end pt-3">
+            <div className="flex justify-end pt-2">
               <Button
                 type="button"
                 onClick={() => {
@@ -351,9 +393,9 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                   }
                   setStep(2)
                 }}
-                className="h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-6 text-sm font-bold shadow-md cursor-pointer gap-2"
+                className="h-13 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-8 text-base font-bold shadow-lg shadow-violet-600/30 cursor-pointer gap-2"
               >
-                Keyingisi: Mahsulotlar <ChevronRight className="w-4 h-4" />
+                Keyingisi: Mahsulotlar qo'shish <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -361,26 +403,26 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
         {/* STEP 2: PRODUCTS */}
         {step === 2 && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+          <div className="space-y-6 pt-1">
+            <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
               {items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex flex-col sm:flex-row gap-2.5 items-start sm:items-center bg-gray-50 dark:bg-gray-900 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs"
+                  className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-gray-900 p-4 rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-sm"
                 >
                   <div className="flex-1 w-full space-y-1">
-                    <label className="text-[11px] font-bold text-gray-500">Mahsulot Nomi</label>
+                    <label className="text-xs font-bold text-gray-500">Mahsulot Nomi</label>
                     {availableProducts.length > 0 ? (
                       <Select
                         value={item.product_name}
                         onValueChange={(val) => updateItem(index, "product_name", val)}
                       >
-                        <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-semibold">
+                        <SelectTrigger className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold border-gray-200">
                           <SelectValue placeholder="Mahsulotni tanlang" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl max-h-48">
+                        <SelectContent className="rounded-2xl max-h-56">
                           {availableProducts.map((p) => (
-                            <SelectItem key={p.id} value={p.name} className="text-sm font-medium">
+                            <SelectItem key={p.id} value={p.name} className="py-2 text-sm font-medium">
                               {p.name} — {formatCurrency(p.price)}
                             </SelectItem>
                           ))}
@@ -391,43 +433,63 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                         value={item.product_name}
                         onChange={(e) => updateItem(index, "product_name", e.target.value)}
                         placeholder="Mahsulot nomi"
-                        className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-semibold"
+                        className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
                       />
                     )}
                   </div>
 
-                  <div className="w-full sm:w-28 space-y-1">
-                    <label className="text-[11px] font-bold text-gray-500">Soni (dona)</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-bold text-center"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
-                    />
+                  <div className="w-full sm:w-32 space-y-1">
+                    <label className="text-xs font-bold text-gray-500">Soni (dona)</label>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-12 w-10 rounded-xl text-lg font-bold"
+                        onClick={() => updateItem(index, "quantity", Math.max(1, (Number(item.quantity) || 1) - 1))}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        min="1"
+                        className="h-12 rounded-xl bg-gray-50 dark:bg-gray-800 text-base font-black text-center"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-12 w-10 rounded-xl text-lg font-bold"
+                        onClick={() => updateItem(index, "quantity", (Number(item.quantity) || 0) + 1)}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="w-full sm:w-36 space-y-1">
-                    <label className="text-[11px] font-bold text-gray-500">Dona narxi (so'm)</label>
+                  <div className="w-full sm:w-40 space-y-1">
+                    <label className="text-xs font-bold text-gray-500">Dona narxi (so'm)</label>
                     <Input
                       type="number"
                       step="500"
-                      className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-bold"
+                      className="h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 text-sm font-bold"
                       value={item.unit_price}
                       onChange={(e) => updateItem(index, "unit_price", Number(e.target.value))}
                     />
                   </div>
 
-                  <div className="self-end sm:self-center mt-2 sm:mt-5">
+                  <div className="self-end sm:self-center mt-2 sm:mt-6">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-11 w-11 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl cursor-pointer"
+                      className="h-12 w-12 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-2xl cursor-pointer"
                       onClick={() => removeItem(index)}
                       aria-label="O'chirish"
                     >
-                      <Trash className="h-4 w-4" />
+                      <Trash className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -438,18 +500,21 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
               type="button"
               variant="outline"
               onClick={handleAddItem}
-              className="w-full h-11 rounded-2xl border-dashed border-gray-300 dark:border-gray-700 gap-2 text-xs font-bold cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/30"
+              className="w-full h-13 rounded-2xl border-2 border-dashed border-violet-200 dark:border-violet-900 gap-2 text-sm font-bold cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/30 text-violet-700 dark:text-violet-300"
             >
-              <Plus className="h-4 w-4 text-violet-600" /> Mahsulot qatori qo&apos;shish
+              <Plus className="h-5 w-5 text-violet-600" /> Yangi Mahsulot Qatori Qo'shish
             </Button>
 
-            <div className="flex items-center justify-between p-4 bg-violet-50/60 dark:bg-violet-950/40 rounded-2xl border border-violet-100 dark:border-violet-900/60">
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Jami Hisoblangan Summa:
-              </span>
-              <span className="text-2xl font-bold text-violet-700 dark:text-violet-300">
-                {formatCurrency(totalAmount)}
-              </span>
+            <div className="flex items-center justify-between p-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-3xl shadow-xl">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider block text-violet-200">
+                  Jami Hisoblangan Summa:
+                </span>
+                <span className="text-2xl sm:text-3xl font-black">
+                  {formatCurrency(totalAmount)}
+                </span>
+              </div>
+              <Sparkles className="w-8 h-8 opacity-80" />
             </div>
 
             <div className="flex justify-between pt-2">
@@ -457,7 +522,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                 type="button"
                 variant="outline"
                 onClick={() => setStep(1)}
-                className="h-12 rounded-2xl px-6 text-sm font-bold cursor-pointer"
+                className="h-13 rounded-2xl px-8 text-sm font-bold cursor-pointer"
               >
                 Ortga
               </Button>
@@ -465,9 +530,9 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                 type="button"
                 onClick={() => setStep(3)}
                 disabled={items.length === 0}
-                className="h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-6 text-sm font-bold shadow-md cursor-pointer gap-2"
+                className="h-13 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-8 text-base font-bold shadow-lg shadow-violet-600/30 cursor-pointer gap-2"
               >
-                Keyingisi: To&apos;lov <ChevronRight className="w-4 h-4" />
+                Keyingisi: To'lov <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -475,49 +540,49 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
         {/* STEP 3: PAYMENT & CONFIRM */}
         {step === 3 && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-6 pt-1">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                To&apos;lov Usuli
+                To'lov Usuli
               </label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold">
+                <SelectTrigger className="h-13 rounded-2xl bg-white dark:bg-gray-900 text-base font-semibold border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   <SelectItem value="CASH">Naqd pul</SelectItem>
                   <SelectItem value="CARD">Plastik karta</SelectItem>
-                  <SelectItem value="BANK">Bank o&apos;tkazmasi</SelectItem>
+                  <SelectItem value="BANK">Bank o'tkazmasi</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Oldindan To&apos;langan Summa (so&apos;m)
+                Oldindan To'langan Summa (so'm)
               </label>
               <Input
                 type="number"
                 step="10000"
-                className="h-12 rounded-2xl text-base font-bold bg-white dark:bg-gray-900"
+                className="h-13 rounded-2xl text-lg font-black bg-white dark:bg-gray-900 px-4 border-gray-300"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(Number(e.target.value))}
                 placeholder="0"
               />
-              <div className="flex justify-between text-xs text-gray-500 font-medium px-1">
-                <span>Jami sotuv summasi: <strong>{formatCurrency(totalAmount)}</strong></span>
-                <span className={totalAmount - paidAmount > 0 ? "text-red-500 font-bold" : "text-emerald-600 font-bold"}>
-                  {totalAmount - paidAmount > 0 ? `Qarz: ${formatCurrency(totalAmount - paidAmount)}` : "To'liq to'langan"}
+              <div className="flex justify-between items-center text-sm font-medium px-2 py-1 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                <span>Jami sotuv: <strong>{formatCurrency(totalAmount)}</strong></span>
+                <span className={totalAmount - paidAmount > 0 ? "text-red-600 font-bold" : "text-emerald-600 font-bold"}>
+                  {totalAmount - paidAmount > 0 ? `Qarzdorlik: ${formatCurrency(totalAmount - paidAmount)}` : "To'liq to'langan"}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Qo&apos;shimcha Izoh
+                Qo'shimcha Izoh
               </label>
               <Input
-                className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm"
+                className="h-13 rounded-2xl bg-white dark:bg-gray-900 text-sm px-4"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Yetkazish vaqti yoki maxsus ko'rsatmalar..."
@@ -529,7 +594,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                 type="button"
                 variant="outline"
                 onClick={() => setStep(2)}
-                className="h-12 rounded-2xl px-6 text-sm font-bold cursor-pointer"
+                className="h-13 rounded-2xl px-8 text-sm font-bold cursor-pointer"
               >
                 Ortga
               </Button>
@@ -537,7 +602,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 text-sm font-bold shadow-lg cursor-pointer"
+                className="h-13 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-10 text-base font-bold shadow-xl shadow-emerald-600/30 cursor-pointer"
               >
                 {isSubmitting ? "Saqlanmoqda..." : "Sotuvni Tasdiqlash"}
               </Button>
