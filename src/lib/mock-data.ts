@@ -95,6 +95,16 @@ export function isRealSupabaseConfigured(): boolean {
 // MAHSULOTLAR UCHUN LOCALSTORAGE PERSISTENCE
 // ==========================================
 const STORAGE_KEY_PRODUCTS = "holva_crm_stored_products"
+const STORAGE_KEY_DELETED_PRODUCTS = "holva_crm_deleted_products"
+
+export function getDeletedProductIds(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_PRODUCTS)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
 
 export function getStoredProducts(): MockProduct[] {
   if (typeof window === "undefined") return []
@@ -102,7 +112,10 @@ export function getStoredProducts(): MockProduct[] {
     const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        const deletedSet = new Set(getDeletedProductIds())
+        return parsed.filter((p) => !deletedSet.has(p.id) && !deletedSet.has(p.name.toLowerCase().trim()))
+      }
     }
   } catch (e) {
     console.error("Error reading stored products:", e)
@@ -111,15 +124,26 @@ export function getStoredProducts(): MockProduct[] {
 }
 
 export async function syncProductsFromServer(): Promise<MockProduct[]> {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  if (typeof window === "undefined") return []
+  const deletedIds = getDeletedProductIds()
+  const deletedSet = new Set(deletedIds)
   try {
     const res = await fetch("/api/sync/products", { cache: "no-store" })
     if (res.ok) {
       const data = await res.json()
       if (data.success && Array.isArray(data.products)) {
+        if (Array.isArray(data.deletedProductIds)) {
+          data.deletedProductIds.forEach((id: string) => deletedSet.add(id))
+          try {
+            localStorage.setItem(STORAGE_KEY_DELETED_PRODUCTS, JSON.stringify(Array.from(deletedSet)))
+          } catch {}
+        }
+        const filteredServer = data.products.filter(
+          (p: MockProduct) => !deletedSet.has(p.id) && !deletedSet.has(p.name.toLowerCase().trim())
+        )
         const local = getStoredProducts()
         const map = new Map<string, MockProduct>()
-        data.products.forEach((p: MockProduct) => map.set(p.id, p))
+        filteredServer.forEach((p: MockProduct) => map.set(p.id, p))
         local.forEach((p: MockProduct) => {
           if (map.has(p.id)) {
             const serverItem = map.get(p.id)!
@@ -128,18 +152,20 @@ export async function syncProductsFromServer(): Promise<MockProduct[]> {
               ...p,
               image_url: p.image_url || serverItem.image_url,
             })
-          } else {
+          } else if (!deletedSet.has(p.id) && !deletedSet.has(p.name.toLowerCase().trim())) {
             map.set(p.id, p)
           }
         })
-        const merged = Array.from(map.values())
+        const merged = Array.from(map.values()).filter(
+          (p) => !deletedSet.has(p.id) && !deletedSet.has(p.name.toLowerCase().trim())
+        )
         localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(merged))
         window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: merged } }))
 
         fetch("/api/sync/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "sync_all", productsList: merged }),
+          body: JSON.stringify({ action: "sync_all", productsList: merged, deletedProductIds: Array.from(deletedSet) }),
         }).catch(() => {})
 
         syncProductsToInventory(merged)
@@ -153,7 +179,7 @@ export async function syncProductsFromServer(): Promise<MockProduct[]> {
 }
 
 export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }): MockProduct[] {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  if (typeof window === "undefined") return []
   const list = getStoredProducts()
   const updatedList = list.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
   try {
@@ -165,7 +191,7 @@ export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }
     fetch("/api/sync/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "update", product: updated }),
+      body: JSON.stringify({ action: "update", product: updated, deletedProductIds: getDeletedProductIds() }),
     }).catch(() => {})
   } catch {}
 
@@ -174,7 +200,7 @@ export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }
 }
 
 export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: string }): MockProduct[] {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  if (typeof window === "undefined") return []
   const list = getStoredProducts()
   const product: MockProduct = {
     ...newItem,
@@ -190,7 +216,7 @@ export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: st
     fetch("/api/sync/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create", product }),
+      body: JSON.stringify({ action: "create", product, deletedProductIds: getDeletedProductIds() }),
     }).catch(() => {})
   } catch {}
 
@@ -199,9 +225,24 @@ export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: st
 }
 
 export function deleteStoredProduct(id: string): MockProduct[] {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  if (typeof window === "undefined") return []
   const list = getStoredProducts()
-  const updatedList = list.filter((item) => item.id !== id)
+  const matched = list.find((item) => item.id === id || item.name === id)
+
+  const deletedIds = getDeletedProductIds()
+  const set = new Set(deletedIds)
+  set.add(id)
+  if (matched) {
+    set.add(matched.id)
+    set.add(matched.name.toLowerCase().trim())
+  }
+
+  const updatedDeleted = Array.from(set)
+  try {
+    localStorage.setItem(STORAGE_KEY_DELETED_PRODUCTS, JSON.stringify(updatedDeleted))
+  } catch {}
+
+  const updatedList = list.filter((item) => !set.has(item.id) && !set.has(item.name.toLowerCase().trim()))
   try {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updatedList))
     window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
@@ -211,7 +252,7 @@ export function deleteStoredProduct(id: string): MockProduct[] {
     fetch("/api/sync/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", productId: id }),
+      body: JSON.stringify({ action: "delete", productId: id, deletedProductIds: updatedDeleted }),
     }).catch(() => {})
   } catch {}
 
@@ -222,10 +263,21 @@ export function deleteStoredProduct(id: string): MockProduct[] {
 export function syncProductsToInventory(productsList?: MockProduct[]): void {
   if (typeof window === "undefined") return
   const prods = productsList || getStoredProducts()
+  const deletedSet = new Set(getDeletedProductIds())
 
   try {
     const rawInv = localStorage.getItem("holva_crm_stored_inventory")
     let invList: any[] = rawInv ? JSON.parse(rawInv) : []
+
+    // Filter out deleted product inventory items
+    invList = invList.filter((invItem) => {
+      if (invItem.item_type === "product" || invItem.product_id || invItem.product?.name) {
+        const pId = invItem.product_id
+        const pName = (invItem.product?.name || "").toLowerCase().trim()
+        if (deletedSet.has(pId) || deletedSet.has(pName)) return false
+      }
+      return true
+    })
 
     const map = new Map<string, any>()
     invList.forEach((invItem) => {
@@ -233,8 +285,13 @@ export function syncProductsToInventory(productsList?: MockProduct[]): void {
       map.set(key, invItem)
     })
 
+    const activeKeys = new Set<string>()
     prods.forEach((p) => {
+      if (deletedSet.has(p.id) || deletedSet.has(p.name.toLowerCase().trim())) return
       const key = p.id || p.name.toLowerCase().trim()
+      activeKeys.add(p.id)
+      activeKeys.add(p.name.toLowerCase().trim())
+
       const existing = map.get(key) || map.get(p.id) || map.get(p.name.toLowerCase().trim())
 
       if (existing) {
@@ -259,8 +316,19 @@ export function syncProductsToInventory(productsList?: MockProduct[]): void {
       }
     })
 
-    localStorage.setItem("holva_crm_stored_inventory", JSON.stringify(invList))
-    window.dispatchEvent(new CustomEvent("inventory-updated", { detail: { items: invList } }))
+    // Keep only active product inventory items or raw material items
+    const finalInv = invList.filter((invItem) => {
+      if (invItem.item_type === "product" || invItem.product_id || invItem.product?.name) {
+        const pId = invItem.product_id
+        const pName = (invItem.product?.name || "").toLowerCase().trim()
+        if (deletedSet.has(pId) || deletedSet.has(pName)) return false
+        return (pId && activeKeys.has(pId)) || (pName && activeKeys.has(pName))
+      }
+      return true
+    })
+
+    localStorage.setItem("holva_crm_stored_inventory", JSON.stringify(finalInv))
+    window.dispatchEvent(new CustomEvent("inventory-updated", { detail: { items: finalInv } }))
   } catch (e) {
     console.error("syncProductsToInventory error:", e)
   }

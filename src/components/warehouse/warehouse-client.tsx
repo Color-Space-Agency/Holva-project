@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { isRealSupabaseConfigured, getStoredProducts } from "@/lib/mock-data";
+import { isRealSupabaseConfigured, getStoredProducts, getDeletedProductIds, deleteStoredProduct } from "@/lib/mock-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,18 +36,30 @@ const STORAGE_KEY_INVENTORY = "holva_crm_stored_inventory";
 
 function getStoredInventoryList(): InventoryItem[] {
   if (typeof window === "undefined") return [];
+  const deletedSet = new Set(getDeletedProductIds());
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY_INVENTORY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item: InventoryItem) => {
+          const pId = item.product_id;
+          const pName = (item.product?.name || "").toLowerCase().trim();
+          if (pId && deletedSet.has(pId)) return false;
+          if (pName && deletedSet.has(pName)) return false;
+          return true;
+        });
+      }
     }
   } catch (e) {
     console.error("Error reading stored inventory:", e);
   }
 
-  // Generate initial inventory items from stored products if empty
+  // Generate inventory items only from active (non-deleted) stored products if empty
   const storedProducts = getStoredProducts();
+  if (storedProducts.length === 0) return [];
+
   const initialItems: InventoryItem[] = storedProducts.map((p) => ({
     id: `inv-${p.id}`,
     product_id: p.id,
@@ -287,9 +299,19 @@ export function WarehouseClient() {
 
   const handleDelete = (id: string) => {
     const currentList = getStoredInventoryList();
+    const itemToDelete = currentList.find((i) => i.id === id);
+    if (itemToDelete) {
+      if (itemToDelete.product_id) {
+        deleteStoredProduct(itemToDelete.product_id);
+      } else if (itemToDelete.product?.name) {
+        deleteStoredProduct(itemToDelete.product.name);
+      }
+    }
+
     const updatedList = currentList.filter((i) => i.id !== id);
     saveStoredInventoryList(updatedList);
     queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
     toast.success("Inventar elementi o'chirildi");
   };
 
