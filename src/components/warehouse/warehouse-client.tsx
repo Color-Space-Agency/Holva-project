@@ -71,6 +71,36 @@ function saveStoredInventoryList(items: InventoryItem[]): void {
   try {
     localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(items));
     window.dispatchEvent(new CustomEvent("inventory-updated", { detail: { items } }));
+
+    // Sync inventory stock changes back to stored products
+    const rawProds = localStorage.getItem("holva_crm_stored_products");
+    if (rawProds) {
+      const prodsList: any[] = JSON.parse(rawProds);
+      let prodsChanged = false;
+
+      items.forEach((item) => {
+        const name = (item.product?.name || item.raw_material?.name || "").toLowerCase().trim();
+        const pId = item.product_id;
+        const found = prodsList.find(
+          (p) => (pId && p.id === pId) || (name && p.name.toLowerCase().trim() === name)
+        );
+        if (found && found.stock !== item.current_stock) {
+          found.stock = item.current_stock;
+          prodsChanged = true;
+        }
+      });
+
+      if (prodsChanged) {
+        localStorage.setItem("holva_crm_stored_products", JSON.stringify(prodsList));
+        window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: prodsList } }));
+
+        fetch("/api/sync/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "sync_all", productsList: prodsList }),
+        }).catch(() => {});
+      }
+    }
   } catch (e) {
     console.error("Error saving stored inventory:", e);
   }
@@ -88,6 +118,22 @@ export function WarehouseClient() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    };
+    window.addEventListener("inventory-updated", handleUpdate);
+    window.addEventListener("products-updated", handleUpdate);
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    }, 3000);
+    return () => {
+      window.removeEventListener("inventory-updated", handleUpdate);
+      window.removeEventListener("products-updated", handleUpdate);
+      clearInterval(interval);
+    };
+  }, [queryClient]);
 
   // Form states
   const [formData, setFormData] = useState({

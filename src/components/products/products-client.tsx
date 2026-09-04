@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { Plus, Search, Edit2, Trash2, Archive, Copy, Package, Filter, MoreVertical, Pencil } from "lucide-react"
+import { Plus, Search, Edit2, Trash2, Archive, Copy, Package, Filter, MoreVertical, Pencil, Warehouse } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -348,6 +348,17 @@ export function ProductsClient() {
                     +{formatCurrency(product.sales_price - ((product as any).cost_price || Math.round(product.sales_price * 0.6)))}
                   </p>
                 </div>
+              </div>
+
+              {/* Stock in Warehouse Info Badge */}
+              <div className="mt-3 p-2 bg-amber-50/80 dark:bg-amber-950/40 rounded-xl border border-amber-200/70 dark:border-amber-800/60 flex items-center justify-between text-xs">
+                <span className="text-gray-600 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                  <Warehouse size={14} className="text-amber-600" />
+                  Omborda qoldiq soni:
+                </span>
+                <span className="font-extrabold text-amber-700 dark:text-amber-300 text-xs sm:text-sm">
+                  {(product as any).stock ?? 100} {(product as any).product_units?.symbol || (product as any).unit || "dona"}
+                </span>
               </div>
 
               {/* Actions */}

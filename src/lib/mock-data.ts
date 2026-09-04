@@ -209,6 +209,14 @@ export async function syncProductsFromServer(): Promise<MockProduct[]> {
         const merged = Array.from(map.values())
         localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(merged))
         window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: merged } }))
+
+        fetch("/api/sync/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "sync_all", productsList: merged }),
+        }).catch(() => {})
+
+        syncProductsToInventory(merged)
         return merged
       }
     }
@@ -235,6 +243,7 @@ export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }
     }).catch(() => {})
   } catch {}
 
+  syncProductsToInventory(updatedList)
   return updatedList
 }
 
@@ -259,6 +268,7 @@ export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: st
     }).catch(() => {})
   } catch {}
 
+  syncProductsToInventory(updatedList)
   return updatedList
 }
 
@@ -279,7 +289,97 @@ export function deleteStoredProduct(id: string): MockProduct[] {
     }).catch(() => {})
   } catch {}
 
+  syncProductsToInventory(updatedList)
   return updatedList
+}
+
+export function syncProductsToInventory(productsList?: MockProduct[]): void {
+  if (typeof window === "undefined") return
+  const prods = productsList || getStoredProducts()
+
+  try {
+    const rawInv = localStorage.getItem("holva_crm_stored_inventory")
+    let invList: any[] = rawInv ? JSON.parse(rawInv) : []
+
+    const map = new Map<string, any>()
+    invList.forEach((invItem) => {
+      const key = invItem.product_id || (invItem.product?.name ? invItem.product.name.toLowerCase().trim() : invItem.id)
+      map.set(key, invItem)
+    })
+
+    prods.forEach((p) => {
+      const key = p.id || p.name.toLowerCase().trim()
+      const existing = map.get(key) || map.get(p.id) || map.get(p.name.toLowerCase().trim())
+
+      if (existing) {
+        existing.current_stock = p.stock
+        existing.minimum_stock = p.min_stock || 10
+        existing.product = { name: p.name }
+        existing.unit = { short_name: p.unit || "dona" }
+      } else {
+        invList.push({
+          id: `inv-${p.id}`,
+          product_id: p.id,
+          raw_material_id: null,
+          item_type: "product",
+          current_stock: p.stock,
+          minimum_stock: p.min_stock || 10,
+          reserved_stock: 0,
+          warehouse: { name: "Tayyor Mahsulotlar Ombori" },
+          product: { name: p.name },
+          raw_material: null,
+          unit: { short_name: p.unit || "dona" },
+        })
+      }
+    })
+
+    localStorage.setItem("holva_crm_stored_inventory", JSON.stringify(invList))
+    window.dispatchEvent(new CustomEvent("inventory-updated", { detail: { items: invList } }))
+  } catch (e) {
+    console.error("syncProductsToInventory error:", e)
+  }
+}
+
+export function deductStockForOrder(order: any): void {
+  if (typeof window === "undefined" || !order) return
+
+  const items = order.order_items || order.items || []
+  if (!Array.isArray(items) || items.length === 0) return
+
+  const productsList = getStoredProducts()
+  let productsChanged = false
+
+  items.forEach((item: any) => {
+    const qty = Number(item.quantity) || 1
+    const pName = (item.products?.name || item.product_name || "").toLowerCase().trim()
+    const pId = item.product_id
+
+    const foundProd = productsList.find(
+      (p) => (pId && p.id === pId) || (pName && p.name.toLowerCase().trim() === pName)
+    )
+
+    if (foundProd) {
+      foundProd.stock = Math.max(0, (foundProd.stock || 0) - qty)
+      productsChanged = true
+    }
+  })
+
+  if (productsChanged) {
+    try {
+      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(productsList))
+      window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: productsList } }))
+    } catch (e) {}
+
+    try {
+      fetch("/api/sync/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_all", productsList }),
+      }).catch(() => {})
+    } catch (e) {}
+
+    syncProductsToInventory(productsList)
+  }
 }
 
 // ==========================================
@@ -677,6 +777,8 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   const list = getStoredOrders()
   const updatedList = [newOrder, ...list]
   saveStoredOrders(updatedList)
+
+  deductStockForOrder(newOrder)
 
   try {
     fetch("/api/sync/orders", {

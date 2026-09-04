@@ -226,7 +226,7 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
         })
         toast.success("Sotuv tahrirlandi!")
       } else {
-        const newMockOrder: MockOrder = {
+        const newMockOrder: any = {
           id: `ord-${Date.now()}`,
           order_number: orderNumber,
           store_name: finalStore,
@@ -237,6 +237,12 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
           payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
           created_at: new Date().toISOString(),
           items_count: items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0),
+          order_items: items.map((item) => ({
+            product_name: item.product_name,
+            quantity: Number(item.quantity) || 1,
+            unit_price: Number(item.unit_price) || 0,
+            total_price: (Number(item.quantity) || 1) * (Number(item.unit_price) || 0) - (Number(item.discount_amount) || 0),
+          })),
         }
         createStoredOrder(newMockOrder)
         toast.success("Yangi sotuv rasmiylashtirildi!")
