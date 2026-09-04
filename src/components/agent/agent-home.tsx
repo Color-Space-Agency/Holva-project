@@ -667,12 +667,7 @@ export function AgentHome() {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   // Sotuvlar ro'yxati (To'langan summasi bilan)
-  const [ordersList, setOrdersList] = useState<OrderItem[]>([
-    { id: 'HLV-2026-00104', client: 'Korzinka — Chilonzor', time: '05:21', amount: 14800000, status: 'delivered', phone: '+998711401414', paidAmount: 14800000 },
-    { id: 'HLV-2026-00105', client: 'Makro Supermarket — Sergeli', time: '00:21', amount: 9200000, status: 'accepted', phone: '+998712051222', paidAmount: 5000000 },
-    { id: 'HLV-2026-00106', client: 'Havas Diskaunter — Qo\'yliq', time: '11:21', amount: 21500000, status: 'shipping', phone: '+998712000007', paidAmount: 0 },
-    { id: 'HLV-2026-00107', client: 'Baraka Qandolat Do\'koni', time: '03:21', amount: 4600000, status: 'ready', phone: '+998909876543', paidAmount: 2000000 },
-  ]);
+  const [ordersList, setOrdersList] = useState<OrderItem[]>([]);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');

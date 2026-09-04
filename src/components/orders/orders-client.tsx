@@ -126,7 +126,10 @@ export function OrdersClient() {
       }
       
       deleteStoredOrder(deletingOrder.id)
-      toast.success("Sotuv Sotuvsi o'chirildi")
+      if (deletingOrder.order_number) {
+        deleteStoredOrder(deletingOrder.order_number)
+      }
+      toast.success("Sotuv hujjati muvaffaqiyatli o'chirildi")
       refetch()
     } catch (error) {
       toast.error("Xatolik yuz berdi")

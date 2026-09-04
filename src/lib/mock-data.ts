@@ -524,6 +524,16 @@ export function deleteStoredStore(id: string): MockStore[] {
 // Sotuvlar (ORDERS) LOCALSTORAGE PERSISTENCE
 // ==========================================
 const STORAGE_KEY_ORDERS = "holva_crm_stored_orders"
+const STORAGE_KEY_DELETED_ORDERS = "holva_crm_deleted_orders"
+
+export function getDeletedOrderIds(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_ORDERS)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
 
 export function getStoredOrders(): MockOrder[] {
   if (typeof window === "undefined") return INITIAL_ORDERS
@@ -531,7 +541,10 @@ export function getStoredOrders(): MockOrder[] {
     const raw = localStorage.getItem(STORAGE_KEY_ORDERS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        const deletedSet = new Set(getDeletedOrderIds())
+        return parsed.filter((o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number))
+      }
     }
   } catch (e) {
     console.error("Error reading stored orders:", e)
@@ -542,27 +555,38 @@ export function getStoredOrders(): MockOrder[] {
 export function saveStoredOrders(orders: MockOrder[]): void {
   if (typeof window === "undefined") return
   try {
-    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders))
-    window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders } }))
+    const deletedSet = new Set(getDeletedOrderIds())
+    const filtered = orders.filter((o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number))
+    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(filtered))
+    window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: filtered } }))
   } catch {}
 }
 
 export async function syncOrdersFromServer(): Promise<MockOrder[]> {
   if (typeof window === "undefined") return INITIAL_ORDERS
   const localOrders = getStoredOrders()
+  const deletedIds = getDeletedOrderIds()
   try {
     const res = await fetch("/api/sync/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "sync", orders: localOrders }),
+      body: JSON.stringify({ action: "sync", orders: localOrders, deletedOrderIds: deletedIds }),
       cache: "no-store",
     })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
-        localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(data.orders))
-        window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: data.orders } }))
-        return data.orders
+      if (data.success && Array.isArray(data.orders)) {
+        const deletedSet = new Set(deletedIds)
+        if (Array.isArray(data.deletedOrderIds)) {
+          data.deletedOrderIds.forEach((id: string) => deletedSet.add(id))
+          try {
+            localStorage.setItem(STORAGE_KEY_DELETED_ORDERS, JSON.stringify(Array.from(deletedSet)))
+          } catch {}
+        }
+        const filtered = data.orders.filter((o: MockOrder) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number))
+        localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(filtered))
+        window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: filtered } }))
+        return filtered
       }
     }
   } catch (e) {
@@ -627,15 +651,34 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
 
 export function deleteStoredOrder(orderId: string): MockOrder[] {
   if (typeof window === "undefined") return INITIAL_ORDERS
-  const list = getStoredOrders()
-  const updatedList = list.filter((o) => o.id !== orderId && o.order_number !== orderId)
-  saveStoredOrders(updatedList)
+  
+  const deletedIds = getDeletedOrderIds()
+  const set = new Set(deletedIds)
+  set.add(orderId)
+
+  const currentList = getStoredOrders()
+  const matched = currentList.find((o) => o.id === orderId || o.order_number === orderId)
+  if (matched) {
+    set.add(matched.id)
+    set.add(matched.order_number)
+  }
+
+  const updatedDeletedIds = Array.from(set)
+  try {
+    localStorage.setItem(STORAGE_KEY_DELETED_ORDERS, JSON.stringify(updatedDeletedIds))
+  } catch {}
+
+  const updatedList = currentList.filter((o) => !set.has(o.id) && !set.has(o.order_number))
+  try {
+    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(updatedList))
+    window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: updatedList } }))
+  } catch {}
 
   try {
     fetch("/api/sync/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", orderId }),
+      body: JSON.stringify({ action: "delete", orderId, deletedOrderIds: updatedDeletedIds }),
     }).catch(() => {})
   } catch {}
 

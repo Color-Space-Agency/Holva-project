@@ -3,22 +3,34 @@ import { MockOrder } from "@/lib/mock-data"
 
 declare global {
   var __HOLVA_SERVER_ORDERS: MockOrder[] | undefined
+  var __HOLVA_DELETED_ORDERS: Set<string> | undefined
 }
 
 if (!globalThis.__HOLVA_SERVER_ORDERS) {
   globalThis.__HOLVA_SERVER_ORDERS = []
 }
+if (!globalThis.__HOLVA_DELETED_ORDERS) {
+  globalThis.__HOLVA_DELETED_ORDERS = new Set<string>()
+}
 
 // GET /api/sync/orders — Get all orders
 export async function GET() {
   try {
-    const orders = globalThis.__HOLVA_SERVER_ORDERS || []
+    const deletedSet = globalThis.__HOLVA_DELETED_ORDERS || new Set<string>()
+    const orders = (globalThis.__HOLVA_SERVER_ORDERS || []).filter(
+      (o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number)
+    )
     return NextResponse.json({
       success: true,
       orders,
+      deletedOrderIds: Array.from(deletedSet),
     })
   } catch (error: any) {
-    return NextResponse.json({ success: true, orders: globalThis.__HOLVA_SERVER_ORDERS || [] })
+    return NextResponse.json({
+      success: true,
+      orders: [],
+      deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS || []),
+    })
   }
 }
 
@@ -26,47 +38,71 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, order, orderId, amount, orders } = body
+    const { action, order, orderId, amount, orders, deletedOrderIds } = body
 
     if (!globalThis.__HOLVA_SERVER_ORDERS) {
       globalThis.__HOLVA_SERVER_ORDERS = []
     }
+    if (!globalThis.__HOLVA_DELETED_ORDERS) {
+      globalThis.__HOLVA_DELETED_ORDERS = new Set<string>()
+    }
+
+    if (Array.isArray(deletedOrderIds)) {
+      deletedOrderIds.forEach((id: string) => globalThis.__HOLVA_DELETED_ORDERS!.add(id))
+    }
+
+    const isDeleted = (id: string) => globalThis.__HOLVA_DELETED_ORDERS!.has(id)
 
     if (action === "sync" && Array.isArray(orders)) {
       const orderMap = new Map<string, MockOrder>()
       for (const o of globalThis.__HOLVA_SERVER_ORDERS) {
-        if (o && o.id) orderMap.set(o.id, o)
+        if (o && o.id && !isDeleted(o.id) && !isDeleted(o.order_number)) {
+          orderMap.set(o.id, o)
+        }
       }
       for (const o of orders) {
-        if (o && o.id) orderMap.set(o.id, o)
+        if (o && o.id && !isDeleted(o.id) && !isDeleted(o.order_number)) {
+          orderMap.set(o.id, o)
+        }
       }
-      globalThis.__HOLVA_SERVER_ORDERS = Array.from(orderMap.values()).sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-      return NextResponse.json({ success: true, orders: globalThis.__HOLVA_SERVER_ORDERS })
-    }
-
-    if (action === "create" && order) {
-      const newOrder: MockOrder = {
-        id: order.id || `ord-${Date.now()}`,
-        order_number: order.order_number || `ORD-${Date.now().toString().slice(-6)}`,
-        store_name: order.store_name || "Do'kon",
-        agent_name: order.agent_name || "Sardor Rahimov",
-        total_amount: Number(order.total_amount) || 0,
-        paid_amount: Number(order.paid_amount) || 0,
-        status: order.status || "CONFIRMED",
-        payment_status: order.payment_status || "PENDING",
-        created_at: order.created_at || new Date().toISOString(),
-        items_count: order.items_count || 1,
-      }
-
-      globalThis.__HOLVA_SERVER_ORDERS = [newOrder, ...globalThis.__HOLVA_SERVER_ORDERS.filter((o) => o.id !== newOrder.id)]
+      globalThis.__HOLVA_SERVER_ORDERS = Array.from(orderMap.values())
+        .filter((o) => !isDeleted(o.id) && !isDeleted(o.order_number))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
       return NextResponse.json({
         success: true,
         orders: globalThis.__HOLVA_SERVER_ORDERS,
-        createdOrder: newOrder,
+        deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS),
       })
+    }
+
+    if (action === "create" && order) {
+      if (!isDeleted(order.id) && !isDeleted(order.order_number)) {
+        const newOrder: MockOrder = {
+          id: order.id || `ord-${Date.now()}`,
+          order_number: order.order_number || `ORD-${Date.now().toString().slice(-6)}`,
+          store_name: order.store_name || "Do'kon",
+          agent_name: order.agent_name || "Sardor Rahimov",
+          total_amount: Number(order.total_amount) || 0,
+          paid_amount: Number(order.paid_amount) || 0,
+          status: order.status || "CONFIRMED",
+          payment_status: order.payment_status || "PENDING",
+          created_at: order.created_at || new Date().toISOString(),
+          items_count: order.items_count || 1,
+        }
+
+        globalThis.__HOLVA_SERVER_ORDERS = [
+          newOrder,
+          ...globalThis.__HOLVA_SERVER_ORDERS.filter((o) => o.id !== newOrder.id && !isDeleted(o.id) && !isDeleted(o.order_number)),
+        ]
+
+        return NextResponse.json({
+          success: true,
+          orders: globalThis.__HOLVA_SERVER_ORDERS,
+          createdOrder: newOrder,
+          deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS),
+        })
+      }
     }
 
     if (action === "pay" && orderId && amount) {
@@ -96,24 +132,45 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        orders: globalThis.__HOLVA_SERVER_ORDERS,
+        orders: globalThis.__HOLVA_SERVER_ORDERS.filter((o) => !isDeleted(o.id) && !isDeleted(o.order_number)),
         updatedOrder,
+        deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS),
       })
     }
 
     if (action === "delete" && orderId) {
+      globalThis.__HOLVA_DELETED_ORDERS.add(orderId)
+      
+      const found = globalThis.__HOLVA_SERVER_ORDERS.find((o) => o.id === orderId || o.order_number === orderId)
+      if (found) {
+        globalThis.__HOLVA_DELETED_ORDERS.add(found.id)
+        globalThis.__HOLVA_DELETED_ORDERS.add(found.order_number)
+      }
+
       globalThis.__HOLVA_SERVER_ORDERS = globalThis.__HOLVA_SERVER_ORDERS.filter(
-        (o) => o.id !== orderId && o.order_number !== orderId
+        (o) => o.id !== orderId && o.order_number !== orderId && !isDeleted(o.id) && !isDeleted(o.order_number)
       )
 
       return NextResponse.json({
         success: true,
         orders: globalThis.__HOLVA_SERVER_ORDERS,
+        deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS),
       })
     }
 
-    return NextResponse.json({ success: true, orders: globalThis.__HOLVA_SERVER_ORDERS })
+    const filtered = (globalThis.__HOLVA_SERVER_ORDERS || []).filter(
+      (o) => !isDeleted(o.id) && !isDeleted(o.order_number)
+    )
+    return NextResponse.json({
+      success: true,
+      orders: filtered,
+      deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS),
+    })
   } catch (error: any) {
-    return NextResponse.json({ success: true, orders: globalThis.__HOLVA_SERVER_ORDERS || [] })
+    return NextResponse.json({
+      success: true,
+      orders: globalThis.__HOLVA_SERVER_ORDERS || [],
+      deletedOrderIds: Array.from(globalThis.__HOLVA_DELETED_ORDERS || []),
+    })
   }
 }
