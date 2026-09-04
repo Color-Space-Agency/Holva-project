@@ -161,7 +161,7 @@ export function ProductsClient() {
       createStoredProduct({
         name: `${product.name} (nusxa)`,
         sku: `${product.sku}-copy-${Date.now().toString().slice(-4)}`,
-        category: (product as any).product_categories?.name || "Klassik Holvalar",
+        category: (product as any).product_categories?.name || "Umumiy",
         price: product.sales_price,
         cost_price: (product as any).cost_price || Math.round(product.sales_price * 0.6),
         unit: (product as any).product_units?.name || "dona",

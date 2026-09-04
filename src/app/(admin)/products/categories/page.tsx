@@ -15,25 +15,20 @@ interface Category {
   product_count?: number
 }
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: "cat-1", name: "Klassik Holvalar", description: "An'anaviy resept bo'yicha holvalar", product_count: 5 },
-  { id: "cat-2", name: "Premium Holvalar", description: "Oliy navli mahsulotlardan", product_count: 3 },
-  { id: "cat-3", name: "Yong'oqli Holvalar", description: "Bodom va pista qo'shilgan", product_count: 4 },
-  { id: "cat-4", name: "Shokoladli Holvalar", description: "Kakao va shokolad glazuri bilan", product_count: 2 },
-]
+const DEFAULT_CATEGORIES: Category[] = []
 
 const STORAGE_KEY = "holva_crm_stored_categories"
 
 function getStoredCategories(): Category[] {
-  if (typeof window === "undefined") return DEFAULT_CATEGORIES
+  if (typeof window === "undefined") return []
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch {}
-  return DEFAULT_CATEGORIES
+  return []
 }
 
 function saveCategories(items: Category[]) {

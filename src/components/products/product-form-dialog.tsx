@@ -74,15 +74,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         }
       }
       const localCats = getStoredProductCategories()
-      if (localCats && localCats.length > 0) {
-        return localCats
-      }
-      return [
-        { id: "cat-1", name: "Klassik Holvalar" },
-        { id: "cat-2", name: "Premium Holvalar" },
-        { id: "cat-3", name: "Yong'oqli Holvalar" },
-        { id: "cat-4", name: "Shokoladli Holvalar" },
-      ]
+      return localCats || []
     },
   })
 
@@ -132,13 +124,14 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const marginPercentage = watchedCostPrice > 0 ? ((profitPerItem / watchedCostPrice) * 100).toFixed(1) : "0"
 
   useEffect(() => {
+    const defaultCatId = categories[0]?.id || ""
     if (product) {
       const estimatedCost = (product as any).cost_price || Math.round(product.sales_price * 0.6)
       reset({
         name: product.name,
         sku: product.sku,
         barcode: product.barcode ?? "",
-        category_id: product.category_id ?? "cat-1",
+        category_id: product.category_id ?? defaultCatId,
         description: product.description ?? "",
         unit_id: product.unit_id ?? "u-1",
         cost_price: estimatedCost,
@@ -155,7 +148,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         name: "",
         sku: `HLV-${Math.floor(100 + Math.random() * 900)}`,
         barcode: "",
-        category_id: "cat-1",
+        category_id: defaultCatId,
         description: "",
         unit_id: "u-1",
         cost_price: 25000,
@@ -169,7 +162,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       setImagePreview(null)
       setImageFile(null)
     }
-  }, [product, reset, open])
+  }, [product, reset, open, categories])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -194,7 +187,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const onSubmit = async (formData: FormData) => {
     setIsSubmitting(true)
     try {
-      const catName = categories.find((c: any) => c.id === formData.category_id)?.name || "Klassik Holvalar"
+      const catName = categories.find((c: any) => c.id === formData.category_id)?.name || "Umumiy"
       const uName = units.find((u: any) => u.id === formData.unit_id)?.name || "dona"
       const finalImageUrl = imagePreview !== null ? imagePreview : (product?.image_url || "")
 
@@ -362,18 +355,24 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                 Kategoriya
               </Label>
               <Select
-                value={watch("category_id") || "cat-1"}
+                value={watch("category_id") || (categories[0]?.id || "")}
                 onValueChange={(v) => setValue("category_id", v)}
               >
                 <SelectTrigger className="h-11 rounded-2xl bg-white dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
-                  <SelectValue placeholder="Kategoriya tanlang" />
+                  <SelectValue placeholder={categories.length === 0 ? "Kategoriya kiritilmagan" : "Kategoriya tanlang"} />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
+                  {categories.length === 0 ? (
+                    <div className="p-3 text-xs text-gray-400 text-center">
+                      Kategoriyalar mavjud emas. Avval &quot;Kategoriyalar&quot; bo&apos;limida yangi kategoriya qo&apos;shing.
+                    </div>
+                  ) : (
+                    categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
