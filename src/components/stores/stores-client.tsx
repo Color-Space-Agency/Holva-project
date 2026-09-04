@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
   BLOCKED: "bg-red-500/10 text-red-500",
 }
 import { useEffect } from "react"
-import { INITIAL_STORES, getStoredOrders, isRealSupabaseConfigured } from "@/lib/mock-data"
+import { getStoredStores, getStoredOrders, deleteStoredStore, isRealSupabaseConfigured } from "@/lib/mock-data"
 
 export function StoresClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -71,13 +71,13 @@ export function StoresClient() {
       }
 
       const storedOrders = getStoredOrders()
-      let res = INITIAL_STORES.map((s) => {
+      let res = getStoredStores().map((s) => {
         const storeOrders = storedOrders.filter((o) => o.store_name === s.name)
         const debt = storeOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
         return {
           ...s,
           current_balance: debt > 0 ? -debt : (s.current_balance || 0),
-          created_at: new Date().toISOString(),
+          created_at: s.created_at || new Date().toISOString(),
         }
       })
       if (searchQuery) {
@@ -89,30 +89,27 @@ export function StoresClient() {
 
   // Real-time synchronization with orders & payments
   useEffect(() => {
-    const handleSync = () => {
-      refetch()
-    }
-    window.addEventListener("orders-updated", handleSync)
-    window.addEventListener("storage", handleSync)
-
+    const handleOrdersUpdated = () => refetch()
+    const handleStoresUpdated = () => refetch()
+    window.addEventListener("orders-updated", handleOrdersUpdated)
+    window.addEventListener("stores-updated", handleStoresUpdated)
     return () => {
-      window.removeEventListener("orders-updated", handleSync)
-      window.removeEventListener("storage", handleSync)
+      window.removeEventListener("orders-updated", handleOrdersUpdated)
+      window.removeEventListener("stores-updated", handleStoresUpdated)
     }
   }, [refetch])
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (!deletingStore) return
-
     try {
-      const { error } = await supabase
-        .from("stores")
-        .update({ status: "INACTIVE" })
-        .eq("id", deletingStore.id)
-
-      if (error) throw error
-      
-      toast.success("Do'kon o'chirildi (INACTIVE holatiga o'tkazildi)")
+      if (isRealSupabaseConfigured()) {
+        await supabase
+          .from("stores")
+          .update({ status: "INACTIVE" })
+          .eq("id", deletingStore.id)
+      }
+      deleteStoredStore(deletingStore.id)
+      toast.success("Do'kon o'chirildi")
       refetch()
     } catch (error) {
       toast.error("Xatolik yuz berdi")

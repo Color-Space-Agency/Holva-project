@@ -36,6 +36,7 @@ export interface MockStore {
   credit_limit: number
   current_balance: number
   status: "ACTIVE" | "INACTIVE" | "BLOCKED"
+  created_at?: string
 }
 
 export interface MockOrder {
@@ -208,116 +209,9 @@ export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = [
   },
 ]
 
-export const INITIAL_STORES: MockStore[] = [
-  {
-    id: "s-1",
-    name: "Korzinka — Chilonzor",
-    phone: "+998 71 140 14 14",
-    address: "Toshkent sh., Chilonzor tumani, 9-mavze",
-    contact_person: "Bobur Rahmonov",
-    credit_limit: 50000000,
-    current_balance: -8400000, // Qarzdorlik
-    status: "ACTIVE",
-  },
-  {
-    id: "s-2",
-    name: "Makro Supermarket — Sergeli",
-    phone: "+998 71 205 12 22",
-    address: "Toshkent sh., Yangi Sergeli ko'chasi, 12",
-    contact_person: "Dilshod Ergashev",
-    credit_limit: 40000000,
-    current_balance: 0,
-    status: "ACTIVE",
-  },
-  {
-    id: "s-3",
-    name: "Havas Diskaunter — Qo'yliq",
-    phone: "+998 71 200 00 07",
-    address: "Toshkent sh., Farg'ona yo'li, 45",
-    contact_person: "Azizbek Karimov",
-    credit_limit: 30000000,
-    current_balance: -3200000, // Qarzdorlik
-    status: "ACTIVE",
-  },
-  {
-    id: "s-4",
-    name: "Baraka Qandolat Do'koni",
-    phone: "+998 90 987 65 43",
-    address: "Samarqand sh., Registon ko'chasi, 88",
-    contact_person: "Olimjon Toirov",
-    credit_limit: 15000000,
-    current_balance: -2600000, // Qarzdorlik
-    status: "ACTIVE",
-  },
-  {
-    id: "s-5",
-    name: "Shirin Dunyo Savdo Markazi",
-    phone: "+998 93 555 44 33",
-    address: "Farg'ona sh., Al-Farg'oniy ko'chasi, 104",
-    contact_person: "Zokirjon Madumarov",
-    credit_limit: 20000000,
-    current_balance: 1500000,
-    status: "ACTIVE",
-  },
-]
+export const INITIAL_STORES: MockStore[] = []
 
-export const INITIAL_ORDERS: MockOrder[] = [
-  {
-    id: "ord-1",
-    order_number: "HLV-2026-00104",
-    store_name: "Korzinka — Chilonzor",
-    agent_name: "Sardor Rahimov",
-    total_amount: 14800000,
-    paid_amount: 6400000,
-    status: "DELIVERED",
-    payment_status: "PARTIAL",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "ord-2",
-    order_number: "HLV-2026-00105",
-    store_name: "Makro Supermarket — Sergeli",
-    agent_name: "Jamshid Qodirov",
-    total_amount: 9200000,
-    paid_amount: 9200000,
-    status: "CONFIRMED",
-    payment_status: "PAID",
-    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: "ord-3",
-    order_number: "HLV-2026-00106",
-    store_name: "Havas Diskaunter — Qo'yliq",
-    agent_name: "Sardor Rahimov",
-    total_amount: 21500000,
-    paid_amount: 7300000,
-    status: "DELIVERING",
-    payment_status: "PARTIAL",
-    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-  {
-    id: "ord-4",
-    order_number: "HLV-2026-00107",
-    store_name: "Baraka Qandolat Do'koni",
-    agent_name: "Jamshid Qodirov",
-    total_amount: 4600000,
-    paid_amount: 0,
-    status: "READY",
-    payment_status: "PENDING",
-    created_at: new Date(Date.now() - 3600000 * 26).toISOString(),
-  },
-  {
-    id: "ord-5",
-    order_number: "HLV-2026-00108",
-    store_name: "Shirin Dunyo Savdo Markazi",
-    agent_name: "Sardor Rahimov",
-    total_amount: 18400000,
-    paid_amount: 18400000,
-    status: "CONFIRMED",
-    payment_status: "PAID",
-    created_at: new Date(Date.now() - 3600000 * 32).toISOString(),
-  },
-]
+export const INITIAL_ORDERS: MockOrder[] = []
 
 export const INITIAL_EMPLOYEES: MockEmployee[] = [
   {
@@ -688,6 +582,60 @@ export function setStoredCompletedVisitsCount(count: number): void {
 }
 
 // ==========================================
+// Do'konlar (STORES) LOCALSTORAGE PERSISTENCE
+// ==========================================
+const STORAGE_KEY_STORES = "holva_crm_stored_stores"
+
+export function getStoredStores(): MockStore[] {
+  if (typeof window === "undefined") return INITIAL_STORES
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_STORES)
+    if (raw !== null) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) {
+    console.error("Error reading stored stores:", e)
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(INITIAL_STORES))
+  } catch {}
+  return INITIAL_STORES
+}
+
+export function saveStoredStores(stores: MockStore[]): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(stores))
+    window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores } }))
+  } catch {}
+}
+
+export function createStoredStore(newStore: MockStore): MockStore[] {
+  if (typeof window === "undefined") return INITIAL_STORES
+  const list = getStoredStores()
+  const updatedList = [newStore, ...list]
+  saveStoredStores(updatedList)
+  return updatedList
+}
+
+export function updateStoredStore(id: string, updates: Partial<MockStore>): MockStore[] {
+  if (typeof window === "undefined") return INITIAL_STORES
+  const list = getStoredStores()
+  const updatedList = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
+  saveStoredStores(updatedList)
+  return updatedList
+}
+
+export function deleteStoredStore(id: string): MockStore[] {
+  if (typeof window === "undefined") return INITIAL_STORES
+  const list = getStoredStores()
+  const updatedList = list.filter((s) => s.id !== id)
+  saveStoredStores(updatedList)
+  return updatedList
+}
+
+// ==========================================
 // Sotuvlar (ORDERS) LOCALSTORAGE PERSISTENCE
 // ==========================================
 const STORAGE_KEY_ORDERS = "holva_crm_stored_orders"
@@ -696,9 +644,9 @@ export function getStoredOrders(): MockOrder[] {
   if (typeof window === "undefined") return INITIAL_ORDERS
   try {
     const raw = localStorage.getItem(STORAGE_KEY_ORDERS)
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored orders:", e)

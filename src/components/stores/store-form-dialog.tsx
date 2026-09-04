@@ -51,6 +51,8 @@ interface StoreFormDialogProps {
   onSuccess: () => void
 }
 
+import { createStoredStore, updateStoredStore, isRealSupabaseConfigured, MockStore } from "@/lib/mock-data"
+
 export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: StoreFormDialogProps) {
   const supabase = createClient()
   const queryClient = useQueryClient()
@@ -73,55 +75,32 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("User not found")
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("factory_id")
-        .eq("id", user.id)
-        .single()
-
-      if (!profile?.factory_id) throw new Error("Factory not found")
-
       if (initialData) {
-        const { error } = await supabase
-          .from("stores")
-          .update(values)
-          .eq("id", initialData.id)
-
-        if (error) throw error
-
-        await createAuditLog({
-          action: "UPDATE",
-          tableName: "stores",
-          recordId: initialData.id,
-          oldValues: initialData,
-          newValues: values,
-        })
+        if (isRealSupabaseConfigured()) {
+          try {
+            await supabase.from("stores").update(values).eq("id", initialData.id)
+          } catch {}
+        }
+        updateStoredStore(initialData.id, values)
         toast.success("Do'kon yangilandi")
       } else {
-        const { data, error } = await supabase
-          .from("stores")
-          .insert({
-            ...values,
-            factory_id: profile.factory_id,
-            created_by: user.id,
-            current_balance: 0,
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        if (data) {
-          await createAuditLog({
-            action: "CREATE",
-            tableName: "stores",
-            recordId: data.id,
-            newValues: data,
-          })
+        const newStore: MockStore = {
+          id: `s-${Date.now()}`,
+          name: values.name,
+          phone: values.phone || "",
+          address: values.address || "",
+          contact_person: values.contact_person || "",
+          credit_limit: values.credit_limit || 0,
+          current_balance: 0,
+          status: values.status || "ACTIVE",
+          created_at: new Date().toISOString(),
         }
+        if (isRealSupabaseConfigured()) {
+          try {
+            await supabase.from("stores").insert(values)
+          } catch {}
+        }
+        createStoredStore(newStore)
         toast.success("Do'kon qo'shildi")
       }
 

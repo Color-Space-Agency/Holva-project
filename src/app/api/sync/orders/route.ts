@@ -7,13 +7,13 @@ declare global {
 }
 
 if (!globalThis.__HOLVA_SERVER_ORDERS) {
-  globalThis.__HOLVA_SERVER_ORDERS = [...INITIAL_ORDERS];
+  globalThis.__HOLVA_SERVER_ORDERS = [];
 }
 
 // GET /api/sync/orders — Barcha Sotuvlarni olish
 export async function GET(request: NextRequest) {
   try {
-    const orders = globalThis.__HOLVA_SERVER_ORDERS || [...INITIAL_ORDERS];
+    const orders = globalThis.__HOLVA_SERVER_ORDERS || [];
     return NextResponse.json({
       success: true,
       orders,
