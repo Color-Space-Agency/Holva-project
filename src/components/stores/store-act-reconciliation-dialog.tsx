@@ -27,11 +27,13 @@ import {
   FileCheck2,
   X,
   Edit,
-  Trash
+  Trash,
+  Eye
 } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { getStoredOrders, getStoredStores, deleteStoredOrder, updateStoredOrder, updateStoredStore, MockOrder } from "@/lib/mock-data"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
+import { OrderViewDialog } from "@/components/orders/order-view-dialog"
 import { toast } from "sonner"
 
 interface StoreActReconciliationDialogProps {
@@ -62,6 +64,7 @@ export function StoreActReconciliationDialog({
   const [refreshKey, setRefreshKey] = useState(0)
 
   const [editItem, setEditItem] = useState<any>(null)
+  const [viewingOrder, setViewingOrder] = useState<any>(null)
   const [deletingItem, setDeletingItem] = useState<any>(null)
   const [editDebitVal, setEditDebitVal] = useState<number>(0)
   const [editCreditVal, setEditCreditVal] = useState<number>(0)
@@ -417,11 +420,20 @@ export function StoreActReconciliationDialog({
                       {formatCurrency(item.balance)}
                     </td>
                     <td className="p-2.5 sm:p-3 print:hidden text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
+                          className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                          onClick={() => setViewingOrder(item)}
+                          title="Mahsulotlar tarkibini ko'rish (Batafsil)"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-amber-600" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => openEdit(item)}
                           title="Tahrirlash"
                         >
@@ -430,7 +442,7 @@ export function StoreActReconciliationDialog({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 cursor-pointer"
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => setDeletingItem(item)}
                           title="O'chirish"
                         >
@@ -536,6 +548,11 @@ export function StoreActReconciliationDialog({
           onConfirm={handleDeleteItem}
           title="Yozuvni o'chirish"
           description="Haqiqatan ham ushbu solishtirma dalolatnoma yozuvini o'chirmoqchimisiz?"
+        />
+        <OrderViewDialog
+          open={!!viewingOrder}
+          onOpenChange={(open) => !open && setViewingOrder(null)}
+          orderData={viewingOrder}
         />
       </DialogContent>
     </Dialog>

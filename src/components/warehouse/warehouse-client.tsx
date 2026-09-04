@@ -377,18 +377,9 @@ export function WarehouseClient() {
         </div>
       </div>
 
-      <Tabs defaultValue="products">
-        <TabsList className="rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
-          <TabsTrigger value="products" className="rounded-lg text-xs sm:text-sm">Tayyor mahsulotlar</TabsTrigger>
-          <TabsTrigger value="materials" className="rounded-lg text-xs sm:text-sm">Xomashyo</TabsTrigger>
-        </TabsList>
-        <TabsContent value="products" className="pt-2">
-          {renderTable(products)}
-        </TabsContent>
-        <TabsContent value="materials" className="pt-2">
-          {renderTable(rawMaterials)}
-        </TabsContent>
-      </Tabs>
+      <div className="pt-2">
+        {renderTable(products.length > 0 ? products : inventory)}
+      </div>
       
       {adjustItem && (
         <StockAdjustmentDialog 

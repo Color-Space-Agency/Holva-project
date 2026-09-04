@@ -59,26 +59,9 @@ const navItems: NavItem[] = [
     icon: Package,
   },
   {
-    label: "Retseptlar",
-    href: "/recipes",
-    icon: ClipboardList,
-  },
-  {
-    label: "Xomashyo",
-    icon: Boxes,
-    children: [
-      { label: "Xomashyolar", href: "/raw-materials", icon: Boxes },
-      { label: "Ta'minotchilar", href: "/raw-materials/suppliers", icon: Truck },
-    ],
-  },
-  {
     label: "Ombor",
+    href: "/warehouse",
     icon: Warehouse,
-    children: [
-      { label: "Inventar", href: "/warehouse", icon: Warehouse },
-      { label: "Harakatlar", href: "/warehouse/movements", icon: ClipboardList },
-      { label: "Qoldiqni moslash", href: "/warehouse/adjustments", icon: Boxes },
-    ],
   },
   {
     label: "Sotuv bo'limi",
@@ -90,19 +73,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Yetkazib berish",
-    href: "/delivery",
-    icon: Truck,
-  },
-  {
     label: "Ishxona (HR)",
     icon: Users,
     roles: ["SUPER_ADMIN", "ADMIN"],
     children: [
       { label: "Ishchilar", href: "/hr/employees", icon: Users },
-      { label: "Bo'limlar", href: "/hr/departments", icon: Boxes },
-      { label: "Keldi-ketti", href: "/hr/attendance", icon: UserCheck },
-      { label: "Samaradorlik", href: "/hr/performance", icon: TrendingUp },
       { label: "Ish haqi", href: "/hr/salary", icon: Banknote },
     ],
   },
@@ -116,16 +91,6 @@ const navItems: NavItem[] = [
       { label: "Chiqim", href: "/finance/expenses", icon: Banknote },
       { label: "Sotuv to'lovlari", href: "/finance/payments", icon: Receipt },
     ],
-  },
-  {
-    label: "Analitika",
-    href: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    label: "Hisobotlar",
-    href: "/reports",
-    icon: FileText,
   },
   {
     label: "Bildirishnomalar",

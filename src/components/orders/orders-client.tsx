@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { OrderFormDialog } from "./order-form-dialog"
+import { OrderViewDialog } from "./order-view-dialog"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
 import { useEffect } from "react"
 import { OrderStatusBadge, OrderPaymentStatusBadge } from "./order-status-badge"
@@ -38,6 +39,7 @@ export function OrdersClient() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<any>(null)
+  const [viewingOrder, setViewingOrder] = useState<any>(null)
   const [deletingOrder, setDeletingOrder] = useState<any>(null)
   const [isAktSverkaOpen, setIsAktSverkaOpen] = useState(false)
   const [aktSverkaStore, setAktSverkaStore] = useState<{ id: string; name: string } | null>(null)
@@ -227,49 +229,59 @@ export function OrdersClient() {
                   })()}
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="sr-only">Menyu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Amallar</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/orders/${order.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg cursor-pointer"
+                      onClick={() => setViewingOrder(order)}
+                      title="Mahsulotlar tarkibini ko'rish (Batafsil)"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 opacity-70 hover:opacity-100 transition-opacity">
+                          <span className="sr-only">Menyu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Amallar</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setViewingOrder(order)}>
+                          <Eye className="mr-2 h-4 w-4 text-amber-600" />
                           Batafsil ko&apos;rish
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          setEditingOrder(order)
-                          setIsFormOpen(true)
-                        }}
-                      >
-                        <Pencil className="mr-2 h-4 w-4 text-amber-600" />
-                        Tahrirlash
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setAktSverkaStore({
-                            id: order.stores?.name || order.id,
-                            name: order.stores?.name || "Do'kon",
-                          })
-                          setIsAktSverkaOpen(true)
-                        }}
-                      >
-                        <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
-                        Akt Sverka (Solishtirma)
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
-                        <Trash className="mr-2 h-4 w-4" />
-                        O&apos;chirish
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setEditingOrder(order)
+                            setIsFormOpen(true)
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4 text-amber-600" />
+                          Tahrirlash
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setAktSverkaStore({
+                              id: order.stores?.name || order.id,
+                              name: order.stores?.name || "Do'kon",
+                            })
+                            setIsAktSverkaOpen(true)
+                          }}
+                        >
+                          <FileCheck2 className="mr-2 h-4 w-4 text-amber-600" />
+                          Akt Sverka (Solishtirma)
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setDeletingOrder(order)} className="text-red-600">
+                          <Trash className="mr-2 h-4 w-4" />
+                          O&apos;chirish
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -284,6 +296,11 @@ export function OrdersClient() {
         </Table>
       </div>
 
+      <OrderViewDialog
+        open={!!viewingOrder}
+        onOpenChange={(open) => !open && setViewingOrder(null)}
+        orderData={viewingOrder}
+      />
       <OrderFormDialog 
         open={isFormOpen} 
         onOpenChange={(open) => {

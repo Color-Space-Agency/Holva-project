@@ -6,8 +6,9 @@ import { getStoredStores, getStoredOrders, deleteStoredOrder, updateStoredOrder,
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2,
-  Clock, Edit, FileCheck2, Filter, Trash
+  Clock, Edit, FileCheck2, Filter, Trash, Eye
 } from "lucide-react"
+import { OrderViewDialog } from "@/components/orders/order-view-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -43,6 +44,7 @@ export function AktSverkaClient() {
   const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0])
   
   const [isGenerated, setIsGenerated] = useState(true)
+  const [viewingOrder, setViewingOrder] = useState<any>(null)
   const [editItem, setEditItem] = useState<any>(null)
   const [deletingItem, setDeletingItem] = useState<any>(null)
   const [editDebitVal, setEditDebitVal] = useState<number>(0)
@@ -470,6 +472,18 @@ export function AktSverkaClient() {
                               variant="ghost" 
                               size="sm" 
                               className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setViewingOrder(item)
+                              }}
+                              title="Batafsil ko'rish"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600"
                               onClick={() => openEdit(item)}
                               title="Tahrirlash"
                             >
@@ -535,6 +549,13 @@ export function AktSverkaClient() {
         onConfirm={handleDeleteItem}
         title="Yozuvni o'chirish"
         description="Haqiqatan ham Akt Sverka dagi ushbu yozuvni o'chirmoqchimisiz?"
+      />
+
+      <OrderViewDialog
+        open={!!viewingOrder}
+        onOpenChange={(open) => !open && setViewingOrder(null)}
+        orderId={viewingOrder?.rawOrdId}
+        orderData={viewingOrder}
       />
     </div>
   )
