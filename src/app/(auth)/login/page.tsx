@@ -47,12 +47,10 @@ export default function LoginPage() {
 
   const handleSelectRole = (roleName: string) => {
     setUsername(roleName)
-    setPassword("")
+    const pass = roleName === "SUPER ADMIN" ? "0321" : "0123"
+    setPassword(pass)
     setError("")
-    toast.info(`${roleName} tanlandi. Parolni qo'lda kiriting.`)
-    setTimeout(() => {
-      passwordInputRef.current?.focus()
-    }, 100)
+    toast.info(`${roleName} tanlandi (Parol: ${pass}).`)
   }
 
   return (
