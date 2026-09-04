@@ -84,12 +84,24 @@ export function DeliveryFormDialog({ open, onOpenChange, onSuccess }: DeliveryFo
 
     setIsSubmitting(true)
     try {
+      const selectedStore = stores.find((s) => s.id === storeId)
+      const deliveryNumber = `DEL-2026-${String(Math.floor(1000 + Math.random() * 9000))}`
+      const newDelivery = {
+        id: `del-${Date.now()}`,
+        delivery_number: deliveryNumber,
+        store_name: selectedStore?.name || "Do'kon",
+        driver_name: driverName || "Shavkat Ergashev",
+        vehicle_info: vehicleInfo || "Labo (01 450 TAA)",
+        total_amount: 15000000,
+        delivery_date: new Date().toLocaleDateString("uz-UZ"),
+        status: "OUT_FOR_DELIVERY" as const,
+      }
+
       if (isRealSupabaseConfigured()) {
         try {
           const {
             data: { user },
           } = await supabase.auth.getUser()
-          const deliveryNumber = `DEL-${Date.now()}`
 
           await supabase.from("deliveries").insert({
             order_id: orderId || null,
@@ -106,6 +118,13 @@ export function DeliveryFormDialog({ open, onOpenChange, onSuccess }: DeliveryFo
           // Fallback
         }
       }
+
+      try {
+        const raw = localStorage.getItem("holva_crm_stored_deliveries")
+        const currentList = raw ? JSON.parse(raw) : []
+        const updatedList = [newDelivery, ...currentList]
+        localStorage.setItem("holva_crm_stored_deliveries", JSON.stringify(updatedList))
+      } catch {}
 
       toast.success("Yangi yetkazma muvaffaqiyatli rejalashtirildi!")
       onSuccess()

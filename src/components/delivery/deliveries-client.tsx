@@ -270,21 +270,55 @@ export function DeliveriesClient() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Yetkazma Holatini Tahrirlash</DialogTitle>
+            <DialogTitle>Yetkazmani Tahrirlash</DialogTitle>
           </DialogHeader>
           {editingDelivery && (
-            <form onSubmit={handleEditSave} className="space-y-4 mt-2">
+            <form onSubmit={handleEditSave} className="space-y-3.5 mt-2">
               <div className="space-y-1">
-                <label className="text-xs font-medium">Do'kon</label>
-                <Input value={editingDelivery.store_name} disabled className="rounded-xl bg-gray-50" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Haydovchi</label>
+                <label className="text-xs font-medium">Do'kon nomi *</label>
                 <Input
-                  value={editingDelivery.driver_name}
-                  onChange={(e) => setEditingDelivery({ ...editingDelivery, driver_name: e.target.value })}
+                  value={editingDelivery.store_name}
+                  onChange={(e) => setEditingDelivery({ ...editingDelivery, store_name: e.target.value })}
+                  required
                   className="rounded-xl"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Haydovchi</label>
+                  <Input
+                    value={editingDelivery.driver_name}
+                    onChange={(e) => setEditingDelivery({ ...editingDelivery, driver_name: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Avto (Transport)</label>
+                  <Input
+                    value={editingDelivery.vehicle_info}
+                    onChange={(e) => setEditingDelivery({ ...editingDelivery, vehicle_info: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Yuk Qiymati (so'm)</label>
+                  <Input
+                    type="number"
+                    value={editingDelivery.total_amount}
+                    onChange={(e) => setEditingDelivery({ ...editingDelivery, total_amount: Number(e.target.value) || 0 })}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Yetkazish Sanasi</label>
+                  <Input
+                    value={editingDelivery.delivery_date}
+                    onChange={(e) => setEditingDelivery({ ...editingDelivery, delivery_date: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium">Holat</label>
