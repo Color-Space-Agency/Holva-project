@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { getStoredOrders, deleteStoredOrder, updateStoredOrder, updateStoredStore, MockStore } from "@/lib/mock-data"
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2, 
-  Clock, Edit, FileCheck2, Trash
+  Clock, Edit, FileCheck2, Trash, Eye
 } from "lucide-react"
+import { OrderViewDialog } from "@/components/orders/order-view-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +37,7 @@ export function AktSverkaDetailClient({ store }: Props) {
   const [startDate, setStartDate] = useState(firstDay.toISOString().split("T")[0])
   const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0])
 
+  const [viewingOrder, setViewingOrder] = useState<any>(null)
   const [editItem, setEditItem] = useState<any>(null)
   const [deletingItem, setDeletingItem] = useState<any>(null)
   const [editDebitVal, setEditDebitVal] = useState<number>(0)
@@ -144,6 +146,16 @@ export function AktSverkaDetailClient({ store }: Props) {
       return { entries: processed, totalDebit, totalCredit, finalBalance }
     }
   })
+
+  useEffect(() => {
+    const handleUpdate = () => refetch()
+    window.addEventListener("orders-updated", handleUpdate)
+    window.addEventListener("stores-updated", handleUpdate)
+    return () => {
+      window.removeEventListener("orders-updated", handleUpdate)
+      window.removeEventListener("stores-updated", handleUpdate)
+    }
+  }, [refetch])
 
   const handlePrint = () => window.print()
 
@@ -339,6 +351,18 @@ export function AktSverkaDetailClient({ store }: Props) {
                     </TableCell>
                     <TableCell className="print:hidden text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setViewingOrder(item)
+                          }}
+                          title="Hujjatni to'liq ko'rish"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600" onClick={() => openEdit(item)} title="Tahrirlash">
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -389,6 +413,13 @@ export function AktSverkaDetailClient({ store }: Props) {
         onConfirm={handleDeleteItem}
         title="Yozuvni o'chirish"
         description="Haqiqatan ham solishtirma dalolatnomadagi ushbu yozuvni o'chirmoqchimisiz?"
+      />
+
+      <OrderViewDialog
+        open={!!viewingOrder}
+        onOpenChange={(open) => !open && setViewingOrder(null)}
+        orderId={viewingOrder?.rawOrdId}
+        orderData={viewingOrder}
       />
     </div>
   )
