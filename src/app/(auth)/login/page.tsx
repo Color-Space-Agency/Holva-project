@@ -148,7 +148,6 @@ export default function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               className="pl-10 h-11 rounded-2xl bg-gray-50 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-sm"
               placeholder="SUPER ADMIN, Sotuv agent yoki admin"
-              required
             />
           </div>
         </div>
@@ -159,7 +158,7 @@ export default function LoginPage() {
               Parol
             </label>
             <span className="text-[11px] text-violet-600 dark:text-violet-400">
-              Qo&apos;lda kiritiladi
+              Ixtiyoriy (bo'sh qoldirish mumkin)
             </span>
           </div>
           <div className="relative">
@@ -170,8 +169,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-11 rounded-2xl bg-gray-50 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-sm"
-              placeholder="Parolni kiriting..."
-              required
+              placeholder="Parolni kiriting (ixtiyoriy)..."
             />
             <button
               type="button"

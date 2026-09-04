@@ -10,41 +10,14 @@ export async function POST(request: NextRequest) {
     const cleanUser = username.trim().toLowerCase();
     const cleanPass = password.trim();
 
-    // 1. Super Admin (SUPER ADMIN, admin, admin@holva.uz)
-    const isSuperAdminUsername =
-      cleanUser === "super admin" ||
-      cleanUser === "superadmin" ||
-      cleanUser === "admin" ||
-      cleanUser === "admin@holva.uz" ||
-      cleanUser === "super_admin";
+    // 1. Sotuv Agenti
+    const isAgent =
+      cleanUser === "sotuv agent" ||
+      cleanUser === "sotuvagent" ||
+      cleanUser === "agent" ||
+      cleanUser === "agent@holva.uz";
 
-    if (isSuperAdminUsername) {
-      const response = NextResponse.json({
-        success: true,
-        user: {
-          id: "super-admin-id",
-          full_name: "Super Admin",
-          username: "SUPER ADMIN",
-          role: "SUPER_ADMIN",
-        },
-        redirectUrl: "/dashboard",
-      });
-
-      response.cookies.set("demo_session", "SUPER_ADMIN", {
-        path: "/",
-        httpOnly: false,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30,
-      });
-
-      return response;
-    }
-
-    // 2. Sotuv Agenti (Sotuv agent / 0123)
-    if (
-      (cleanUser === "sotuv agent" || cleanUser === "sotuvagent" || cleanUser === "agent" || cleanUser === "agent@holva.uz") &&
-      cleanPass === "0123"
-    ) {
+    if (isAgent) {
       const response = NextResponse.json({
         success: true,
         user: {
@@ -60,51 +33,32 @@ export async function POST(request: NextRequest) {
         path: "/",
         httpOnly: false,
         sameSite: "lax",
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 30,
       });
 
       return response;
     }
 
-    // 3. Supabase Auth
-    if (isRealSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const email = cleanUser.includes("@") ? cleanUser : `${cleanUser}@holva.uz`;
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: cleanPass,
-        });
+    // 2. Super Admin / Boshqa barcha foydalanuvchilar
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: "super-admin-id",
+        full_name: "Super Admin",
+        username: "SUPER ADMIN",
+        role: "SUPER_ADMIN",
+      },
+      redirectUrl: "/dashboard",
+    });
 
-        if (!error && data.user) {
-          const response = NextResponse.json({
-            success: true,
-            user: {
-              id: data.user.id,
-              full_name: data.user.email?.split("@")[0] || "Admin",
-              role: "ADMIN",
-            },
-            redirectUrl: "/dashboard",
-          });
+    response.cookies.set("demo_session", "SUPER_ADMIN", {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+    });
 
-          response.cookies.set("demo_session", "ADMIN", {
-            path: "/",
-            httpOnly: false,
-            sameSite: "lax",
-            maxAge: 60 * 60 * 24,
-          });
-
-          return response;
-        }
-      } catch (err) {
-        console.error("Supabase auth error:", err);
-      }
-    }
-
-    return NextResponse.json(
-      { error: "Noto'g'ri login yoki parol kiritildi" },
-      { status: 401 }
-    );
+    return response;
   } catch (error: any) {
     console.error("Login API error:", error);
     return NextResponse.json(
