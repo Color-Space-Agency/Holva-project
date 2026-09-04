@@ -15,28 +15,13 @@ interface Category {
   product_count?: number
 }
 
-const DEFAULT_CATEGORIES: Category[] = []
-
-const STORAGE_KEY = "holva_crm_stored_categories"
-
-function getStoredCategories(): Category[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed)) return parsed
-    }
-  } catch {}
-  return []
-}
-
-function saveCategories(items: Category[]) {
-  if (typeof window === "undefined") return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  } catch {}
-}
+import {
+  getStoredProductCategories,
+  saveStoredProductCategories,
+  createStoredProductCategory,
+  deleteStoredProductCategory,
+  syncProductCategoriesFromServer,
+} from "@/lib/mock-data"
 
 export default function ProductCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -46,8 +31,30 @@ export default function ProductCategoriesPage() {
   const [name, setName] = useState("")
   const [desc, setDesc] = useState("")
 
+  const reloadCategories = () => {
+    setCategories(getStoredProductCategories())
+  }
+
   useEffect(() => {
-    setCategories(getStoredCategories())
+    syncProductCategoriesFromServer().then((data) => setCategories(data))
+
+    const handleUpdated = () => reloadCategories()
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_stored_categories") reloadCategories()
+    }
+
+    window.addEventListener("holva-categories-updated", handleUpdated)
+    window.addEventListener("storage", handleStorage)
+
+    const interval = setInterval(() => {
+      syncProductCategoriesFromServer().then((data) => setCategories(data))
+    }, 3000)
+
+    return () => {
+      window.removeEventListener("holva-categories-updated", handleUpdated)
+      window.removeEventListener("storage", handleStorage)
+      clearInterval(interval)
+    }
   }, [])
 
   const filtered = categories.filter((c) =>
@@ -58,25 +65,23 @@ export default function ProductCategoriesPage() {
     e.preventDefault()
     if (!name.trim()) return
 
-    let updated: Category[]
     if (editingId) {
-      updated = categories.map((c) =>
+      const updated = categories.map((c) =>
         c.id === editingId ? { ...c, name, description: desc } : c
       )
+      setCategories(updated)
+      saveStoredProductCategories(updated)
       toast.success("Kategoriya tahrirlandi")
     } else {
-      const newCat: Category = {
-        id: `c-${Date.now()}`,
+      const newCat = createStoredProductCategory({
         name,
         description: desc,
         product_count: 0,
-      }
-      updated = [newCat, ...categories]
+      })
+      setCategories([newCat, ...categories])
       toast.success("Kategoriya muvaffaqiyatli qo'shildi")
     }
 
-    setCategories(updated)
-    saveCategories(updated)
     setName("")
     setDesc("")
     setEditingId(null)
@@ -91,9 +96,8 @@ export default function ProductCategoriesPage() {
   }
 
   const handleDelete = (id: string) => {
-    const updated = categories.filter((c) => c.id !== id)
-    setCategories(updated)
-    saveCategories(updated)
+    deleteStoredProductCategory(id)
+    setCategories(categories.filter((c) => c.id !== id))
     toast.success("Kategoriya o'chirildi")
   }
 

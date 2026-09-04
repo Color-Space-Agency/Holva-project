@@ -906,7 +906,71 @@ export function saveStoredProductCategories(items: MockCategory[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(items))
+    window.dispatchEvent(new CustomEvent("holva-categories-updated", { detail: { categories: items } }))
   } catch {}
+
+  fetch("/api/sync/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "sync", categories: items }),
+  }).catch(() => {})
+}
+
+export async function syncProductCategoriesFromServer(): Promise<MockCategory[]> {
+  if (typeof window === "undefined") return []
+  try {
+    const local = getStoredProductCategories()
+    const res = await fetch("/api/sync/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", categories: local }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.categories)) {
+        const deletedSet = new Set<string>(data.deletedCategoryIds || [])
+        const filtered = data.categories.filter((c: MockCategory) => !deletedSet.has(c.id) && !deletedSet.has(c.name.toLowerCase().trim()))
+        localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(filtered))
+        window.dispatchEvent(new CustomEvent("holva-categories-updated", { detail: { categories: filtered } }))
+        return filtered
+      }
+    }
+  } catch {}
+  return getStoredProductCategories()
+}
+
+export function createStoredProductCategory(cat: Omit<MockCategory, "id">): MockCategory {
+  const newCat: MockCategory = {
+    ...cat,
+    id: `c-${Date.now()}`,
+    product_count: cat.product_count || 0,
+  }
+  const current = getStoredProductCategories()
+  const updated = [newCat, ...current]
+  saveStoredProductCategories(updated)
+
+  fetch("/api/sync/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create", category: newCat }),
+  }).catch(() => {})
+
+  return newCat
+}
+
+export function deleteStoredProductCategory(id: string) {
+  const current = getStoredProductCategories()
+  const updated = current.filter((c) => c.id !== id)
+  try {
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(updated))
+    window.dispatchEvent(new CustomEvent("holva-categories-updated", { detail: { categories: updated } }))
+  } catch {}
+
+  fetch("/api/sync/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete", categoryId: id }),
+  }).catch(() => {})
 }
 
 export function getStoredRecipes(): MockRecipe[] {
@@ -925,7 +989,37 @@ export function saveStoredRecipes(items: MockRecipe[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(STORAGE_KEY_RECIPES, JSON.stringify(items))
+    window.dispatchEvent(new CustomEvent("holva-recipes-updated", { detail: { recipes: items } }))
   } catch {}
+
+  fetch("/api/sync/recipes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "sync", recipes: items }),
+  }).catch(() => {})
+}
+
+export async function syncRecipesFromServer(): Promise<MockRecipe[]> {
+  if (typeof window === "undefined") return []
+  try {
+    const local = getStoredRecipes()
+    const res = await fetch("/api/sync/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", recipes: local }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.recipes)) {
+        const deletedSet = new Set<string>(data.deletedRecipeIds || [])
+        const filtered = data.recipes.filter((r: MockRecipe) => !deletedSet.has(r.id))
+        localStorage.setItem(STORAGE_KEY_RECIPES, JSON.stringify(filtered))
+        window.dispatchEvent(new CustomEvent("holva-recipes-updated", { detail: { recipes: filtered } }))
+        return filtered
+      }
+    }
+  } catch {}
+  return getStoredRecipes()
 }
 
 export function createStoredRecipe(recipe: Omit<MockRecipe, "id">): MockRecipe {
@@ -936,12 +1030,28 @@ export function createStoredRecipe(recipe: Omit<MockRecipe, "id">): MockRecipe {
   }
   const updated = [newRec, ...list]
   saveStoredRecipes(updated)
+
+  fetch("/api/sync/recipes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create", recipe: newRec }),
+  }).catch(() => {})
+
   return newRec
 }
 
 export function deleteStoredRecipe(id: string) {
   const list = getStoredRecipes()
-  const updated = list.filter(r => r.id !== id)
-  saveStoredRecipes(updated)
+  const updated = list.filter((r) => r.id !== id)
+  try {
+    localStorage.setItem(STORAGE_KEY_RECIPES, JSON.stringify(updated))
+    window.dispatchEvent(new CustomEvent("holva-recipes-updated", { detail: { recipes: updated } }))
+  } catch {}
+
+  fetch("/api/sync/recipes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete", recipeId: id }),
+  }).catch(() => {})
 }
 

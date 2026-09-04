@@ -25,10 +25,10 @@ export function RecipesClient() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: recipes, isLoading } = useQuery({
+  const { data: recipes, isLoading, refetch } = useQuery({
     queryKey: ["recipes", search, statusFilter],
     queryFn: async () => {
-      const { isRealSupabaseConfigured, getStoredRecipes } = await import("@/lib/mock-data");
+      const { isRealSupabaseConfigured, getStoredRecipes, syncRecipesFromServer } = await import("@/lib/mock-data");
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -55,6 +55,7 @@ export function RecipesClient() {
         }
       }
 
+      await syncRecipesFromServer();
       const storedRecipes = getStoredRecipes();
       let res = storedRecipes;
       if (statusFilter !== "all") {
@@ -69,6 +70,29 @@ export function RecipesClient() {
       return res;
     },
   });
+
+  const { useEffect } = require("react");
+  useEffect(() => {
+    const handleUpdated = () => refetch();
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "holva_crm_stored_recipes") refetch();
+    };
+
+    window.addEventListener("holva-recipes-updated", handleUpdated);
+    window.addEventListener("storage", handleStorage);
+
+    const interval = setInterval(async () => {
+      const { syncRecipesFromServer } = await import("@/lib/mock-data");
+      await syncRecipesFromServer();
+      refetch();
+    }, 3000);
+
+    return () => {
+      window.removeEventListener("holva-recipes-updated", handleUpdated);
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, [refetch]);
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active, product_id }: { id: string, is_active: boolean, product_id: string }) => {
