@@ -55,11 +55,8 @@ const navItems: NavItem[] = [
   },
   {
     label: "Mahsulotlar",
+    href: "/products",
     icon: Package,
-    children: [
-      { label: "Holvalar", href: "/products", icon: Package },
-      { label: "Kategoriyalar", href: "/products/categories", icon: Boxes },
-    ],
   },
   {
     label: "Retseptlar",
