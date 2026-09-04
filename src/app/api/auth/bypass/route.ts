@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  // Bu endpoint faqat development/preview muhitida ishlaydi.
-  // Production'da (haqiqiy foydalanuvchilar kiradigan domenda) 404 qaytariladi.
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
 
   const url = request.nextUrl.clone();
   url.pathname = "/dashboard";
