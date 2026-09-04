@@ -93,6 +93,18 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: "Analitika",
+    href: "/analytics",
+    icon: BarChart3,
+    roles: ["SUPER_ADMIN", "ADMIN"],
+  },
+  {
+    label: "Hisobotlar",
+    href: "/reports",
+    icon: FileText,
+    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
+  },
+  {
     label: "Bildirishnomalar",
     href: "/notifications",
     icon: Bell,

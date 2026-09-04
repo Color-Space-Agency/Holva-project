@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,62 +10,108 @@ import { generateSalesReport } from '@/lib/export/pdf-export';
 import { exportToExcel } from '@/lib/export/excel-export';
 import { exportToCSV } from '@/lib/export/csv-export';
 import { StoreActReconciliationDialog } from '@/components/stores/store-act-reconciliation-dialog';
-import { INITIAL_STORES } from '@/lib/mock-data';
+import { getStoredStores, getStoredOrders, MockStore } from '@/lib/mock-data';
+import { toast } from 'sonner';
 
 export function ReportsClient() {
   const [reportType, setReportType] = useState('sales');
-  const [fromDate, setFromDate] = useState('2026-08-01');
-  const [toDate, setToDate] = useState('2026-08-30');
+  const [fromDate, setFromDate] = useState('2026-01-01');
+  const [toDate, setToDate] = useState('2026-12-31');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStore, setSelectedStore] = useState(INITIAL_STORES[0]);
+  const [stores, setStores] = useState<MockStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<MockStore | null>(null);
   const [isActOpen, setIsActOpen] = useState(false);
+
+  useEffect(() => {
+    const list = getStoredStores();
+    setStores(list);
+    if (list.length > 0) setSelectedStore(list[0]);
+  }, []);
 
   const handleExportPDF = async () => {
     setIsLoading(true);
     try {
+      const orders = getStoredOrders() as any[];
+      const reportData = orders.map((o, idx) => ({
+        id: String(idx + 1),
+        date: o.created_at ? o.created_at.split("T")[0] : "2026-08-29",
+        store: o.stores?.name || o.store_name || "Do'kon",
+        total: o.total_amount || 0,
+      }));
+
       await generateSalesReport({
         title: 'Sotuvlar hisoboti',
         period: `${fromDate} - ${toDate}`,
-        data: [
+        data: reportData.length > 0 ? reportData : [
           { id: '1', date: '2026-08-10', store: 'Korzinka — Chilonzor', total: 14800000 },
-          { id: '2', date: '2026-08-15', store: 'Makro — Yunusobod', total: 8200000 },
-          { id: '3', date: '2026-08-20', store: 'Havas — Sergeli', total: 6400000 },
-        ]
+        ],
       });
+      toast.success("PDF hisoboti shakllantirildi va yuklandi!");
     } catch (error) {
       console.error(error);
+      toast.error("PDF yuklashda xatolik yuz berdi");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleExportExcel = async () => {
-    exportToExcel(
-      [
-        { id: 1, doc: 'HLV-00104', store: 'Korzinka — Chilonzor', total: 14800000, paid: 10000000, debt: 4800000 },
-        { id: 2, doc: 'HLV-00108', store: 'Makro — Yunusobod', total: 8200000, paid: 8200000, debt: 0 }
-      ], 
-      'Sotuvlar_va_Qarzlar_Hisoboti', 
-      [
-        { header: '№', key: 'id' }, 
-        { header: 'Hujjat', key: 'doc' },
-        { header: "Do'kon", key: 'store' }, 
-        { header: 'Jami Summa', key: 'total' },
-        { header: "To'langan", key: 'paid' },
-        { header: 'Qoldiq Qarz', key: 'debt' },
-      ]
-    );
+    try {
+      const orders = getStoredOrders() as any[];
+      const excelRows = orders.map((o, idx) => ({
+        id: idx + 1,
+        doc: o.order_number || `HLV-${o.id}`,
+        store: o.stores?.name || o.store_name || "Do'kon",
+        total: o.total_amount || 0,
+        paid: o.paid_amount || 0,
+        debt: Math.max(0, (o.total_amount || 0) - (o.paid_amount || 0)),
+      }));
+
+      exportToExcel(
+        excelRows.length > 0 ? excelRows : [
+          { id: 1, doc: 'HLV-00104', store: 'Korzinka — Chilonzor', total: 14800000, paid: 10000000, debt: 4800000 },
+        ],
+        'Sotuvlar_va_Qarzlar_Hisoboti', 
+        [
+          { header: '№', key: 'id' }, 
+          { header: 'Hujjat', key: 'doc' },
+          { header: "Do'kon", key: 'store' }, 
+          { header: 'Jami Summa', key: 'total' },
+          { header: "To'langan", key: 'paid' },
+          { header: 'Qoldiq Qarz', key: 'debt' },
+        ]
+      );
+      toast.success("Excel hisoboti yuklandi!");
+    } catch {
+      toast.error("Excel yuklashda xatolik");
+    }
   };
 
   const handleExportCSV = async () => {
-    exportToCSV([
-      { id: 1, hujjat: 'HLV-00104', dokon: 'Korzinka — Chilonzor', summa: 14800000, tolandi: 10000000 },
-      { id: 2, hujjat: 'HLV-00108', dokon: 'Makro — Yunusobod', summa: 8200000, tolandi: 8200000 }
-    ], 'sotuv_va_hisob_kitob');
+    try {
+      const orders = getStoredOrders() as any[];
+      const csvRows = orders.map((o, idx) => ({
+        id: idx + 1,
+        hujjat: o.order_number || `HLV-${o.id}`,
+        dokon: o.stores?.name || o.store_name || "Do'kon",
+        summa: o.total_amount || 0,
+        tolandi: o.paid_amount || 0,
+      }));
+
+      exportToCSV(
+        csvRows.length > 0 ? csvRows : [
+          { id: 1, hujjat: 'HLV-00104', dokon: 'Korzinka — Chilonzor', summa: 14800000, tolandi: 10000000 }
+        ], 
+        'sotuv_va_hisob_kitob'
+      );
+      toast.success("CSV hisoboti yuklandi!");
+    } catch {
+      toast.error("CSV yuklashda xatolik");
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Hisobotlar va Tahlillar</h1>
@@ -108,7 +154,7 @@ export function ReportsClient() {
             </div>
           </div>
 
-          {reportType === 'akt_sverka' && (
+          {reportType === 'akt_sverka' && selectedStore && (
             <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 space-y-3">
               <label className="text-sm font-bold text-amber-900 dark:text-amber-300">
                 Solishtirma dalolatnomasi uchun do&apos;konni tanlang:
@@ -117,7 +163,7 @@ export function ReportsClient() {
                 <Select
                   value={selectedStore.id}
                   onValueChange={(val) => {
-                    const found = INITIAL_STORES.find(s => s.id === val);
+                    const found = stores.find(s => s.id === val);
                     if (found) setSelectedStore(found);
                   }}
                 >
@@ -125,7 +171,7 @@ export function ReportsClient() {
                     <SelectValue placeholder="Do'konni tanlang" />
                   </SelectTrigger>
                   <SelectContent>
-                    {INITIAL_STORES.map((s) => (
+                    {stores.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name} (Balans: {s.current_balance < 0 ? `-${Math.abs(s.current_balance).toLocaleString()} so'm qarz` : '0 so\'m'})
                       </SelectItem>
@@ -168,11 +214,13 @@ export function ReportsClient() {
         </CardContent>
       </Card>
 
-      <StoreActReconciliationDialog
-        open={isActOpen}
-        onOpenChange={setIsActOpen}
-        store={selectedStore}
-      />
+      {selectedStore && (
+        <StoreActReconciliationDialog
+          open={isActOpen}
+          onOpenChange={setIsActOpen}
+          store={selectedStore}
+        />
+      )}
     </div>
   );
 }
