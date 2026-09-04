@@ -95,7 +95,7 @@ export function WarehouseClient() {
     item_type: "product" as "product" | "material",
     current_stock: "",
     minimum_stock: "",
-    unit: "kg",
+    unit: "dona",
     warehouse_name: "Tayyor Mahsulotlar Ombori",
   });
 
@@ -406,30 +406,6 @@ export function WarehouseClient() {
                 className="rounded-xl"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Turi</label>
-                <select
-                  value={formData.item_type}
-                  onChange={(e) => setFormData({ ...formData, item_type: e.target.value as any })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  <option value="product">Tayyor mahsulot</option>
-                  <option value="material">Xomashyo</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Ombor</label>
-                <select
-                  value={formData.warehouse_name}
-                  onChange={(e) => setFormData({ ...formData, warehouse_name: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  <option value="Tayyor Mahsulotlar Ombori">Tayyor Mahsulotlar Ombori</option>
-                  <option value="Xomashyo Ombori">Xomashyo Ombori</option>
-                </select>
-              </div>
-            </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium">Joriy zaxira *</label>
@@ -457,7 +433,7 @@ export function WarehouseClient() {
                 <Input
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="kg / dona"
+                  placeholder="dona"
                   className="rounded-xl"
                 />
               </div>
@@ -491,30 +467,6 @@ export function WarehouseClient() {
                 className="rounded-xl"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Turi</label>
-                <select
-                  value={formData.item_type}
-                  onChange={(e) => setFormData({ ...formData, item_type: e.target.value as any })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  <option value="product">Tayyor mahsulot</option>
-                  <option value="material">Xomashyo</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Ombor</label>
-                <select
-                  value={formData.warehouse_name}
-                  onChange={(e) => setFormData({ ...formData, warehouse_name: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  <option value="Tayyor Mahsulotlar Ombori">Tayyor Mahsulotlar Ombori</option>
-                  <option value="Xomashyo Ombori">Xomashyo Ombori</option>
-                </select>
-              </div>
-            </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium">Joriy zaxira *</label>
@@ -542,7 +494,7 @@ export function WarehouseClient() {
                 <Input
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="kg / dona"
+                  placeholder="dona"
                   className="rounded-xl"
                 />
               </div>
