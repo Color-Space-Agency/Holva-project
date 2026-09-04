@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (Array.isArray(deletedOrderIds)) {
+      deletedStoreIdsOrOrderIds:
       deletedOrderIds.forEach((id: string) => globalThis.__HOLVA_DELETED_ORDERS!.add(id))
     }
 
@@ -78,7 +79,8 @@ export async function POST(request: NextRequest) {
 
     if (action === "create" && order) {
       if (!isDeleted(order.id) && !isDeleted(order.order_number)) {
-        const newOrder: MockOrder = {
+        const newOrder: any = {
+          ...order,
           id: order.id || `ord-${Date.now()}`,
           order_number: order.order_number || `ORD-${Date.now().toString().slice(-6)}`,
           store_name: order.store_name || "Do'kon",
@@ -89,6 +91,7 @@ export async function POST(request: NextRequest) {
           payment_status: order.payment_status || "PENDING",
           created_at: order.created_at || new Date().toISOString(),
           items_count: order.items_count || 1,
+          order_items: order.order_items || order.items || [],
         }
 
         globalThis.__HOLVA_SERVER_ORDERS = [

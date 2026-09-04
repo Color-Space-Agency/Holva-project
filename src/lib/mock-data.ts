@@ -779,6 +779,7 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   saveStoredOrders(updatedList)
 
   deductStockForOrder(newOrder)
+  recalculateStoreBalances()
 
   try {
     fetch("/api/sync/orders", {
@@ -816,6 +817,8 @@ export function deleteStoredOrder(orderId: string): MockOrder[] {
     window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: updatedList } }))
   } catch {}
 
+  recalculateStoreBalances()
+
   try {
     fetch("/api/sync/orders", {
       method: "POST",
@@ -827,11 +830,55 @@ export function deleteStoredOrder(orderId: string): MockOrder[] {
   return updatedList
 }
 
+export function recalculateStoreBalances(): void {
+  if (typeof window === "undefined") return
+  try {
+    const rawStores = localStorage.getItem("holva_crm_stored_stores")
+    if (!rawStores) return
+    const stores: MockStore[] = JSON.parse(rawStores)
+    const orders = getStoredOrders()
+
+    const debtMap: Record<string, number> = {}
+    orders.forEach((o: any) => {
+      const sName = (o.stores?.name || o.store_name || "").toLowerCase().trim()
+      const total = o.total_amount || 0
+      const paid = o.paid_amount || 0
+      const debt = Math.max(0, total - paid)
+      if (sName) {
+        debtMap[sName] = (debtMap[sName] || 0) + debt
+      }
+    })
+
+    const updatedStores = stores.map((s) => {
+      const sName = s.name.toLowerCase().trim()
+      const initDebt = Math.abs(s.initial_balance || 0)
+      const orderDebt = debtMap[sName] || 0
+      const totalDebt = initDebt + orderDebt
+      return {
+        ...s,
+        current_balance: totalDebt > 0 ? -totalDebt : (s.current_balance || 0),
+      }
+    })
+
+    localStorage.setItem("holva_crm_stored_stores", JSON.stringify(updatedStores))
+    window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: updatedStores } }))
+
+    fetch("/api/sync/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", stores: updatedStores }),
+    }).catch(() => {})
+  } catch (e) {
+    console.error("recalculateStoreBalances error:", e)
+  }
+}
+
 export function updateStoredOrder(id: string, updates: Partial<MockOrder>): MockOrder[] {
   if (typeof window === "undefined") return INITIAL_ORDERS
   const list = getStoredOrders()
   const updatedList = list.map((o) => (o.id === id ? { ...o, ...updates } : o))
   saveStoredOrders(updatedList)
+  recalculateStoreBalances()
 
   try {
     fetch("/api/sync/orders", {
