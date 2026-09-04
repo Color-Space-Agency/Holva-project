@@ -21,6 +21,8 @@ import {
 
 import { getStoredOrders, getStoredStores } from "@/lib/mock-data"
 
+import { BackButton } from "@/components/shared/back-button"
+
 const COLORS = ["#7c3aed", "#10b981", "#f59e0b", "#3b82f6"]
 
 export default function AnalyticsPage() {
@@ -39,14 +41,17 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <BarChart3 className="h-7 w-7 text-violet-600" />
-          Biznes Analitika & Savdo Tahlili
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Oylik dinamika, daromadlilik va eng ko&apos;p sotilayotgan mahsulotlar ulushi
-        </p>
+      <div className="flex items-center gap-3">
+        <BackButton />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <BarChart3 className="h-7 w-7 text-violet-600" />
+            Biznes Analitika & Savdo Tahlili
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Oylik dinamika, daromadlilik va eng ko&apos;p sotilayotgan mahsulotlar ulushi
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

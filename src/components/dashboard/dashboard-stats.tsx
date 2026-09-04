@@ -17,7 +17,7 @@ import {
   TrendingDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isRealSupabaseConfigured, getStoredOrders, getStoredProducts, getStoredEmployees, syncOrdersFromServer } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, getStoredOrders, getStoredProducts, getStoredEmployees, getStoredStores, syncOrdersFromServer } from "@/lib/mock-data"
 
 interface StatCardProps {
   title: string
@@ -165,10 +165,22 @@ async function fetchStats() {
   const storedOrders = getStoredOrders()
   const storedProducts = getStoredProducts()
   const storedEmployees = getStoredEmployees()
+  const storedStores = getStoredStores()
 
   const todayOrders = storedOrders.length
   const todayRevenue = storedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
-  const totalDebt = storedOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
+
+  // Real store debt = initial_balance + unpaid orders amount
+  const totalDebt = storedStores.reduce((sum, s) => {
+    const storeOrders = storedOrders.filter(
+      (o) => o.store_name.toLowerCase().trim() === s.name.toLowerCase().trim()
+    )
+    const orderDebt = storeOrders.reduce(
+      (s2, o) => s2 + Math.max(0, o.total_amount - (o.paid_amount || 0)),
+      0
+    )
+    return sum + Math.abs(s.initial_balance || 0) + orderDebt
+  }, 0)
 
   return {
     todayOrders,
@@ -195,6 +207,8 @@ export function DashboardStats() {
       refetch()
     }
     window.addEventListener("orders-updated", handleSync)
+    window.addEventListener("stores-updated", handleSync)
+    window.addEventListener("products-updated", handleSync)
     window.addEventListener("storage", handleSync)
 
     const interval = setInterval(() => {
@@ -203,6 +217,8 @@ export function DashboardStats() {
 
     return () => {
       window.removeEventListener("orders-updated", handleSync)
+      window.removeEventListener("stores-updated", handleSync)
+      window.removeEventListener("products-updated", handleSync)
       window.removeEventListener("storage", handleSync)
       clearInterval(interval)
     }
@@ -211,7 +227,7 @@ export function DashboardStats() {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: 7 }).map((_, i) => (
           <StatCardSkeleton key={i} />
         ))}
       </div>
@@ -221,7 +237,7 @@ export function DashboardStats() {
   const stats: StatCardProps[] = [
     {
       title: "Bugungi sotuvlar",
-      value: `${data?.todayOrders ?? 24} ta`,
+      value: `${data?.todayOrders ?? 0} ta`,
       icon: ShoppingCart,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-950/40",
@@ -232,40 +248,29 @@ export function DashboardStats() {
     },
     {
       title: "Oylik tushum",
-      value: "128.5 mln so'm",
+      value: formatCurrency(data?.todayRevenue ?? 0),
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
       change: "+8.2%",
       trend: "up",
-      subtitle: "o'tgan oyga nisbatan",
+      subtitle: "jami tushum",
       delayClass: "delay-200",
     },
     {
-      title: "Bugungi ishlab chiqarish",
-      value: `${formatNumber(data?.producedKg ?? 4200)} kg`,
-      icon: Factory,
-      color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-50 dark:bg-amber-950/40",
-      change: "+5.0%",
-      trend: "up",
-      subtitle: "rejaga nisbatan",
-      delayClass: "delay-300",
-    },
-    {
       title: "Faol mahsulotlar",
-      value: `${data?.totalProducts ?? 12} xil`,
+      value: `${data?.totalProducts ?? 0} xil`,
       icon: Package,
       color: "text-violet-600 dark:text-violet-400",
       bgColor: "bg-violet-50 dark:bg-violet-950/40",
       change: "+2 xil",
       trend: "up",
       subtitle: "sotuvdagi turlar",
-      delayClass: "delay-400",
+      delayClass: "delay-300",
     },
     {
       title: "Kutayotgan yetkazmalar",
-      value: `${data?.pendingDeliveries ?? 4} ta`,
+      value: `${data?.pendingDeliveries ?? 0} ta`,
       icon: Truck,
       color: "text-indigo-600 dark:text-indigo-400",
       bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
@@ -273,7 +278,7 @@ export function DashboardStats() {
     },
     {
       title: "Kelgan ishchilar",
-      value: `${data?.presentEmployees ?? 18} nafar`,
+      value: `${data?.presentEmployees ?? 0} nafar`,
       icon: UserCheck,
       color: "text-teal-600 dark:text-teal-400",
       bgColor: "bg-teal-50 dark:bg-teal-950/40",
@@ -281,7 +286,7 @@ export function DashboardStats() {
     },
     {
       title: "Kelmagan ishchilar",
-      value: `${data?.absentEmployees ?? 2} nafar`,
+      value: `${data?.absentEmployees ?? 0} nafar`,
       icon: UserX,
       color: "text-rose-600 dark:text-rose-400",
       bgColor: "bg-rose-50 dark:bg-rose-950/40",
@@ -289,7 +294,7 @@ export function DashboardStats() {
     },
     {
       title: "Do'konlar qarzdorligi",
-      value: "14.2 mln so'm",
+      value: formatCurrency(data?.totalDebt ?? 0),
       icon: AlertTriangle,
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-950/40",
