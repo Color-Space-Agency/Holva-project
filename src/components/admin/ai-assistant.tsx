@@ -9,7 +9,7 @@ import {
   Maximize2, Minimize2, ChevronDown
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_STORES } from '@/lib/mock-data';
+import { getStoredProducts, getStoredOrders, getStoredStores } from '@/lib/mock-data';
 
 interface AIMessage {
   role: 'user' | 'assistant';
@@ -31,9 +31,9 @@ export function AIAssistant({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const analyticsData = {
     totalRevenue: 22400000,
     revenueGrowth: 18,
-    totalOrders: INITIAL_ORDERS.length || 156,
+    totalOrders: getStoredOrders().length,
     orderGrowth: 12,
-    totalProducts: INITIAL_PRODUCTS.length || 24,
+    totalProducts: getStoredProducts().length,
     topProducts: [
       { name: 'Kunjutli Premium Holva', sales: 142, revenue: 28400000, growth: 12 },
       { name: 'Shokoladli Yong\'oqli Holva', sales: 98, revenue: 19600000, growth: 8 },
@@ -49,7 +49,7 @@ export function AIAssistant({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       { name: 'Alisher Vohidov', revenue: 15600000, orders: 4, growth: 8 },
     ],
     stores: {
-      total: INITIAL_STORES.length || 45,
+      total: getStoredStores().length,
       active: 38,
       new: 5,
       inactive: 7

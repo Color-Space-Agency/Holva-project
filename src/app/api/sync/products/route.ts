@@ -6,15 +6,15 @@ declare global {
   var __HOLVA_SERVER_PRODUCTS: MockProduct[] | undefined;
 }
 
-if (!globalThis.__HOLVA_SERVER_PRODUCTS || globalThis.__HOLVA_SERVER_PRODUCTS.length === 0) {
-  globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
+if (!globalThis.__HOLVA_SERVER_PRODUCTS) {
+  globalThis.__HOLVA_SERVER_PRODUCTS = [];
 }
 
 // GET /api/sync/products — Get all synchronized products
 export async function GET(request: NextRequest) {
   try {
-    if (!globalThis.__HOLVA_SERVER_PRODUCTS || globalThis.__HOLVA_SERVER_PRODUCTS.length === 0) {
-      globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
+    if (!globalThis.__HOLVA_SERVER_PRODUCTS) {
+      globalThis.__HOLVA_SERVER_PRODUCTS = [];
     }
 
     return NextResponse.json({
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const { action, product, productId, productsList } = body;
 
     if (!globalThis.__HOLVA_SERVER_PRODUCTS) {
-      globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
+      globalThis.__HOLVA_SERVER_PRODUCTS = [];
     }
 
     if (action === "sync_all" && Array.isArray(productsList)) {

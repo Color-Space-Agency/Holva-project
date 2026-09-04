@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { 
-  INITIAL_STORES, 
+  getStoredStores, 
   getStoredCompletedVisitsCount, 
   setStoredCompletedVisitsCount,
   getStoredVisits,
@@ -758,7 +758,7 @@ export function AgentHome() {
     todayRevenue: 22400000,
     revenuePercent: 118,
     orders: ordersList.length,
-    stores: INITIAL_STORES.length,
+    stores: getStoredStores().length,
     commission: 4725000,
     commissionPaid: 3500000,
     commissionRemaining: 1225000,

@@ -3,7 +3,7 @@ import { formatCurrency, formatNumber } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { isRealSupabaseConfigured, INITIAL_PRODUCTS } from "@/lib/mock-data";
+import { isRealSupabaseConfigured } from "@/lib/mock-data";
 
 import type { Metadata } from "next";
 

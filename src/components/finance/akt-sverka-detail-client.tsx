@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { getStoredOrders, deleteStoredOrder, updateStoredOrder, updateStoredStore, MockStore } from "@/lib/mock-data"
+import { getStoredOrders, deleteStoredOrder, updateStoredOrder, updateStoredStore, getStoredStores, MockStore } from "@/lib/mock-data"
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2, 
@@ -26,10 +26,22 @@ import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
 import { toast } from "sonner"
 
 interface Props {
-  store: MockStore | any
+  store?: MockStore | any
+  storeId?: string
 }
 
-export function AktSverkaDetailClient({ store }: Props) {
+export function AktSverkaDetailClient({ store, storeId }: Props) {
+  const [activeStore, setActiveStore] = useState<any>(store || null)
+
+  useEffect(() => {
+    if (store) {
+      setActiveStore(store)
+    } else if (storeId) {
+      const found = getStoredStores().find((s) => s.id === storeId)
+      if (found) setActiveStore(found)
+    }
+  }, [store, storeId])
+
   const today = new Date()
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
   const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
@@ -45,10 +57,10 @@ export function AktSverkaDetailClient({ store }: Props) {
   const [editDescVal, setEditDescVal] = useState<string>("")
 
   const { data: entries, isLoading, refetch } = useQuery({
-    queryKey: ["akt-sverka-detail", store?.id, startDate, endDate],
-    enabled: !!store,
+    queryKey: ["akt-sverka-detail", activeStore?.id, startDate, endDate],
+    enabled: !!activeStore,
     queryFn: () => {
-      const orders = getStoredOrders().filter((o: any) => o.stores?.name === store.name || o.store_name === store.name)
+      const orders = getStoredOrders().filter((o: any) => o.stores?.name === activeStore.name || o.store_name === activeStore.name || o.store_id === activeStore.id)
       
       const list: any[] = []
       

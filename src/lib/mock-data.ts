@@ -66,78 +66,7 @@ export interface MockEmployee {
   photo_url: string
 }
 
-export const INITIAL_PRODUCTS: MockProduct[] = [
-  {
-    id: "p-1",
-    name: "Kunjutli Premium Holva (500g)",
-    sku: "HLV-KNJ-500",
-    category: "Premium Holvalar",
-    price: 38000,
-    cost_price: 22000,
-    unit: "dona",
-    stock: 120,
-    min_stock: 20,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1599785209707-a456fc1337bb?auto=format&fit=crop&w=600&q=80",
-    description: "Kunjut va tabiiy asal bilan boyitilgan premium sifatli holva",
-  },
-  {
-    id: "p-2",
-    name: "Shokoladli Yong'oqli Holva (400g)",
-    sku: "HLV-SHK-400",
-    category: "Shokoladli Holvalar",
-    price: 45000,
-    cost_price: 26000,
-    unit: "dona",
-    stock: 85,
-    min_stock: 15,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=600&q=80",
-    description: "Belgiya shokoladi va o'rmon yong'og'i qo'shilgan holva",
-  },
-  {
-    id: "p-3",
-    name: "Pista Mag'izli Samarqand Holvasi (1kg)",
-    sku: "HLV-PST-1000",
-    category: "Premium Holvalar",
-    price: 95000,
-    cost_price: 58000,
-    unit: "dona",
-    stock: 45,
-    min_stock: 10,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
-    description: "Eron pistasi mag'zi va Samarqand milliy retsepti asosida",
-  },
-  {
-    id: "p-4",
-    name: "Kungaboqar Klassik Holvasi (350g)",
-    sku: "HLV-KNG-350",
-    category: "Klassik Holvalar",
-    price: 18000,
-    cost_price: 10000,
-    unit: "dona",
-    stock: 200,
-    min_stock: 30,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=600&q=80",
-    description: "Klassik kunjut va kungaboqar urug'laridan tayyorlangan",
-  },
-  {
-    id: "p-5",
-    name: "Bodomli Qandolat Holvasi (500g)",
-    sku: "HLV-BDM-500",
-    category: "Yong'oqli Holvalar",
-    price: 60000,
-    cost_price: 36000,
-    unit: "dona",
-    stock: 60,
-    min_stock: 10,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=600&q=80",
-    description: "Maydalangan bodom va vanil xushbo'yligi",
-  },
-]
+export const INITIAL_PRODUCTS: MockProduct[] = []
 
 export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = []
 
@@ -168,20 +97,17 @@ export function isRealSupabaseConfigured(): boolean {
 const STORAGE_KEY_PRODUCTS = "holva_crm_stored_products"
 
 export function getStoredProducts(): MockProduct[] {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS
+  if (typeof window === "undefined") return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored products:", e)
   }
-  try {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(INITIAL_PRODUCTS))
-  } catch {}
-  return INITIAL_PRODUCTS
+  return []
 }
 
 export async function syncProductsFromServer(): Promise<MockProduct[]> {

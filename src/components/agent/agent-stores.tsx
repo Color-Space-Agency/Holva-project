@@ -7,12 +7,12 @@ import { formatCurrency } from '@/lib/utils';
 import { Search, MapPin, Phone, ShoppingCart, Plus, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { INITIAL_STORES } from '@/lib/mock-data';
+import { getStoredStores } from '@/lib/mock-data';
 
 export function AgentStores() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [stores, setStores] = useState(INITIAL_STORES);
+  const [stores, setStores] = useState(() => getStoredStores());
 
   const filteredStores = stores.filter(
     (s) =>

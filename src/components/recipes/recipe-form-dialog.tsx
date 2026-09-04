@@ -6,7 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { isRealSupabaseConfigured, INITIAL_PRODUCTS, INITIAL_RAW_MATERIALS } from "@/lib/mock-data";
+import { isRealSupabaseConfigured, getStoredProducts } from "@/lib/mock-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -51,12 +51,12 @@ export function RecipeFormDialog({ open, onOpenChange }: { open: boolean; onOpen
           // Fallback
         }
       }
-      return INITIAL_PRODUCTS.map((p) => ({ id: p.id, name: p.name }));
+      return getStoredProducts().map((p) => ({ id: p.id, name: p.name }));
     },
     enabled: open,
   });
 
-  const { data: rawMaterials = [] } = useQuery({
+  const { data: rawMaterials = [] } = useQuery<{ id: string; name: string; purchase_price: number }[]>({
     queryKey: ["raw-materials-list"],
     queryFn: async () => {
       if (isRealSupabaseConfigured()) {
@@ -67,11 +67,7 @@ export function RecipeFormDialog({ open, onOpenChange }: { open: boolean; onOpen
           // Fallback
         }
       }
-      return INITIAL_RAW_MATERIALS.map((r) => ({
-        id: r.id,
-        name: r.name,
-        purchase_price: r.purchase_price,
-      }));
+      return [];
     },
     enabled: open,
   });

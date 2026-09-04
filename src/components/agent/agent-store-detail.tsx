@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Phone, MapPin, User, FileText, Plus, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { INITIAL_STORES, INITIAL_ORDERS, isRealSupabaseConfigured } from '@/lib/mock-data';
+import { getStoredStores, getStoredOrders, isRealSupabaseConfigured } from '@/lib/mock-data';
 
 export function AgentStoreDetail({ storeId }: { storeId: string }) {
   const supabase = createClient();
@@ -27,7 +27,7 @@ export function AgentStoreDetail({ storeId }: { storeId: string }) {
           // Fallback
         }
       }
-      return INITIAL_STORES.find(s => s.id === storeId) || INITIAL_STORES[0];
+      return getStoredStores().find(s => s.id === storeId) || getStoredStores()[0];
     }
   });
 
@@ -42,7 +42,7 @@ export function AgentStoreDetail({ storeId }: { storeId: string }) {
           // Fallback
         }
       }
-      return INITIAL_ORDERS.filter(o => o.store_name === store?.name || true).slice(0, 5);
+      return getStoredOrders().filter(o => o.store_name === store?.name || (o as any).store_id === storeId);
     }
   });
 

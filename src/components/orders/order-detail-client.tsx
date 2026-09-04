@@ -34,7 +34,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   const { data: order, isLoading } = useQuery({
     queryKey: ["orders", orderId],
     queryFn: async () => {
-      const { INITIAL_ORDERS, isRealSupabaseConfigured } = await import("@/lib/mock-data")
+      const { getStoredOrders, isRealSupabaseConfigured } = await import("@/lib/mock-data")
       if (isRealSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
@@ -56,7 +56,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
           // Fallback
         }
       }
-      const ord = INITIAL_ORDERS.find(o => o.id === orderId) || INITIAL_ORDERS[0]
+      const ord = getStoredOrders().find(o => o.id === orderId) || getStoredOrders()[0]
+      if (!ord) return null
       return {
         id: ord.id,
         order_number: ord.order_number,

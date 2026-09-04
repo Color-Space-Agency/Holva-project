@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Minus, Trash2, ShoppingCart, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { INITIAL_PRODUCTS, INITIAL_STORES } from '@/lib/mock-data';
+import { getStoredProducts, getStoredStores, createStoredOrder } from '@/lib/mock-data';
 
 interface AgentOrderFormProps {
   open: boolean;
@@ -16,10 +16,16 @@ interface AgentOrderFormProps {
 }
 
 export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderFormProps) {
-  const [storeId, setStoreId] = useState(INITIAL_STORES[0]?.id || '');
-  const [cart, setCart] = useState<{ productId: string; quantity: number; price: number }[]>([
-    { productId: INITIAL_PRODUCTS[0]?.id || '', quantity: 10, price: INITIAL_PRODUCTS[0]?.price || 38000 },
-  ]);
+  const storesList = getStoredStores();
+  const productsList = getStoredProducts();
+
+  const [storeId, setStoreId] = useState(storesList[0]?.id || '');
+  const [cart, setCart] = useState<{ productId: string; quantity: number; price: number }[]>(() => {
+    if (productsList.length > 0) {
+      return [{ productId: productsList[0].id, quantity: 10, price: productsList[0].price || 38000 }];
+    }
+    return [];
+  });
   const [discount, setDiscount] = useState<string>('0');
   const [notes, setNotes] = useState('');
 
@@ -28,7 +34,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
     if (existing) {
       setCart(cart.map((c) => (c.productId === prodId ? { ...c, quantity: c.quantity + 5 } : c)));
     } else {
-      const prod = INITIAL_PRODUCTS.find((p) => p.id === prodId);
+      const prod = productsList.find((p) => p.id === prodId);
       if (prod) {
         setCart([...cart, { productId: prod.id, quantity: 5, price: prod.price }]);
       }
@@ -58,19 +64,31 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
       return;
     }
 
-    const selectedStore = INITIAL_STORES.find((s) => s.id === storeId) || INITIAL_STORES[0];
+    const selectedStore = storesList.find((s) => s.id === storeId) || storesList[0];
 
     const newOrder = {
       id: `ord-${Date.now()}`,
       order_number: `HLV-2026-00${Math.floor(Math.random() * 900 + 100)}`,
-      store_name: selectedStore.name,
+      store_name: selectedStore?.name || 'Do\'kon',
       agent_name: 'Sardor Rahimov',
       total_amount: total,
       paid_amount: 0,
-      status: 'CONFIRMED',
-      payment_status: 'PENDING',
+      status: 'CONFIRMED' as const,
+      payment_status: 'PENDING' as const,
       created_at: new Date().toISOString(),
+      order_items: cart.map((item) => {
+        const p = productsList.find((pr) => pr.id === item.productId);
+        return {
+          product_id: item.productId,
+          product_name: p?.name || 'Mahsulot',
+          quantity: item.quantity,
+          price: item.price,
+          products: { name: p?.name || 'Mahsulot', unit: p?.unit || 'dona' }
+        };
+      })
     };
+
+    createStoredOrder(newOrder);
 
     toast.success(`Sotuv ${newOrder.order_number} muvaffaqiyatli rasmiylashtirildi!`);
     onSuccess(newOrder);
@@ -97,7 +115,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
               onChange={(e) => setStoreId(e.target.value)}
               className="w-full h-11 px-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium"
             >
-              {INITIAL_STORES.map((st) => (
+              {storesList.map((st) => (
                 <option key={st.id} value={st.id}>
                   {st.name} ({st.address})
                 </option>
@@ -111,7 +129,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
               Mahsulotlar katalogidan qo&apos;shish:
             </label>
             <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
-              {INITIAL_PRODUCTS.map((prod) => (
+              {productsList.map((prod) => (
                 <button
                   type="button"
                   key={prod.id}
@@ -137,7 +155,7 @@ export function AgentOrderForm({ open, onOpenChange, onSuccess }: AgentOrderForm
 
             <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
               {cart.map((item, idx) => {
-                const product = INITIAL_PRODUCTS.find((p) => p.id === item.productId);
+                const product = productsList.find((p) => p.id === item.productId);
                 return (
                   <div
                     key={idx}

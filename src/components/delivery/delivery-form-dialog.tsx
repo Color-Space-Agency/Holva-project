@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_ORDERS } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, getStoredStores, getStoredOrders } from "@/lib/mock-data"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -50,7 +50,7 @@ export function DeliveryFormDialog({ open, onOpenChange, onSuccess }: DeliveryFo
           // Fallback
         }
       }
-      return INITIAL_ORDERS.map((o: any) => ({
+      return getStoredOrders().map((o: any) => ({
         id: o.id,
         order_number: o.order_number,
         store_id: o.store_id || "s-1",
@@ -70,7 +70,7 @@ export function DeliveryFormDialog({ open, onOpenChange, onSuccess }: DeliveryFo
           // Fallback
         }
       }
-      return INITIAL_STORES.map((s) => ({ id: s.id, name: s.name }))
+      return getStoredStores().map((s) => ({ id: s.id, name: s.name }))
     },
     enabled: open,
   })

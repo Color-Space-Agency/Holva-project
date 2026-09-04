@@ -43,7 +43,7 @@ export function ProductionBatchFormDialog({ open, onOpenChange }: { open: boolea
   const { data: products = [] } = useQuery({
     queryKey: ["products-active"],
     queryFn: async () => {
-      const { isRealSupabaseConfigured, INITIAL_PRODUCTS } = await import("@/lib/mock-data")
+      const { isRealSupabaseConfigured, getStoredProducts } = await import("@/lib/mock-data")
       if (isRealSupabaseConfigured()) {
         try {
           const { data } = await supabase.from("products").select("id, name").eq("is_active", true);
@@ -52,7 +52,7 @@ export function ProductionBatchFormDialog({ open, onOpenChange }: { open: boolea
           // Fallback
         }
       }
-      return INITIAL_PRODUCTS.map(p => ({ id: p.id, name: p.name }));
+      return getStoredProducts().map(p => ({ id: p.id, name: p.name }));
     }
   });
 

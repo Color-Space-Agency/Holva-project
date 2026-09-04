@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Navigation, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { INITIAL_STORES } from '@/lib/mock-data';
+import { getStoredStores } from '@/lib/mock-data';
 
 interface AgentVisitFormProps {
   open: boolean;
@@ -15,25 +15,26 @@ interface AgentVisitFormProps {
 }
 
 export function AgentVisitForm({ open, onOpenChange, onSuccess }: AgentVisitFormProps) {
-  const [storeId, setStoreId] = useState(INITIAL_STORES[0]?.id || '');
+  const storesList = getStoredStores();
+  const [storeId, setStoreId] = useState(storesList[0]?.id || '');
   const [purpose, setPurpose] = useState('Sotuv olish');
   const [notes, setNotes] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const store = INITIAL_STORES.find((s) => s.id === storeId) || INITIAL_STORES[0];
+    const store = storesList.find((s) => s.id === storeId) || storesList[0];
 
     const newVisit = {
       id: `vis-${Date.now()}`,
-      store_name: store.name,
-      address: store.address,
+      store_name: store?.name || 'Do\'kon',
+      address: store?.address || '',
       status: 'IN_PROGRESS' as const,
       start_time: `Bugun ${new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })} (Jarayonda)`,
       duration: 'Hozir boshlandi',
       notes: `${purpose}: ${notes || "Muzokara olib borilmoqda"}`,
     };
 
-    toast.success(`${store.name} do'koniga tashrif boshlandi!`);
+    toast.success(`${store?.name || 'Do\'kon'} do'koniga tashrif boshlandi!`);
     onSuccess(newVisit);
   };
 
@@ -57,7 +58,7 @@ export function AgentVisitForm({ open, onOpenChange, onSuccess }: AgentVisitForm
               onChange={(e) => setStoreId(e.target.value)}
               className="w-full h-11 px-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium"
             >
-              {INITIAL_STORES.map((st) => (
+              {storesList.map((st) => (
                 <option key={st.id} value={st.id}>
                   {st.name} ({st.address})
                 </option>
