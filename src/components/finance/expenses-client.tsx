@@ -32,62 +32,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   OTHER: "#94a3b8",
 };
 
-const DEFAULT_EXPENSES = [
-  {
-    id: "exp-1",
-    category: "RAW_MATERIALS",
-    amount: 6400000,
-    expense_date: new Date().toISOString(),
-    description: "200 kg oq kunjut xaridi (Agro Import)",
-    payment_method: "BANK",
-  },
-  {
-    id: "exp-2",
-    category: "TRANSPORT",
-    amount: 450000,
-    expense_date: new Date(Date.now() - 86400000).toISOString(),
-    description: "Labo va Damas avtomobillari uchun yoqilg'i (Metan)",
-    payment_method: "CASH",
-  },
-  {
-    id: "exp-3",
-    category: "PACKAGING",
-    amount: 1200000,
-    expense_date: new Date(Date.now() - 86400000 * 2).toISOString(),
-    description: "Holva qutilari va vakuum plyonka xaridi",
-    payment_method: "CARD",
-  },
-  {
-    id: "exp-4",
-    category: "ELECTRICITY",
-    amount: 2800000,
-    expense_date: new Date(Date.now() - 86400000 * 4).toISOString(),
-    description: "Tsex elektr energiyasi va ishlab chiqarish pechlari",
-    payment_method: "BANK",
-  },
-  {
-    id: "exp-5",
-    category: "SALARY",
-    amount: 18500000,
-    expense_date: new Date(Date.now() - 86400000 * 10).toISOString(),
-    description: "Oylik ish haqi va avans to'lovlari",
-    payment_method: "BANK",
-  },
-  {
-    id: "exp-6",
-    category: "MAINTENANCE",
-    amount: 850000,
-    expense_date: new Date(Date.now() - 86400000 * 12).toISOString(),
-    description: "Qandolat qozonining reduktor podshipniklarini almashtirish",
-    payment_method: "CASH",
-  },
-];
+const DEFAULT_EXPENSES: any[] = [];
 
 export function ExpensesClient() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [expenses, setExpenses] = useState(DEFAULT_EXPENSES);
+  const [expenses, setExpenses] = useState<any[]>(DEFAULT_EXPENSES);
 
   const filteredExpenses = expenses.filter((e) => {
     const matchesCategory = categoryFilter === "ALL" || e.category === categoryFilter;

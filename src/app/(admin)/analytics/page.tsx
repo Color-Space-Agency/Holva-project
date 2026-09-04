@@ -19,25 +19,24 @@ import {
   Legend,
 } from "recharts"
 
-const SALES_BY_MONTH = [
-  { month: "Mart", Sotuv: 42000000, Xarajat: 24000000, Foyda: 18000000 },
-  { month: "Aprel", Sotuv: 55000000, Xarajat: 31000000, Foyda: 24000000 },
-  { month: "May", Sotuv: 68000000, Xarajat: 38000000, Foyda: 30000000 },
-  { month: "Iyun", Sotuv: 74000000, Xarajat: 41000000, Foyda: 33000000 },
-  { month: "Iyul", Sotuv: 89000000, Xarajat: 49000000, Foyda: 40000000 },
-  { month: "Avgust", Sotuv: 98500000, Xarajat: 52000000, Foyda: 46500000 },
-]
-
-const TOP_PRODUCTS = [
-  { name: "Kunjutli Premium", value: 38 },
-  { name: "Shokoladli Yong'oq", value: 27 },
-  { name: "Samarqand Pista", value: 19 },
-  { name: "Kungaboqar Klassik", value: 16 },
-]
+import { getStoredOrders, getStoredStores } from "@/lib/mock-data"
 
 const COLORS = ["#7c3aed", "#10b981", "#f59e0b", "#3b82f6"]
 
 export default function AnalyticsPage() {
+  const orders = getStoredOrders()
+  const stores = getStoredStores()
+
+  const totalSales = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+  const totalPaid = orders.reduce((sum, o) => sum + (o.paid_amount || 0), 0)
+  const activeStoresCount = stores.length
+
+  const chartData = orders.length > 0 ? [
+    { month: "Joriy davr", Sotuv: totalSales, Xarajat: 0, Foyda: totalPaid }
+  ] : []
+
+  const topProducts: any[] = []
+
   return (
     <div className="space-y-6">
       <div>
@@ -53,28 +52,28 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-1">
           <span className="text-xs font-semibold uppercase text-gray-400">Jami Oylik Savdo</span>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(98500000)}</h3>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalSales)}</h3>
           <p className="text-xs text-emerald-600 font-medium flex items-center gap-0.5">
-            <ArrowUpRight className="h-3 w-3" /> +10.7% o&apos;tgan oyga nisbatan
+            <ArrowUpRight className="h-3 w-3" /> Real statistika
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-1">
-          <span className="text-xs font-semibold uppercase text-gray-400">Sof Foyda</span>
-          <h3 className="text-2xl font-bold text-emerald-600">{formatCurrency(46500000)}</h3>
-          <p className="text-xs text-gray-400">Marja: 47.2%</p>
+          <span className="text-xs font-semibold uppercase text-gray-400">Qabul Qilingan To'lov</span>
+          <h3 className="text-2xl font-bold text-emerald-600">{formatCurrency(totalPaid)}</h3>
+          <p className="text-xs text-gray-400">Jami tushum</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-1">
-          <span className="text-xs font-semibold uppercase text-gray-400">Ishlab chiqarildi</span>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">18,400 kg</h3>
-          <p className="text-xs text-emerald-600 font-medium">Reja 108% bajarildi</p>
+          <span className="text-xs font-semibold uppercase text-gray-400">Jami Buyurtmalar</span>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(orders.length)} ta</h3>
+          <p className="text-xs text-emerald-600 font-medium">Barcha buyurtmalar</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-1">
           <span className="text-xs font-semibold uppercase text-gray-400">Faol Hamkor Do&apos;konlar</span>
-          <h3 className="text-2xl font-bold text-violet-600">42 ta</h3>
-          <p className="text-xs text-gray-400">+5 ta yangi do&apos;kon</p>
+          <h3 className="text-2xl font-bold text-violet-600">{activeStoresCount} ta</h3>
+          <p className="text-xs text-gray-400">Ro'yxatdan o'tgan do'konlar</p>
         </div>
       </div>
 
@@ -84,7 +83,7 @@ export default function AnalyticsPage() {
           <h3 className="font-semibold text-gray-900 dark:text-white text-base">Oylik Sotuv, Xarajat va Foyda Trendi</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={SALES_BY_MONTH}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis
@@ -111,7 +110,7 @@ export default function AnalyticsPage() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={TOP_PRODUCTS}
+                  data={topProducts}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -119,7 +118,7 @@ export default function AnalyticsPage() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {TOP_PRODUCTS.map((entry, index) => (
+                  {topProducts.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

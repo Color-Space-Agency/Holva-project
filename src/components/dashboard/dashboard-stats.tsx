@@ -130,21 +130,21 @@ async function fetchStats() {
         supabase.from("stores").select("current_balance"),
       ])
 
-      const todayOrders = ordersRes.data?.length ?? 24
+      const todayOrders = ordersRes.data?.length ?? 0
       const todayRevenue =
-        ordersRes.data?.reduce((sum, o) => sum + (o.total_amount || 0), 0) ?? 128500000
-      const totalProducts = productsRes.count ?? 12
+        ordersRes.data?.reduce((sum, o) => sum + (o.total_amount || 0), 0) ?? 0
+      const totalProducts = productsRes.count ?? 0
       const presentEmployees =
-        attendanceRes.data?.filter((a) => a.status === "PRESENT").length ?? 18
+        attendanceRes.data?.filter((a) => a.status === "PRESENT").length ?? 0
       const absentEmployees =
-        attendanceRes.data?.filter((a) => a.status === "ABSENT_UNEXCUSED" || a.status === "ABSENT_EXCUSED").length ?? 2
-      const pendingDeliveries = deliveriesRes.count ?? 4
+        attendanceRes.data?.filter((a) => a.status === "ABSENT_UNEXCUSED" || a.status === "ABSENT_EXCUSED").length ?? 0
+      const pendingDeliveries = deliveriesRes.count ?? 0
       const producedKg =
-        batchesRes.data?.reduce((sum, b) => sum + (b.actual_quantity || 0), 0) ?? 4200
+        batchesRes.data?.reduce((sum, b) => sum + (b.actual_quantity || 0), 0) ?? 0
       const totalDebt =
         storesRes.data
           ?.filter((s) => (s.current_balance || 0) < 0)
-          .reduce((sum, s) => sum + Math.abs(s.current_balance || 0), 0) ?? 14200000
+          .reduce((sum, s) => sum + Math.abs(s.current_balance || 0), 0) ?? 0
 
       return {
         todayOrders,
@@ -166,20 +166,19 @@ async function fetchStats() {
   const storedProducts = getStoredProducts()
   const storedEmployees = getStoredEmployees()
 
-  const todayOrders = storedOrders.length || 24
-  const totalPaid = storedOrders.reduce((sum, o) => sum + (o.paid_amount || 0), 0)
-  const todayRevenue = totalPaid > 0 ? (120000000 + totalPaid) : 128500000
+  const todayOrders = storedOrders.length
+  const todayRevenue = storedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
   const totalDebt = storedOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
 
   return {
     todayOrders,
     todayRevenue,
-    totalProducts: storedProducts.length || 12,
-    presentEmployees: storedEmployees.filter((e) => e.employment_status === "ACTIVE").length || 18,
-    absentEmployees: 2,
-    pendingDeliveries: 4,
-    producedKg: 4200,
-    totalDebt: totalDebt || 14200000,
+    totalProducts: storedProducts.length,
+    presentEmployees: storedEmployees.filter((e) => e.employment_status === "ACTIVE").length,
+    absentEmployees: 0,
+    pendingDeliveries: 0,
+    producedKg: 0,
+    totalDebt,
   }
 }
 
