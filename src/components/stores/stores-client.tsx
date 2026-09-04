@@ -77,10 +77,12 @@ export function StoresClient() {
       const storedOrders = getStoredOrders()
       let res = getStoredStores().map((s) => {
         const storeOrders = storedOrders.filter((o) => o.store_name.toLowerCase().trim() === s.name.toLowerCase().trim())
-        const debt = storeOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
+        const debtFromOrders = storeOrders.reduce((sum, o) => sum + Math.max(0, o.total_amount - (o.paid_amount || 0)), 0)
+        const initialDebt = Math.abs(s.initial_balance || 0)
+        const totalDebt = initialDebt + debtFromOrders
         return {
           ...s,
-          current_balance: debt > 0 ? -debt : (s.current_balance || 0),
+          current_balance: totalDebt > 0 ? -totalDebt : (s.current_balance || 0),
           created_at: s.created_at || new Date().toISOString(),
         }
       })
@@ -174,8 +176,8 @@ export function StoresClient() {
               </div>
               <div className="text-sm">Manzil: {store.address}</div>
               <div className="text-sm">Mas'ul: {store.contact_person}</div>
-              <div className={`font-semibold ${store.current_balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                Balans: {formatCurrency(store.current_balance)}
+              <div className={`font-semibold ${store.current_balance < 0 ? 'text-red-500 font-bold' : 'text-green-500'}`}>
+                Balans: {store.current_balance < 0 ? `${formatCurrency(Math.abs(store.current_balance))} (Qarz)` : formatCurrency(store.current_balance)}
               </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" asChild className="flex-1">
@@ -251,8 +253,8 @@ export function StoresClient() {
                 <TableCell>{store.phone}</TableCell>
                 <TableCell>{store.address}</TableCell>
                 <TableCell>{store.contact_person}</TableCell>
-                <TableCell className={`font-semibold ${store.current_balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                  {formatCurrency(store.current_balance)}
+                <TableCell className={`font-semibold ${store.current_balance < 0 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-green-600 dark:text-green-400'}`}>
+                  {store.current_balance < 0 ? `${formatCurrency(Math.abs(store.current_balance))} (Qarz)` : formatCurrency(store.current_balance)}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={STATUS_COLORS[store.status]}>

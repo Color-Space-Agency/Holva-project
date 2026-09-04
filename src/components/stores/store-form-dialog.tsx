@@ -42,6 +42,7 @@ const formSchema = z.object({
   telegram: z.string().optional(),
   notes: z.string().optional(),
   payment_terms: z.string().optional(),
+  initial_balance: z.coerce.number().min(0).optional().default(0),
   credit_limit: z.coerce.number().min(0).optional().default(0),
   status: z.enum(["ACTIVE", "INACTIVE", "BLOCKED"]).default("ACTIVE"),
 })
@@ -68,6 +69,7 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
       telegram: "",
       notes: "",
       payment_terms: "",
+      initial_balance: 0,
       credit_limit: 0,
       status: "ACTIVE",
     },
@@ -84,6 +86,7 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
           telegram: initialData.telegram || "",
           notes: initialData.notes || "",
           payment_terms: initialData.payment_terms || "",
+          initial_balance: initialData.initial_balance || 0,
           credit_limit: initialData.credit_limit || 0,
           status: initialData.status || "ACTIVE",
         })
@@ -96,6 +99,7 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
           telegram: "",
           notes: "",
           payment_terms: "",
+          initial_balance: 0,
           credit_limit: 0,
           status: "ACTIVE",
         })
@@ -105,13 +109,18 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      const initBal = values.initial_balance || 0
       if (initialData) {
         if (isRealSupabaseConfigured()) {
           try {
             await supabase.from("stores").update(values).eq("id", initialData.id)
           } catch {}
         }
-        updateStoredStore(initialData.id, values)
+        updateStoredStore(initialData.id, {
+          ...values,
+          initial_balance: initBal,
+          current_balance: initBal > 0 ? -initBal : (initialData.current_balance || 0),
+        })
         toast.success("Do'kon ma'lumotlari yangilandi!")
       } else {
         const newStore: MockStore = {
@@ -120,8 +129,9 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
           phone: values.phone || "",
           address: values.address || "",
           contact_person: values.contact_person || "",
+          initial_balance: initBal,
           credit_limit: values.credit_limit || 0,
-          current_balance: 0,
+          current_balance: initBal > 0 ? -initBal : 0,
           status: values.status || "ACTIVE",
           created_at: new Date().toISOString(),
         }
@@ -266,6 +276,26 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
                         {...field}
                         value={field.value || ""}
                         className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-medium"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="initial_balance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-amber-600" /> Boshlang&apos;ich Qarz Summasi (so&apos;m)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0 (masalan: 5000000)"
+                        {...field}
+                        className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-bold border-amber-200 dark:border-amber-800 focus:ring-amber-500"
                       />
                     </FormControl>
                     <FormMessage />

@@ -48,13 +48,40 @@ export function AktSverkaClient() {
     queryKey: ["akt-sverka-report", selectedStoreId, startDate, endDate],
     queryFn: () => {
       const currentStores = getStoredStores()
+      const list: any[] = []
+      
+      let totalInitDebt = 0
+      currentStores.forEach(s => {
+        if (selectedStoreId !== "all" && s.id !== selectedStoreId) return
+        const initBal = Math.abs(s.initial_balance || 0)
+        totalInitDebt += initBal
+        if (initBal > 0) {
+          list.push({
+            id: `init-${s.id}`,
+            date: startDate || "2026-01-01",
+            fullDate: startDate || "2026-01-01",
+            timestamp: 0,
+            docNumber: "BOSH-001",
+            storeName: s.name,
+            docType: "Boshlang'ich qoldiq",
+            description: "Oldingi davrdan o'tgan boshlang'ich qarz summasi",
+            receiver: "Tizim",
+            debit: initBal,
+            credit: 0,
+            editedAt: null,
+            editedBy: null,
+          })
+        }
+      })
+
       const orders = getStoredOrders().filter((o: any) => {
         if (selectedStoreId === "all") return true
         const selectedStore = currentStores.find(s => s.id === selectedStoreId)
-        return selectedStore && (o.stores?.name === selectedStore.name || o.store_name === selectedStore.name)
+        return selectedStore && (
+          o.stores?.name?.toLowerCase().trim() === selectedStore.name.toLowerCase().trim() || 
+          o.store_name?.toLowerCase().trim() === selectedStore.name.toLowerCase().trim()
+        )
       })
-      
-      const list: any[] = []
       
       orders.forEach((ord: any) => {
         const ordDate = ord.created_at ? ord.created_at.split("T")[0] : "2026-08-29"
@@ -146,7 +173,7 @@ export function AktSverkaClient() {
 
       const totalDebit = processed.reduce((sum, i) => sum + i.debit, 0)
       const totalCredit = processed.reduce((sum, i) => sum + i.credit, 0)
-      const finalBalance = processed.length > 0 ? processed[processed.length - 1].balance : 0
+      const finalBalance = processed.length > 0 ? processed[processed.length - 1].balance : totalInitDebt
 
       return {
         entries: processed,

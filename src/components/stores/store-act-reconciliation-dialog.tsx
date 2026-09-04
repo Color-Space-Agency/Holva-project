@@ -27,7 +27,7 @@ import {
   X
 } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
-import { getStoredOrders, MockOrder } from "@/lib/mock-data"
+import { getStoredOrders, getStoredStores, MockOrder } from "@/lib/mock-data"
 
 interface StoreActReconciliationDialogProps {
   open: boolean
@@ -38,6 +38,7 @@ interface StoreActReconciliationDialogProps {
     phone?: string | null
     address?: string | null
     contact_person?: string | null
+    initial_balance?: number
     current_balance?: number
     credit_limit?: number
   }
@@ -57,11 +58,15 @@ export function StoreActReconciliationDialog({
   // Do'konning Sotuvlari va to'lovlari
   const { entries, totalDebit, totalCredit, initialBalance, finalBalance } = useMemo(() => {
     const orders = getStoredOrders().filter(
-      (o) => o.store_name.toLowerCase().includes(store.name.toLowerCase()) || store.name.toLowerCase().includes(o.store_name.toLowerCase())
+      (o) => o.store_name.toLowerCase().trim() === store.name.toLowerCase().trim() ||
+        o.store_name.toLowerCase().includes(store.name.toLowerCase()) || 
+        store.name.toLowerCase().includes(o.store_name.toLowerCase())
     )
 
     // Boshlang'ich qoldiq
-    const initBal = 0
+    const storeObj = getStoredStores().find((s: any) => (store.id && s.id === store.id) || s.name.toLowerCase().trim() === store.name.toLowerCase().trim())
+    const rawInit = store.initial_balance ?? storeObj?.initial_balance ?? 0
+    const initBal = Math.abs(rawInit)
     let runningBalance = initBal
 
     const list: Array<{
@@ -111,7 +116,7 @@ export function StoreActReconciliationDialog({
     const filtered = list.filter((item) => item.date >= startDate && item.date <= endDate)
     const tDeb = filtered.reduce((sum, i) => sum + i.debit, 0)
     const tCred = filtered.reduce((sum, i) => sum + i.credit, 0)
-    const finBal = filtered.length > 0 ? filtered[filtered.length - 1].balance : 0
+    const finBal = filtered.length > 0 ? filtered[filtered.length - 1].balance : initBal
 
     return {
       entries: filtered,
@@ -120,7 +125,7 @@ export function StoreActReconciliationDialog({
       initialBalance: initBal,
       finalBalance: finBal,
     }
-  }, [store.name, startDate, endDate])
+  }, [store, startDate, endDate])
 
   const handlePrint = () => {
     window.print()

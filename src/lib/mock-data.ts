@@ -35,6 +35,7 @@ export interface MockStore {
   contact_person: string
   credit_limit: number
   current_balance: number
+  initial_balance?: number
   status: "ACTIVE" | "INACTIVE" | "BLOCKED"
   created_at?: string
 }
