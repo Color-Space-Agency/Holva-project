@@ -64,212 +64,15 @@ export interface MockEmployee {
   photo_url: string
 }
 
-export const INITIAL_PRODUCTS: MockProduct[] = [
-  {
-    id: "p-1",
-    name: "Kunjutli Premium Holva (500g)",
-    sku: "HLV-KNJ-500",
-    category: "Premium",
-    price: 38000,
-    cost_price: 22000,
-    unit: "dona",
-    stock: 145,
-    min_stock: 30,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=600&q=80",
-    description: "Tabiiy oq kunjut va asal qiyomidan tayyorlangan klassik qandolat durdonasi.",
-  },
-  {
-    id: "p-2",
-    name: "Shokoladli Yong'oqli Holva (400g)",
-    sku: "HLV-SHOK-400",
-    category: "Shokoladli",
-    price: 45000,
-    cost_price: 27000,
-    unit: "dona",
-    stock: 84,
-    min_stock: 25,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1548848221-0c2e497ed557?auto=format&fit=crop&w=600&q=80",
-    description: "Belgiya kakao kukuni va maydalangan bodom mag'izi bilan to'yintirilgan shokoladli holva.",
-  },
-  {
-    id: "p-3",
-    name: "Pista Mag'izli Samarqand Holvasi (1kg)",
-    sku: "HLV-PST-1000",
-    category: "Samarqand",
-    price: 95000,
-    cost_price: 58000,
-    unit: "dona",
-    stock: 42,
-    min_stock: 15,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=600&q=80",
-    description: "Eron xandon pistasi va tabiiy sariyog' qo'shib pishirilgan maxsus Samarqand holvasi.",
-  },
-  {
-    id: "p-4",
-    name: "Kungaboqar Klassik Holvasi (350g)",
-    sku: "HLV-KNG-350",
-    category: "Klassik",
-    price: 18000,
-    cost_price: 11000,
-    unit: "dona",
-    stock: 320,
-    min_stock: 50,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
-    description: "Qovurilgan kungaboqar mag'izidan tayyorlangan an'anaviy hamyonbop xalqona holva.",
-  },
-  {
-    id: "p-5",
-    name: "Bodomli Qandolat Holvasi (500g)",
-    sku: "HLV-BDM-500",
-    category: "Premium",
-    price: 60000,
-    cost_price: 36000,
-    unit: "dona",
-    stock: 65,
-    min_stock: 20,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80",
-    description: "Saralangan mayin bodom uni va tabiiy vanil aromatli nozik qandolat mahsuloti.",
-  },
-  {
-    id: "p-6",
-    name: "Kakao-Kunjutli Marmar Holva (450g)",
-    sku: "HLV-MRM-450",
-    category: "Shokoladli",
-    price: 42000,
-    cost_price: 25000,
-    unit: "dona",
-    stock: 110,
-    min_stock: 30,
-    status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80",
-    description: "Oq kunjut va quyuq shokoladli qatlamlarning uyg'unlashgan marmar naqshli ko'rinishi.",
-  },
-]
+export const INITIAL_PRODUCTS: MockProduct[] = []
 
-export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = [
-  {
-    id: "rm-1",
-    name: "Oq kunjut (tozalangan)",
-    sku: "RM-KNJ-01",
-    category: "Don va urug'lar",
-    purchase_price: 28000,
-    unit: "kg",
-    current_stock: 450,
-    minimum_stock: 100,
-    supplier: "Agro Import MChJ",
-  },
-  {
-    id: "rm-2",
-    name: "Shakar kukuni (I-nav)",
-    sku: "RM-SHK-02",
-    category: "Shirinlik va qiyomlar",
-    purchase_price: 13500,
-    unit: "kg",
-    current_stock: 800,
-    minimum_stock: 200,
-    supplier: "Shakar Savdo Bazasi",
-  },
-  {
-    id: "rm-3",
-    name: "Xandon pista mag'zi",
-    sku: "RM-PST-03",
-    category: "Yong'oqlar",
-    purchase_price: 140000,
-    unit: "kg",
-    current_stock: 45,
-    minimum_stock: 50, // Past qoldiq
-    supplier: "Samarqand Yong'oq MChJ",
-  },
-  {
-    id: "rm-4",
-    name: "Tozalangan bodom mag'zi",
-    sku: "RM-BDM-04",
-    category: "Yong'oqlar",
-    purchase_price: 98000,
-    unit: "kg",
-    current_stock: 90,
-    minimum_stock: 30,
-    supplier: "Samarqand Yong'oq MChJ",
-  },
-  {
-    id: "rm-5",
-    name: "Tabiiy Belgiya kakao kukuni",
-    sku: "RM-KKO-05",
-    category: "Qo'shimchalar",
-    purchase_price: 65000,
-    unit: "kg",
-    current_stock: 60,
-    minimum_stock: 25,
-    supplier: "Choco Import Distribution",
-  },
-]
+export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = []
 
 export const INITIAL_STORES: MockStore[] = []
 
 export const INITIAL_ORDERS: MockOrder[] = []
 
-export const INITIAL_EMPLOYEES: MockEmployee[] = [
-  {
-    id: "emp-1",
-    full_name: "Rustam Mahmudov",
-    phone: "+998 90 123 45 67",
-    department: "Ishlab chiqarish (Tsex)",
-    position: "Bosh texnolog",
-    employment_status: "ACTIVE",
-    salary_type: "MONTHLY",
-    salary_amount: 9500000,
-    photo_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    id: "emp-2",
-    full_name: "Sardor Rahimov",
-    phone: "+998 93 345 67 89",
-    department: "Sotuv va Logistika",
-    position: "Katta savdo agenti",
-    employment_status: "ACTIVE",
-    salary_type: "PERFORMANCE",
-    salary_amount: 5000000,
-    photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    id: "emp-3",
-    full_name: "Jamshid Qodirov",
-    phone: "+998 94 456 78 90",
-    department: "Sotuv va Logistika",
-    position: "Sotuv agenti",
-    employment_status: "ACTIVE",
-    salary_type: "PERFORMANCE",
-    salary_amount: 4500000,
-    photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    id: "emp-4",
-    full_name: "Nodira Karimova",
-    phone: "+998 97 789 01 23",
-    department: "Moliya va Buxgalteriya",
-    position: "Bosh hisobchi",
-    employment_status: "ACTIVE",
-    salary_type: "MONTHLY",
-    salary_amount: 8000000,
-    photo_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    id: "emp-5",
-    full_name: "Shavkat Ergashev",
-    phone: "+998 91 890 12 34",
-    department: "Sotuv va Logistika",
-    position: "Haydovchi-yetkazuvchi",
-    employment_status: "ACTIVE",
-    salary_type: "MONTHLY",
-    salary_amount: 5500000,
-    photo_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80",
-  },
-]
+export const INITIAL_EMPLOYEES: MockEmployee[] = []
 
 // Tezkor tekshirish helper: Haqiqiy Supabase bormi yoki yo'q?
 export function isRealSupabaseConfigured(): boolean {
@@ -479,44 +282,7 @@ export interface MockVisit {
   notes: string
 }
 
-export const INITIAL_VISITS: MockVisit[] = [
-  {
-    id: "vis-1",
-    store_name: "Korzinka — Chilonzor",
-    address: "Toshkent sh., Chilonzor 9-mavze",
-    status: "COMPLETED",
-    start_time: "Bugun 10:15",
-    duration: "25 daqiqa",
-    notes: "Yangi 14.8 mln so'mlik Sotuv rasmiylashtirildi va vitrina tekshirildi",
-  },
-  {
-    id: "vis-2",
-    store_name: "Makro Supermarket — Sergeli",
-    address: "Toshkent sh., Yangi Sergeli ko'chasi, 12",
-    status: "COMPLETED",
-    start_time: "Bugun 11:40",
-    duration: "18 daqiqa",
-    notes: "Qarzdorlik bo'yicha to'lov qabul qilindi, qoldiq holvalar yetarli",
-  },
-  {
-    id: "vis-3",
-    store_name: "Havas Discounter — Yunusobod",
-    address: "Toshkent sh., Yunusobod 14-mavze",
-    status: "IN_PROGRESS",
-    start_time: "Bugun 14:00 (Jarayonda)",
-    duration: "12 daqiqa",
-    notes: "Menejer bilan yangi assortiment bo'yicha muzokara olib borilmoqda",
-  },
-  {
-    id: "vis-4",
-    store_name: "Baraka Qandolat Do'koni",
-    address: "Samarqand sh., Registon ko'chasi, 88",
-    status: "PLANNED",
-    start_time: "Bugun 16:30 (Rejada)",
-    duration: "—",
-    notes: "Muddati o'tgan mahsulotlar tekshiruvi va yangi ta'mlar namoyishi",
-  },
-]
+export const INITIAL_VISITS: MockVisit[] = []
 
 const STORAGE_KEY_VISITS = "holva_crm_stored_visits"
 const STORAGE_KEY_COMPLETED_COUNT = "holva_crm_visits_completed_count"
@@ -757,8 +523,16 @@ export function deleteStoredOrder(orderId: string): MockOrder[] {
   return updatedList
 }
 
+export function updateStoredOrder(id: string, updates: Partial<MockOrder>): MockOrder[] {
+  if (typeof window === "undefined") return INITIAL_ORDERS
+  const list = getStoredOrders()
+  const updatedList = list.map((o) => (o.id === id ? { ...o, ...updates } : o))
+  saveStoredOrders(updatedList)
+  return updatedList
+}
+
 // ==========================================
-// SINXRONLASHGAN REAL-TIME CHAT TIZIMI (HAR BIR AGENT UCHUN ALOHIDA)
+// CHAT MESSAGES PERSISTENCE & SYNC
 // ==========================================
 export interface RealtimeChatMessage {
   id: string
@@ -770,140 +544,46 @@ export interface RealtimeChatMessage {
   timestamp: number
 }
 
+export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = []
+
 const STORAGE_KEY_CHAT = "holva_crm_chat_messages"
 
-export const INITIAL_CHAT_MESSAGES: RealtimeChatMessage[] = [
-  // 1. Sardor Rahimov bilan chat
-  {
-    id: "msg-s1",
-    agentId: "sardor",
-    sender: "admin",
-    senderName: "Super Admin",
-    text: "Assalomu alaykum Sardor! Bugungi Sotuvlar va do'konlar rejasi qanday ketyapti?",
-    time: "08:30",
-    timestamp: Date.now() - 3600000 * 3,
-  },
-  {
-    id: "msg-s2",
-    agentId: "sardor",
-    sender: "agent",
-    senderName: "Sardor Rahimov",
-    text: "Va alaykum assalom! Hammasi a'lo, Korzinka va Makroga yangi partiya yetkazildi, to'lovlar ham qabul qilinmoqda.",
-    time: "08:35",
-    timestamp: Date.now() - 3600000 * 2.8,
-  },
-  {
-    id: "msg-s3",
-    agentId: "sardor",
-    sender: "admin",
-    senderName: "Super Admin",
-    text: "Barakalla! Pista mag'izli va kunjutli holvalardan zaxira tayyorlab qo'ydik, xaridorlarga taklif qilsangiz bo'ladi.",
-    time: "09:00",
-    timestamp: Date.now() - 3600000 * 2,
-  },
-
-  // 2. Jasur Qodirov bilan chat
-  {
-    id: "msg-j1",
-    agentId: "jasur",
-    sender: "admin",
-    senderName: "Super Admin",
-    text: "Salom Jasur! Sergeli va Chilonzor hududidagi do'konlarda talab qanday?",
-    time: "09:15",
-    timestamp: Date.now() - 3600000 * 2.5,
-  },
-  {
-    id: "msg-j2",
-    agentId: "jasur",
-    sender: "agent",
-    senderName: "Jasur Qodirov",
-    text: "Assalomu alaykum! Sergeli bo'yicha 5 ta yangi Sotuv oldim, shokoladli holvaga talab juda yuqori.",
-    time: "09:20",
-    timestamp: Date.now() - 3600000 * 2.2,
-  },
-
-  // 3. Alisher Vohidov bilan chat
-  {
-    id: "msg-a1",
-    agentId: "alisher",
-    sender: "admin",
-    senderName: "Super Admin",
-    text: "Assalomu alaykum Alisher! Viloyat yo'nalishidagi do'konlarga mahsulot yetkazish rejasini tasdiqlaymiz.",
-    time: "10:00",
-    timestamp: Date.now() - 3600000 * 1.5,
-  },
-  {
-    id: "msg-a2",
-    agentId: "alisher",
-    sender: "agent",
-    senderName: "Alisher Vohidov",
-    text: "Rahmat! Samarqand va Jizzax yo'nalishida 10 ta do'kondan Sotuv shakllantirdim.",
-    time: "10:05",
-    timestamp: Date.now() - 3600000 * 1.2,
-  },
-]
-
-export function mergeChatMessages(listA: RealtimeChatMessage[], listB: RealtimeChatMessage[]): RealtimeChatMessage[] {
-  const combined = [...(listA || []), ...(listB || [])].filter((m) => Boolean(m && m.id && m.text))
-  combined.sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0))
-
-  const result: RealtimeChatMessage[] = []
-  const seenIds = new Set<string>()
-
-  for (const msg of combined) {
-    if (seenIds.has(msg.id)) continue
-
-    // Matn va yuboruvchi bo'yicha takroriylikni (duplicate) tekshirish:
-    // Agar 2 daqiqa ichida bir xil agent, bir xil sender va bir xil matn kelsa, bitta deb olinadi
-    const isDuplicate = result.some(
-      (existing) =>
-        (existing.agentId || "sardor") === (msg.agentId || "sardor") &&
-        existing.sender === msg.sender &&
-        existing.text.trim() === msg.text.trim() &&
-        Math.abs((existing.timestamp || 0) - (msg.timestamp || 0)) < 120000
-    )
-
-    if (!isDuplicate) {
-      seenIds.add(msg.id)
-      result.push(msg)
-    }
-  }
-
-  return result
-}
-
 export function getStoredChatMessages(agentId?: string): RealtimeChatMessage[] {
-  if (typeof window === "undefined") {
-    return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => (m.agentId || "sardor") === agentId) : INITIAL_CHAT_MESSAGES
-  }
+  if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CHAT)
     if (raw !== null) {
-      const parsed: RealtimeChatMessage[] = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const merged = mergeChatMessages(INITIAL_CHAT_MESSAGES, parsed)
-        return agentId ? merged.filter((m) => (m.agentId || "sardor") === agentId) : merged
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return agentId ? parsed.filter((m) => (m.agentId || "sardor") === agentId) : parsed
       }
     }
   } catch (e) {
     console.error("Error reading stored chat messages:", e)
   }
-  try {
-    localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(INITIAL_CHAT_MESSAGES))
-  } catch {}
-  return agentId ? INITIAL_CHAT_MESSAGES.filter((m) => (m.agentId || "sardor") === agentId) : INITIAL_CHAT_MESSAGES
+  return INITIAL_CHAT_MESSAGES
+}
+
+export function mergeChatMessages(localMsgs: RealtimeChatMessage[], serverMsgs: RealtimeChatMessage[]): RealtimeChatMessage[] {
+  const map = new Map<string, RealtimeChatMessage>()
+  for (const m of localMsgs) {
+    if (m && m.id) map.set(m.id, m)
+  }
+  for (const m of serverMsgs) {
+    if (m && m.id) map.set(m.id, m)
+  }
+  return Array.from(map.values()).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
 }
 
 export async function syncChatMessagesFromServer(agentId?: string): Promise<RealtimeChatMessage[]> {
   if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
+  const currentLocal = getStoredChatMessages()
   try {
-    const currentLocal = getStoredChatMessages() // barcha local xabarlar
-    const url = agentId ? `/api/sync/chat?agentId=${encodeURIComponent(agentId)}` : `/api/sync/chat`
+    const url = agentId ? `/api/sync/chat?agentId=${encodeURIComponent(agentId)}` : "/api/sync/chat"
     const res = await fetch(url, { cache: "no-store" })
     if (res.ok) {
       const data = await res.json()
       if (data.success && Array.isArray(data.allMessages)) {
-        // Local va server xabarlarini doim birlashtiramiz va takroriylardan tozalaymiz
         const merged = mergeChatMessages(currentLocal, data.allMessages)
         localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(merged))
         window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: merged, agentId } }))
@@ -923,10 +603,10 @@ export function sendStoredChatMessage(
   text: string
 ): RealtimeChatMessage[] {
   if (typeof window === "undefined") return INITIAL_CHAT_MESSAGES
-  const currentLocal = getStoredChatMessages() // barcha agentlar xabarlari
+  const currentLocal = getStoredChatMessages()
   const now = new Date()
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-  
+
   const newMsg: RealtimeChatMessage = {
     id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     agentId,
@@ -943,7 +623,6 @@ export function sendStoredChatMessage(
     window.dispatchEvent(new CustomEvent("holva-chat-updated", { detail: { messages: updated, agentId } }))
   } catch {}
 
-  // Serverga yagona yangi xabarni va birlashgan ro'yxatni yuborish (ikkilanmasdan bitta nusxada)
   try {
     fetch("/api/sync/chat", {
       method: "POST",
@@ -955,19 +634,18 @@ export function sendStoredChatMessage(
         newMessage: newMsg,
         clientMessages: updated,
       }),
-    }).then(async (res) => {
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && Array.isArray(data.allMessages)) {
-          const reMerged = mergeChatMessages(updated, data.allMessages)
-          localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(reMerged))
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.allMessages)) {
+            const reMerged = mergeChatMessages(updated, data.allMessages)
+            localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(reMerged))
+          }
         }
-      }
-    }).catch(() => {})
+      })
+      .catch(() => {})
   } catch {}
 
   return updated
 }
-
-
-export function updateStoredOrder(id: string, updates: Partial<MockOrder>): MockOrder[] { if (typeof window === 'undefined') return INITIAL_ORDERS; const list = getStoredOrders(); const updatedList = list.map(o => o.id === id ? { ...o, ...updates } : o); saveStoredOrders(updatedList); return updatedList; }

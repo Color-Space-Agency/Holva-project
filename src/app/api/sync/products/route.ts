@@ -7,13 +7,13 @@ declare global {
 }
 
 if (!globalThis.__HOLVA_SERVER_PRODUCTS) {
-  globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
+  globalThis.__HOLVA_SERVER_PRODUCTS = [];
 }
 
 // GET /api/sync/products — Mahsulotlar va rasmlarni olish
 export async function GET(request: NextRequest) {
   try {
-    const products = globalThis.__HOLVA_SERVER_PRODUCTS || [...INITIAL_PRODUCTS];
+    const products = globalThis.__HOLVA_SERVER_PRODUCTS || [];
     return NextResponse.json({
       success: true,
       products,
