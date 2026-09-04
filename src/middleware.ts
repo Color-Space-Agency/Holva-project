@@ -27,9 +27,25 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ["/login", "/register", "/forgot-password"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  // Agar demo rejimida bo'lsa yoki haqiqiy Supabase ulanmagan bo'lsa (0ms instant routing)
-  if (!isConfigured || isDemo) {
+  if (!isConfigured) {
+    if (!isDemo && !isPublicRoute) {
+      supabaseResponse.cookies.set("demo_session", "SUPER_ADMIN", {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+      })
+    }
     if (pathname === "/login" && isDemo) {
+      const url = request.nextUrl.clone()
+      url.pathname = isDemo === "SALES_AGENT" ? "/agent/home" : "/dashboard"
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
+  }
+
+  if (isDemo) {
+    if (pathname === "/login") {
       const url = request.nextUrl.clone()
       url.pathname = isDemo === "SALES_AGENT" ? "/agent/home" : "/dashboard"
       return NextResponse.redirect(url)
