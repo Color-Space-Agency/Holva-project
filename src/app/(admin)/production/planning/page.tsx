@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { CalendarCheck, Plus, Search, Clock, CheckCircle2, AlertTriangle, ArrowRight, User } from "lucide-react"
+import { useState, useEffect } from "react"
+import { CalendarCheck, Plus, Search, Clock, CheckCircle2, AlertTriangle, ArrowRight, User, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -19,84 +19,120 @@ interface Plan {
   status: "PLANNED" | "IN_PROGRESS" | "DONE"
 }
 
-const DEFAULT_PLANS: Plan[] = [
-  {
-    id: "plan-1",
-    product_name: "Kunjutli Premium Holva (500g)",
-    planned_kg: 800,
-    target_date: "25.08.2026",
-    shift: "Kunduzgi (08:00 - 17:00)",
-    responsible: "Rustam Mahmudov",
-    status: "IN_PROGRESS",
-  },
-  {
-    id: "plan-2",
-    product_name: "Shokoladli Yong'oqli Holva",
-    planned_kg: 500,
-    target_date: "25.08.2026",
-    shift: "Tungi (17:00 - 02:00)",
-    responsible: "Otabek Saidov",
-    status: "PLANNED",
-  },
-  {
-    id: "plan-3",
-    product_name: "Samarqand Xandon Pistali",
-    planned_kg: 350,
-    target_date: "26.08.2026",
-    shift: "Kunduzgi (08:00 - 17:00)",
-    responsible: "Rustam Mahmudov",
-    status: "PLANNED",
-  },
-  {
-    id: "plan-4",
-    product_name: "Kungaboqar Klassik Holvasi",
-    planned_kg: 1200,
-    target_date: "24.08.2026",
-    shift: "Kunduzgi (08:00 - 17:00)",
-    responsible: "Jahongir Aliyev",
-    status: "DONE",
-  },
-]
+const DEFAULT_PLANS: Plan[] = []
+
+const STORAGE_KEY = "holva_crm_stored_plans"
+
+function getStoredPlans(): Plan[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
+function savePlans(items: Plan[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+  } catch {}
+}
 
 export default function ProductionPlanningPage() {
-  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS)
+  const [plans, setPlans] = useState<Plan[]>([])
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState<{
+    product_name: string
+    planned_kg: string
+    target_date: string
+    shift: "Kunduzgi (08:00 - 17:00)" | "Tungi (17:00 - 02:00)"
+    responsible: string
+  }>({
     product_name: "",
     planned_kg: "",
     target_date: "",
-    shift: "Kunduzgi (08:00 - 17:00)" as const,
+    shift: "Kunduzgi (08:00 - 17:00)",
     responsible: "",
   })
+
+  useEffect(() => {
+    setPlans(getStoredPlans())
+  }, [])
 
   const filtered = plans.filter((p) =>
     p.product_name.toLowerCase().includes(search.toLowerCase()) ||
     p.responsible.toLowerCase().includes(search.toLowerCase())
   )
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.product_name.trim() || !formData.planned_kg) return
 
-    const newPlan: Plan = {
-      id: `plan-${Date.now()}`,
-      product_name: formData.product_name,
-      planned_kg: Number(formData.planned_kg),
-      target_date: formData.target_date || new Date().toISOString().split("T")[0],
-      shift: formData.shift,
-      responsible: formData.responsible || "Usta Mahmudov",
-      status: "PLANNED",
+    let updated: Plan[]
+    if (editingId) {
+      updated = plans.map((p) =>
+        p.id === editingId
+          ? {
+              ...p,
+              product_name: formData.product_name,
+              planned_kg: Number(formData.planned_kg),
+              target_date: formData.target_date || new Date().toISOString().split("T")[0],
+              shift: formData.shift,
+              responsible: formData.responsible || "Usta Mahmudov",
+            }
+          : p
+      )
+      toast.success("Reja tahrirlandi")
+    } else {
+      const newPlan: Plan = {
+        id: `plan-${Date.now()}`,
+        product_name: formData.product_name,
+        planned_kg: Number(formData.planned_kg),
+        target_date: formData.target_date || new Date().toISOString().split("T")[0],
+        shift: formData.shift,
+        responsible: formData.responsible || "Usta Mahmudov",
+        status: "PLANNED",
+      }
+      updated = [newPlan, ...plans]
+      toast.success("Ishlab chiqarish rejasi tasdiqlandi")
     }
 
-    setPlans([newPlan, ...plans])
+    setPlans(updated)
+    savePlans(updated)
     setFormData({ product_name: "", planned_kg: "", target_date: "", shift: "Kunduzgi (08:00 - 17:00)", responsible: "" })
+    setEditingId(null)
     setIsOpen(false)
-    toast.success("Ishlab chiqarish rejasi tasdiqlandi")
+  }
+
+  const handleEdit = (plan: Plan) => {
+    setEditingId(plan.id)
+    setFormData({
+      product_name: plan.product_name,
+      planned_kg: String(plan.planned_kg),
+      target_date: plan.target_date,
+      shift: plan.shift,
+      responsible: plan.responsible,
+    })
+    setIsOpen(true)
+  }
+
+  const handleDelete = (id: string) => {
+    const updated = plans.filter((p) => p.id !== id)
+    setPlans(updated)
+    savePlans(updated)
+    toast.success("Reja o'chirildi")
   }
 
   const handleStatusChange = (id: string, nextStatus: Plan["status"]) => {
-    setPlans(plans.map((p) => (p.id === id ? { ...p, status: nextStatus } : p)))
+    const updated = plans.map((p) => (p.id === id ? { ...p, status: nextStatus } : p))
+    setPlans(updated)
+    savePlans(updated)
     toast.success("Reja holati yangilandi")
   }
 
@@ -187,17 +223,33 @@ export default function ProductionPlanningPage() {
                   <CheckCircle2 className="h-3.5 w-3.5" /> Tayyor deb belgilash
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(plan)}
+                className="h-8 text-xs text-gray-600 hover:text-gray-900 rounded-lg gap-1"
+              >
+                <Edit2 className="h-3.5 w-3.5" /> Tahrirlash
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDelete(plan.id)}
+                className="h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg gap-1"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> O&apos;chirish
+              </Button>
             </div>
           </div>
         ))}
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={(val) => { setIsOpen(val); if (!val) { setEditingId(null); setFormData({ product_name: "", planned_kg: "", target_date: "", shift: "Kunduzgi (08:00 - 17:00)", responsible: "" }) } }}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Yangi ishlab chiqarish rejasi</DialogTitle>
+            <DialogTitle>{editingId ? "Rejani tahrirlash" : "Yangi ishlab chiqarish rejasi"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAdd} className="space-y-3.5 mt-2">
+          <form onSubmit={handleSave} className="space-y-3.5 mt-2">
             <div className="space-y-1">
               <label className="text-xs font-medium">Mahsulot nomi *</label>
               <Input

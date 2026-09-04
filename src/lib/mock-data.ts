@@ -100,7 +100,7 @@ export function getStoredProducts(): MockProduct[] {
     const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored products:", e)
@@ -117,9 +117,8 @@ export async function syncProductsFromServer(): Promise<MockProduct[]> {
     const res = await fetch("/api/sync/products", { cache: "no-store" })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+      if (data.success && Array.isArray(data.products)) {
         const local = getStoredProducts()
-        // Merge: agar localda rasm o'zgargan bo'lsa uni ustun qo'yish
         const map = new Map<string, MockProduct>()
         data.products.forEach((p: MockProduct) => map.set(p.id, p))
         local.forEach((p: MockProduct) => {
@@ -155,7 +154,6 @@ export function saveStoredProduct(updated: Partial<MockProduct> & { id: string }
     window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
 
-  // Serverga yuborish
   try {
     fetch("/api/sync/products", {
       method: "POST",
@@ -180,7 +178,6 @@ export function createStoredProduct(newItem: Omit<MockProduct, "id"> & { id?: st
     window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
 
-  // Serverga yuborish
   try {
     fetch("/api/sync/products", {
       method: "POST",
@@ -201,7 +198,6 @@ export function deleteStoredProduct(id: string): MockProduct[] {
     window.dispatchEvent(new CustomEvent("products-updated", { detail: { products: updatedList } }))
   } catch {}
 
-  // Serverga yuborish
   try {
     fetch("/api/sync/products", {
       method: "POST",
@@ -291,9 +287,9 @@ export function getStoredVisits(): MockVisit[] {
   if (typeof window === "undefined") return INITIAL_VISITS
   try {
     const raw = localStorage.getItem(STORAGE_KEY_VISITS)
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) return parsed
     }
   } catch (e) {
     console.error("Error reading stored visits:", e)
@@ -312,23 +308,22 @@ export function saveStoredVisits(visits: MockVisit[]): void {
 }
 
 export function completeStoredVisit(id: string): { visits: MockVisit[]; completedCount: number } {
-  if (typeof window === "undefined") return { visits: INITIAL_VISITS, completedCount: 9 }
+  if (typeof window === "undefined") return { visits: INITIAL_VISITS, completedCount: 0 }
   const current = getStoredVisits()
   const updated = current.map((v) =>
     v.id === id ? { ...v, status: "COMPLETED" as const, duration: "25 daqiqa", start_time: v.start_time.replace(" (Jarayonda)", "").replace(" (Rejada)", "") } : v
   )
   saveStoredVisits(updated)
 
-  // Completed count ni 1 ga oshiramiz
   const currentCount = getStoredCompletedVisitsCount()
-  const newCount = Math.min(currentCount + 1, 12)
+  const newCount = currentCount + 1
   setStoredCompletedVisitsCount(newCount)
 
   return { visits: updated, completedCount: newCount }
 }
 
 export function getStoredCompletedVisitsCount(): number {
-  if (typeof window === "undefined") return 9
+  if (typeof window === "undefined") return 0
   try {
     const raw = localStorage.getItem(STORAGE_KEY_COMPLETED_COUNT)
     if (raw) {
@@ -336,7 +331,7 @@ export function getStoredCompletedVisitsCount(): number {
       if (!isNaN(parsed)) return parsed
     }
   } catch {}
-  return 9
+  return 0
 }
 
 export function setStoredCompletedVisitsCount(count: number): void {
@@ -475,7 +470,6 @@ export function recordStoredOrderPayment(orderId: string, amount: number): { ord
 
   saveStoredOrders(updatedOrders)
 
-  // Serverga cross-device sync yuborish
   try {
     fetch("/api/sync/orders", {
       method: "POST",
@@ -493,7 +487,6 @@ export function createStoredOrder(newOrder: MockOrder): MockOrder[] {
   const updatedList = [newOrder, ...list]
   saveStoredOrders(updatedList)
 
-  // Serverga cross-device sync yuborish
   try {
     fetch("/api/sync/orders", {
       method: "POST",
@@ -511,7 +504,6 @@ export function deleteStoredOrder(orderId: string): MockOrder[] {
   const updatedList = list.filter((o) => o.id !== orderId && o.order_number !== orderId)
   saveStoredOrders(updatedList)
 
-  // Serverga cross-device sync yuborish
   try {
     fetch("/api/sync/orders", {
       method: "POST",

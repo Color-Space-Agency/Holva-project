@@ -15,40 +15,7 @@ interface NotificationItem {
   read: boolean
 }
 
-const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "notif-1",
-    title: "Yangi sotuv qabul qilindi",
-    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi sotuv rasmiylashtirildi.",
-    type: "ORDER",
-    time: "10 daqiqa oldin",
-    read: false,
-  },
-  {
-    id: "notif-2",
-    title: "Xomashyo kam qoldi ogohlantirishi!",
-    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya sotib olish tavsiya etiladi.",
-    type: "STOCK",
-    time: "45 daqiqa oldin",
-    read: false,
-  },
-  {
-    id: "notif-3",
-    title: "To'lov qabul qilindi",
-    message: "Makro Supermarket hisobidan 9.2 mln so'm to'liq to'lov kelib tushdi va qarz yopildi.",
-    type: "PAYMENT",
-    time: "2 soat oldin",
-    read: true,
-  },
-  {
-    id: "notif-4",
-    title: "Ishlab chiqarish partiyasi yakunlandi",
-    message: "104-partiya bo'yicha 640 kg Kunjutli Premium holva tayyorlandi va tayyor mahsulotlar omboriga topshirildi.",
-    type: "PRODUCTION",
-    time: "Bugun 11:30",
-    read: true,
-  },
-]
+const DEFAULT_NOTIFICATIONS: NotificationItem[] = []
 
 const STORAGE_KEY = "holva_crm_notifications"
 const READ_IDS_KEY = "holva_crm_notifications_read"

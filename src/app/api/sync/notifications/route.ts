@@ -10,44 +10,7 @@ export interface ServerNotificationItem {
   timestamp: number;
 }
 
-const DEFAULT_SERVER_NOTIFICATIONS: ServerNotificationItem[] = [
-  {
-    id: "notif-1",
-    title: "Yangi sotuv qabul qilindi",
-    message: "Sardor Rahimov tomonidan Korzinka Chilonzor do'koni uchun 14.8 mln so'mlik yangi sotuv rasmiylashtirildi.",
-    type: "ORDER",
-    time: "10 daqiqa oldin",
-    read: false,
-    timestamp: Date.now() - 10 * 60 * 1000,
-  },
-  {
-    id: "notif-2",
-    title: "Xomashyo kam qoldi ogohlantirishi!",
-    message: "Omborda 'Xandon pista (tozalangan)' qoldig'i 45 kg (minimal chegara: 50 kg). Yangi partiya sotib olish tavsiya etiladi.",
-    type: "STOCK",
-    time: "45 daqiqa oldin",
-    read: false,
-    timestamp: Date.now() - 45 * 60 * 1000,
-  },
-  {
-    id: "notif-3",
-    title: "To'lov qabul qilindi",
-    message: "Makro Supermarket hisobidan 9.2 mln so'm to'lov kelib tushdi va qarz yopildi.",
-    type: "PAYMENT",
-    time: "2 soat oldin",
-    read: true,
-    timestamp: Date.now() - 2 * 3600 * 1000,
-  },
-  {
-    id: "notif-4",
-    title: "Ishlab chiqarish partiyasi yakunlandi",
-    message: "104-partiya bo'yicha 640 kg Kunjutli Premium holva tayyorlandi va tayyor mahsulotlar omboriga topshirildi.",
-    type: "PRODUCTION",
-    time: "Bugun 11:30",
-    read: true,
-    timestamp: Date.now() - 4 * 3600 * 1000,
-  },
-];
+const DEFAULT_SERVER_NOTIFICATIONS: ServerNotificationItem[] = [];
 
 declare global {
   var __HOLVA_SERVER_NOTIFICATIONS: ServerNotificationItem[] | undefined;

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, DollarSign, TrendingDown, Calendar, Wallet } from "lucide-react";
+import { Plus, Search, DollarSign, TrendingDown, Calendar, Wallet, Edit2, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ExpenseFormDialog } from "./expense-form-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { toast } from "sonner";
 
 const CATEGORY_NAMES: Record<string, string> = {
   RAW_MATERIALS: "Xomashyo xaridi",
@@ -32,18 +33,36 @@ const CATEGORY_COLORS: Record<string, string> = {
   OTHER: "#94a3b8",
 };
 
-const DEFAULT_EXPENSES: any[] = [];
+const STORAGE_KEY = "holva_crm_stored_expenses";
 
 export function ExpensesClient() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [expenses, setExpenses] = useState<any[]>(DEFAULT_EXPENSES);
+  const [editingExpense, setEditingExpense] = useState<any | null>(null);
+  const [expenses, setExpenses] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setExpenses(parsed);
+      }
+    } catch {}
+  }, []);
+
+  const saveExpenses = (newList: any[]) => {
+    setExpenses(newList);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+    } catch {}
+  };
 
   const filteredExpenses = expenses.filter((e) => {
     const matchesCategory = categoryFilter === "ALL" || e.category === categoryFilter;
     const matchesSearch =
-      e.description.toLowerCase().includes(search.toLowerCase()) ||
+      (e.description || "").toLowerCase().includes(search.toLowerCase()) ||
       (CATEGORY_NAMES[e.category] || "").toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -62,18 +81,41 @@ export function ExpensesClient() {
   }).filter((item) => item.value > 0);
 
   const handleExpenseCreated = (newExpense: any) => {
-    setExpenses([
-      {
+    if (editingExpense) {
+      const updated = expenses.map((e) =>
+        e.id === editingExpense.id
+          ? {
+              ...e,
+              category: newExpense.category || "OTHER",
+              amount: Number(newExpense.amount) || 0,
+              expense_date: newExpense.expense_date || e.expense_date,
+              description: newExpense.description || "Xarajat",
+              payment_method: newExpense.payment_method || "CASH",
+            }
+          : e
+      );
+      saveExpenses(updated);
+      toast.success("Xarajat tahrirlandi");
+    } else {
+      const newObj = {
         id: `exp-${Date.now()}`,
         category: newExpense.category || "OTHER",
         amount: Number(newExpense.amount) || 0,
         expense_date: newExpense.expense_date || new Date().toISOString(),
         description: newExpense.description || "Xarajat",
         payment_method: newExpense.payment_method || "CASH",
-      },
-      ...expenses,
-    ]);
+      };
+      saveExpenses([newObj, ...expenses]);
+      toast.success("Yangi xarajat qo'shildi");
+    }
     setIsFormOpen(false);
+    setEditingExpense(null);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    const updated = expenses.filter((e) => e.id !== id);
+    saveExpenses(updated);
+    toast.success("Xarajat o'chirildi");
   };
 
   return (
@@ -104,13 +146,13 @@ export function ExpensesClient() {
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-gray-400">
-            <span className="text-xs font-semibold uppercase">Eng Katta Xarajat</span>
+            <span className="text-xs font-semibold uppercase">Top Kategoriya</span>
             <Wallet className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            Ish haqi fondi
+          <div className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+            {chartData.length > 0 ? chartData[0].name : "Mavjud emas"}
           </div>
-          <span className="text-xs text-emerald-600 font-medium">Jami xarajatning 61% qismi</span>
+          <span className="text-xs text-emerald-600 font-medium">Eng yuqori ulushga ega</span>
         </div>
       </div>
 
@@ -143,7 +185,10 @@ export function ExpensesClient() {
         </div>
 
         <Button
-          onClick={() => setIsFormOpen(true)}
+          onClick={() => {
+            setEditingExpense(null);
+            setIsFormOpen(true);
+          }}
           className="w-full sm:w-auto h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-bold gap-2 shadow-md shadow-violet-500/20"
         >
           <Plus className="h-4 w-4" /> Yangi Xarajat Qo&apos;shish
@@ -221,6 +266,7 @@ export function ExpensesClient() {
                   <th className="pb-3 px-3">Tavsif</th>
                   <th className="pb-3 px-3">To&apos;lov turi</th>
                   <th className="pb-3 px-3 text-right">Summa</th>
+                  <th className="pb-3 px-3 text-right">Amallar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -247,12 +293,31 @@ export function ExpensesClient() {
                     <td className="py-3.5 px-3 text-right font-bold text-red-600 dark:text-red-400 whitespace-nowrap">
                       -{formatCurrency(exp.amount)}
                     </td>
+                    <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingExpense(exp);
+                            setIsFormOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExpense(exp.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
 
                 {filteredExpenses.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-10 text-gray-400">
+                    <td colSpan={6} className="text-center py-10 text-gray-400">
                       Hech qanday xarajat topilmadi
                     </td>
                   </tr>
@@ -266,7 +331,10 @@ export function ExpensesClient() {
       {/* Expense Form Dialog */}
       <ExpenseFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingExpense(null);
+        }}
         onSuccess={handleExpenseCreated}
       />
     </div>

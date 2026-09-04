@@ -1,24 +1,34 @@
 "use client"
 
-import { useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Clock, AlertTriangle, CheckCircle2, ShieldAlert, TrendingUp } from "lucide-react"
+import { Clock } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
-import { INITIAL_STORES } from "@/lib/mock-data"
+import { getStoredStores, MockStore } from "@/lib/mock-data"
 
 export function DebtAgingAnalysis() {
-  const stats = useMemo(() => {
-    // 1C Aging analiz: 0-7 kun, 8-15 kun, 16-30 kun, 30+ kun
-    return {
-      current: { amount: 18500000, count: 6, label: "0 — 7 kun (Joriy / Xavfsiz)", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200" },
-      overdueShort: { amount: 12400000, count: 3, label: "8 — 15 kun (Kichik kechikish)", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200" },
-      overdueMedium: { amount: 8200000, count: 2, label: "16 — 30 kun (Ogohlantirish)", color: "text-orange-600 bg-orange-50 dark:bg-orange-950/40 border-orange-200" },
-      critical: { amount: 4800000, count: 1, label: "30+ kun (Tanqidiy / Bloklangan)", color: "text-red-600 bg-red-50 dark:bg-red-950/40 border-red-200" },
-      totalDebt: 43900000,
-    }
+  const [stores, setStores] = useState<MockStore[]>([])
+
+  useEffect(() => {
+    setStores(getStoredStores())
+    const handleUpdate = () => setStores(getStoredStores())
+    window.addEventListener("stores-updated", handleUpdate)
+    return () => window.removeEventListener("stores-updated", handleUpdate)
   }, [])
+
+  const stats = useMemo(() => {
+    const storesWithDebt = stores.filter((s) => (s.current_balance || 0) < 0)
+    const totalDebt = storesWithDebt.reduce((sum, s) => sum + Math.abs(s.current_balance), 0)
+
+    return {
+      current: { amount: totalDebt, count: storesWithDebt.length },
+      overdueShort: { amount: 0, count: 0 },
+      overdueMedium: { amount: 0, count: 0 },
+      critical: { amount: 0, count: 0 },
+      totalDebt,
+    }
+  }, [stores])
 
   return (
     <Card className="border shadow-xs">

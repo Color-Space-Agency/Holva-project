@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Banknote, Plus, Search, CheckCircle2, FileText, Download } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Banknote, Plus, Search, CheckCircle2, FileText, Download, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -20,79 +21,129 @@ interface SalaryRecord {
   payment_date: string
 }
 
-const DEFAULT_SALARIES: SalaryRecord[] = [
-  {
-    id: "sal-1",
-    name: "Rustam Mahmudov",
-    position: "Bosh texnolog",
-    base_salary: 9500000,
-    kpi_bonus: 1500000,
-    deductions: 0,
-    total_salary: 11000000,
-    status: "PAID",
-    payment_date: "10.08.2026",
-  },
-  {
-    id: "sal-2",
-    name: "Sardor Rahimov",
-    position: "Katta sotuv agenti",
-    base_salary: 5000000,
-    kpi_bonus: 4725000, // 5% komissiya
-    deductions: 0,
-    total_salary: 9725000,
-    status: "PAID",
-    payment_date: "10.08.2026",
-  },
-  {
-    id: "sal-3",
-    name: "Jamshid Qodirov",
-    position: "Sotuv agenti",
-    base_salary: 4500000,
-    kpi_bonus: 3105000,
-    deductions: 0,
-    total_salary: 7605000,
-    status: "PAID",
-    payment_date: "10.08.2026",
-  },
-  {
-    id: "sal-4",
-    name: "Nodira Karimova",
-    position: "Bosh hisobchi",
-    base_salary: 8000000,
-    kpi_bonus: 800000,
-    deductions: 0,
-    total_salary: 8800000,
-    status: "PENDING",
-    payment_date: "Kutilmoqda",
-  },
-  {
-    id: "sal-5",
-    name: "Shavkat Ergashev",
-    position: "Haydovchi",
-    base_salary: 5500000,
-    kpi_bonus: 500000,
-    deductions: 200000, // Yoqilg'i me'yordan ortiq
-    total_salary: 5800000,
-    status: "PENDING",
-    payment_date: "Kutilmoqda",
-  },
-]
+const DEFAULT_SALARIES: SalaryRecord[] = []
+
+const STORAGE_KEY = "holva_crm_stored_salaries"
+
+function getStoredSalaries(): SalaryRecord[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
+function saveSalaries(items: SalaryRecord[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+  } catch {}
+}
 
 export default function HRSalaryPage() {
-  const [salaries, setSalaries] = useState<SalaryRecord[]>(DEFAULT_SALARIES)
+  const [salaries, setSalaries] = useState<SalaryRecord[]>([])
   const [search, setSearch] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    position: "",
+    base_salary: "",
+    kpi_bonus: "0",
+    deductions: "0",
+    status: "PENDING" as "PAID" | "PENDING",
+  })
 
-  const filtered = salaries.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.position.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    setSalaries(getStoredSalaries())
+  }, [])
+
+  const filtered = salaries.filter(
+    (s) =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.position.toLowerCase().includes(search.toLowerCase())
   )
 
-  const handlePay = (id: string) => {
-    setSalaries(
-      salaries.map((s) =>
-        s.id === id ? { ...s, status: "PAID", payment_date: new Date().toLocaleDateString("uz-UZ") } : s
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.name.trim() || !formData.base_salary) return
+
+    const base = Number(formData.base_salary) || 0
+    const bonus = Number(formData.kpi_bonus) || 0
+    const ded = Number(formData.deductions) || 0
+    const total = Math.max(0, base + bonus - ded)
+
+    let updated: SalaryRecord[]
+    if (editingId) {
+      updated = salaries.map((s) =>
+        s.id === editingId
+          ? {
+              ...s,
+              name: formData.name,
+              position: formData.position || "Xodim",
+              base_salary: base,
+              kpi_bonus: bonus,
+              deductions: ded,
+              total_salary: total,
+              status: formData.status,
+              payment_date: formData.status === "PAID" ? new Date().toLocaleDateString("uz-UZ") : "Kutilmoqda",
+            }
+          : s
       )
+      toast.success("Oylik maosh tahrirlandi")
+    } else {
+      const newSalary: SalaryRecord = {
+        id: `sal-${Date.now()}`,
+        name: formData.name,
+        position: formData.position || "Xodim",
+        base_salary: base,
+        kpi_bonus: bonus,
+        deductions: ded,
+        total_salary: total,
+        status: formData.status,
+        payment_date: formData.status === "PAID" ? new Date().toLocaleDateString("uz-UZ") : "Kutilmoqda",
+      }
+      updated = [newSalary, ...salaries]
+      toast.success("Oylik hisob-kitob qo'shildi")
+    }
+
+    setSalaries(updated)
+    saveSalaries(updated)
+    setFormData({ name: "", position: "", base_salary: "", kpi_bonus: "0", deductions: "0", status: "PENDING" })
+    setEditingId(null)
+    setIsOpen(false)
+  }
+
+  const handleEdit = (sal: SalaryRecord) => {
+    setEditingId(sal.id)
+    setFormData({
+      name: sal.name,
+      position: sal.position,
+      base_salary: String(sal.base_salary),
+      kpi_bonus: String(sal.kpi_bonus),
+      deductions: String(sal.deductions),
+      status: sal.status,
+    })
+    setIsOpen(true)
+  }
+
+  const handleDelete = (id: string) => {
+    const updated = salaries.filter((s) => s.id !== id)
+    setSalaries(updated)
+    saveSalaries(updated)
+    toast.success("Yozuv o'chirildi")
+  }
+
+  const handlePay = (id: string) => {
+    const updated = salaries.map((s) =>
+      s.id === id ? { ...s, status: "PAID" as const, payment_date: new Date().toLocaleDateString("uz-UZ") } : s
     )
+    setSalaries(updated)
+    saveSalaries(updated)
     toast.success("Ish haqi to'langan deb belgilandi")
   }
 
@@ -111,9 +162,14 @@ export default function HRSalaryPage() {
             Xodimlarning oylik maoshlari, bonuslar va ushlanmalar balansi
           </p>
         </div>
-        <Button onClick={() => toast.success("Oylik vedomost Excel formatda yuklab olindi")} variant="outline" className="rounded-xl gap-2">
-          <Download className="h-4 w-4" /> Vedomostni yuklash
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsOpen(true)} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl gap-2">
+            <Plus className="h-4 w-4" /> Yangi oylik hisob
+          </Button>
+          <Button onClick={() => toast.success("Oylik vedomost Excel formatda yuklab olindi")} variant="outline" className="rounded-xl gap-2">
+            <Download className="h-4 w-4" /> Vedomost
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -151,58 +207,172 @@ export default function HRSalaryPage() {
                 <th className="px-5 py-3.5 font-semibold">Ushlanma</th>
                 <th className="px-5 py-3.5 font-semibold">Jami To&apos;lanadigan</th>
                 <th className="px-5 py-3.5 font-semibold">Holat</th>
-                <th className="px-5 py-3.5 font-semibold text-right">Amal</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filtered.map((sal) => (
-                <tr key={sal.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                  <td className="px-5 py-4 font-semibold text-gray-900 dark:text-white">
-                    <div>{sal.name}</div>
-                    <div className="text-xs text-gray-400 font-normal">{sal.position}</div>
-                  </td>
-                  <td className="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {formatCurrency(sal.base_salary)}
-                  </td>
-                  <td className="px-5 py-4 text-xs font-semibold text-emerald-600">
-                    +{formatCurrency(sal.kpi_bonus)}
-                  </td>
-                  <td className="px-5 py-4 text-xs font-medium text-red-500">
-                    {sal.deductions > 0 ? `-${formatCurrency(sal.deductions)}` : "—"}
-                  </td>
-                  <td className="px-5 py-4 font-bold text-gray-900 dark:text-white text-base">
-                    {formatCurrency(sal.total_salary)}
-                  </td>
-                  <td className="px-5 py-4">
-                    <Badge
-                      className={
-                        sal.status === "PAID"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                      }
-                    >
-                      {sal.status === "PAID" ? "To'langan" : "Kutilmoqda"}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    {sal.status === "PENDING" ? (
-                      <Button
-                        size="sm"
-                        onClick={() => handlePay(sal.id)}
-                        className="bg-violet-600 hover:bg-violet-700 text-white rounded-lg h-8 text-xs gap-1"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> To&apos;lash
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-gray-400">{sal.payment_date}</span>
-                    )}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    Maosh yozuvlari mavjud emas
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((sal) => (
+                  <tr key={sal.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="px-5 py-4 font-semibold text-gray-900 dark:text-white">
+                      <div>{sal.name}</div>
+                      <div className="text-xs text-gray-400 font-normal">{sal.position}</div>
+                    </td>
+                    <td className="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      {formatCurrency(sal.base_salary)}
+                    </td>
+                    <td className="px-5 py-4 text-xs font-semibold text-emerald-600">
+                      +{formatCurrency(sal.kpi_bonus)}
+                    </td>
+                    <td className="px-5 py-4 text-xs font-medium text-red-500">
+                      {sal.deductions > 0 ? `-${formatCurrency(sal.deductions)}` : "—"}
+                    </td>
+                    <td className="px-5 py-4 font-bold text-gray-900 dark:text-white text-base">
+                      {formatCurrency(sal.total_salary)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge
+                        className={
+                          sal.status === "PAID"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                        }
+                      >
+                        {sal.status === "PAID" ? "To'langan" : "Kutilmoqda"}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {sal.status === "PENDING" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handlePay(sal.id)}
+                            className="bg-violet-600 hover:bg-violet-700 text-white rounded-lg h-8 text-xs gap-1"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> To&apos;lash
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(sal)}
+                          className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900 rounded-lg"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(sal.id)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Dialog
+        open={isOpen}
+        onOpenChange={(val) => {
+          setIsOpen(val)
+          if (!val) {
+            setEditingId(null)
+            setFormData({ name: "", position: "", base_salary: "", kpi_bonus: "0", deductions: "0", status: "PENDING" })
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Maosh yozuvini tahrirlash" : "Yangi oylik maosh hisobini kiritish"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-3.5 mt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Xodim Ismi *</label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Rustam Mahmudov"
+                required
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Lavozimi</label>
+              <Input
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                placeholder="Bosh texnolog"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Asosiy Oklad *</label>
+                <Input
+                  type="number"
+                  value={formData.base_salary}
+                  onChange={(e) => setFormData({ ...formData, base_salary: e.target.value })}
+                  placeholder="5000000"
+                  required
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Bonus / KPI</label>
+                <Input
+                  type="number"
+                  value={formData.kpi_bonus}
+                  onChange={(e) => setFormData({ ...formData, kpi_bonus: e.target.value })}
+                  placeholder="1000000"
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Ushlanma</label>
+                <Input
+                  type="number"
+                  value={formData.deductions}
+                  onChange={(e) => setFormData({ ...formData, deductions: e.target.value })}
+                  placeholder="0"
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">To'lov Holati</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              >
+                <option value="PENDING">Kutilmoqda</option>
+                <option value="PAID">To'langan</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="rounded-xl">
+                Bekor qilish
+              </Button>
+              <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
+                Saqlash
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

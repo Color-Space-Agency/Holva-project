@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { DollarSign, Search, CheckCircle2, Clock, Plus, Store, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { DollarSign, Search, CheckCircle2, Clock, Plus, Store, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -20,49 +20,13 @@ interface Payment {
   created_at: string
 }
 
-const DEFAULT_PAYMENTS: Payment[] = [
-  {
-    id: "pay-1",
-    order_number: "HLV-2026-00104",
-    store_name: "Korzinka — Chilonzor filiali",
-    amount: 6400000,
-    payment_method: "Bank o'tkazmasi",
-    status: "COMPLETED",
-    created_at: "24.08.2026 15:30",
-  },
-  {
-    id: "pay-2",
-    order_number: "HLV-2026-00105",
-    store_name: "Makro Supermarket",
-    amount: 9200000,
-    payment_method: "Bank o'tkazmasi",
-    status: "COMPLETED",
-    created_at: "24.08.2026 12:00",
-  },
-  {
-    id: "pay-3",
-    order_number: "HLV-2026-00106",
-    store_name: "Havas Discounter",
-    amount: 7300000,
-    payment_method: "Bank o'tkazmasi",
-    status: "COMPLETED",
-    created_at: "23.08.2026 18:20",
-  },
-  {
-    id: "pay-4",
-    order_number: "HLV-2026-00107",
-    store_name: "Baraka Qandolat Do'koni",
-    amount: 4600000,
-    payment_method: "Naqd pul",
-    status: "PENDING",
-    created_at: "23.08.2026 10:15",
-  },
-]
+const STORAGE_KEY = "holva_crm_stored_payments"
 
 export default function FinancePaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>(DEFAULT_PAYMENTS)
+  const [payments, setPayments] = useState<Payment[]>([])
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<Payment | null>(null)
   const [formData, setFormData] = useState({
     store_name: "",
     order_number: "",
@@ -70,35 +34,91 @@ export default function FinancePaymentsPage() {
     payment_method: "Bank o'tkazmasi",
   })
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) setPayments(parsed)
+      }
+    } catch {}
+  }, [])
+
+  const savePayments = (newList: Payment[]) => {
+    setPayments(newList)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newList))
+    } catch {}
+  }
+
+  const handleOpenCreate = () => {
+    setEditingItem(null)
+    setFormData({ store_name: "", order_number: "", amount: "", payment_method: "Bank o'tkazmasi" })
+    setIsOpen(true)
+  }
+
+  const handleOpenEdit = (pay: Payment) => {
+    setEditingItem(pay)
+    setFormData({
+      store_name: pay.store_name,
+      order_number: pay.order_number,
+      amount: String(pay.amount),
+      payment_method: pay.payment_method,
+    })
+    setIsOpen(true)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.amount || !formData.store_name.trim()) return
+
+    if (editingItem) {
+      const updated = payments.map((p) =>
+        p.id === editingItem.id
+          ? {
+              ...p,
+              store_name: formData.store_name,
+              order_number: formData.order_number || p.order_number,
+              amount: Number(formData.amount),
+              payment_method: formData.payment_method,
+            }
+          : p
+      )
+      savePayments(updated)
+      toast.success("To'lov tahrirlandi")
+    } else {
+      const newPayment: Payment = {
+        id: `pay-${Date.now()}`,
+        store_name: formData.store_name,
+        order_number: formData.order_number || `HLV-2026-00${Math.floor(Math.random() * 900 + 100)}`,
+        amount: Number(formData.amount),
+        payment_method: formData.payment_method,
+        status: "COMPLETED",
+        created_at: new Date().toLocaleString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      }
+      savePayments([newPayment, ...payments])
+      toast.success("To'lov qabul qilindi va saqlandi")
+    }
+
+    setIsOpen(false)
+  }
+
+  const handleConfirm = (id: string) => {
+    const updated = payments.map((p) => (p.id === id ? { ...p, status: "COMPLETED" as const } : p))
+    savePayments(updated)
+    toast.success("To'lov tasdiqlandi")
+  }
+
+  const handleDelete = (id: string) => {
+    const updated = payments.filter((p) => p.id !== id)
+    savePayments(updated)
+    toast.success("To'lov yozuvi o'chirildi")
+  }
+
   const filtered = payments.filter((p) =>
     p.store_name.toLowerCase().includes(search.toLowerCase()) ||
     p.order_number.toLowerCase().includes(search.toLowerCase())
   )
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.amount || !formData.store_name.trim()) return
-
-    const newPayment: Payment = {
-      id: `pay-${Date.now()}`,
-      store_name: formData.store_name,
-      order_number: formData.order_number || `HLV-2026-00${Math.floor(Math.random() * 900 + 100)}`,
-      amount: Number(formData.amount),
-      payment_method: formData.payment_method,
-      status: "COMPLETED",
-      created_at: new Date().toLocaleString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    }
-
-    setPayments([newPayment, ...payments])
-    setFormData({ store_name: "", order_number: "", amount: "", payment_method: "Bank o'tkazmasi" })
-    setIsOpen(false)
-    toast.success("To'lov qabul qilindi va do'kon qarzdorligi kamaytirildi")
-  }
-
-  const handleConfirm = (id: string) => {
-    setPayments(payments.map((p) => (p.id === id ? { ...p, status: "COMPLETED" } : p)))
-    toast.success("To'lov tasdiqlandi")
-  }
 
   return (
     <div className="space-y-6">
@@ -114,7 +134,7 @@ export default function FinancePaymentsPage() {
             Do&apos;konlar va agentlardan tushgan savdo to&apos;lovlari va kassa kirimlari
           </p>
         </div>
-        <Button onClick={() => setIsOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl gap-2 cursor-pointer shadow-sm">
+        <Button onClick={handleOpenCreate} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl gap-2 cursor-pointer shadow-sm">
           <Plus className="h-4 w-4" /> Kassa to&apos;lovi qabul qilish
         </Button>
       </div>
@@ -140,47 +160,69 @@ export default function FinancePaymentsPage() {
                 <th className="px-5 py-3.5 font-semibold">To&apos;lov Usuli</th>
                 <th className="px-5 py-3.5 font-semibold">Holat</th>
                 <th className="px-5 py-3.5 font-semibold text-right">Summa</th>
-                <th className="px-5 py-3.5 font-semibold text-right">Amal</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filtered.map((pay) => (
-                <tr key={pay.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                  <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{pay.created_at}</td>
-                  <td className="px-5 py-4 font-mono font-medium text-violet-600 text-xs">{pay.order_number}</td>
-                  <td className="px-5 py-4 font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <Store className="h-4 w-4 text-gray-400" />
-                    {pay.store_name}
-                  </td>
-                  <td className="px-5 py-4 text-xs text-gray-500">{pay.payment_method}</td>
-                  <td className="px-5 py-4">
-                    <Badge
-                      className={
-                        pay.status === "COMPLETED"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 gap-1"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 gap-1"
-                      }
-                    >
-                      {pay.status === "COMPLETED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      {pay.status === "COMPLETED" ? "Qabul qilindi" : "Kutilmoqda"}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-4 font-bold text-right text-emerald-600 text-base">
-                    +{formatCurrency(pay.amount)}
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    {pay.status === "PENDING" && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleConfirm(pay.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-7 text-xs"
-                      >
-                        Tasdiqlash
-                      </Button>
-                    )}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-gray-400 text-sm">
+                    To'lov yozuvlari mavjud emas
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((pay) => (
+                  <tr key={pay.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{pay.created_at}</td>
+                    <td className="px-5 py-4 font-mono font-medium text-violet-600 text-xs">{pay.order_number}</td>
+                    <td className="px-5 py-4 font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                      <Store className="h-4 w-4 text-gray-400" />
+                      {pay.store_name}
+                    </td>
+                    <td className="px-5 py-4 text-xs text-gray-500">{pay.payment_method}</td>
+                    <td className="px-5 py-4">
+                      <Badge
+                        className={
+                          pay.status === "COMPLETED"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 gap-1"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 gap-1"
+                        }
+                      >
+                        {pay.status === "COMPLETED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        {pay.status === "COMPLETED" ? "Qabul qilindi" : "Kutilmoqda"}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-4 font-bold text-right text-emerald-600 text-base">
+                      +{formatCurrency(pay.amount)}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {pay.status === "PENDING" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirm(pay.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-7 text-xs mr-1"
+                          >
+                            Tasdiqlash
+                          </Button>
+                        )}
+                        <button
+                          onClick={() => handleOpenEdit(pay)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-all"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(pay.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -189,9 +231,9 @@ export default function FinancePaymentsPage() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>To&apos;lovni qabul qilish</DialogTitle>
+            <DialogTitle>{editingItem ? "To'lovni tahrirlash" : "To'lovni qabul qilish"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAdd} className="space-y-3.5 mt-2">
+          <form onSubmit={handleSubmit} className="space-y-3.5 mt-2">
             <div className="space-y-1">
               <label className="text-xs font-medium">Do&apos;kon nomi *</label>
               <Input
@@ -238,8 +280,8 @@ export default function FinancePaymentsPage() {
               <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="rounded-xl">
                 Bekor qilish
               </Button>
-              <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
-                Saqlash
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl">
+                {editingItem ? "Saqlash" : "Kiritish"}
               </Button>
             </div>
           </form>

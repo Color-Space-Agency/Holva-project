@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ClipboardList, Plus, Search, ArrowUpRight, ArrowDownLeft, AlertCircle, RefreshCw } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ClipboardList, Plus, Search, ArrowUpRight, ArrowDownLeft, AlertCircle, RefreshCw, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -20,87 +20,113 @@ interface Adjustment {
   created_at: string
 }
 
-const DEFAULT_ADJUSTMENTS: Adjustment[] = [
-  {
-    id: "adj-1",
-    item_name: "Oq tozalangan Kunjut",
-    item_type: "Xomashyo",
-    adjustment_type: "IN",
-    quantity: 500,
-    unit: "kg",
-    reason: "Yangi partiya kirimi (Faktura #458)",
-    created_at: "24.08.2026 14:30",
-  },
-  {
-    id: "adj-2",
-    item_name: "Shakar (1-nav)",
-    item_type: "Xomashyo",
-    adjustment_type: "OUT",
-    quantity: 250,
-    unit: "kg",
-    reason: "Qiyom qaynatish tsexiga berildi",
-    created_at: "24.08.2026 11:15",
-  },
-  {
-    id: "adj-3",
-    item_name: "Kunjutli Premium Holva (500g)",
-    item_type: "Tayyor Mahsulot",
-    adjustment_type: "IN",
-    quantity: 120,
-    unit: "dona",
-    reason: "104-partiya ishlab chiqarish natijasi",
-    created_at: "23.08.2026 17:00",
-  },
-  {
-    id: "adj-4",
-    item_name: "Kakao kukuni",
-    item_type: "Xomashyo",
-    adjustment_type: "WASTE",
-    quantity: 8,
-    unit: "kg",
-    reason: "Yaroqlilik muddati o'tgan / brak",
-    created_at: "22.08.2026 09:40",
-  },
-]
+const STORAGE_KEY = "holva_crm_stored_adjustments"
 
 export default function StockAdjustmentsPage() {
-  const [adjustments, setAdjustments] = useState<Adjustment[]>(DEFAULT_ADJUSTMENTS)
+  const [adjustments, setAdjustments] = useState<Adjustment[]>([])
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const [editingItem, setEditingItem] = useState<Adjustment | null>(null)
+  const [formData, setFormData] = useState<{
+    item_name: string
+    item_type: "Xomashyo" | "Tayyor Mahsulot"
+    adjustment_type: "IN" | "OUT" | "WASTE" | "CORRECTION"
+    quantity: string
+    unit: string
+    reason: string
+  }>({
     item_name: "",
-    item_type: "Xomashyo" as const,
-    adjustment_type: "IN" as const,
+    item_type: "Xomashyo",
+    adjustment_type: "IN",
     quantity: "",
     unit: "kg",
     reason: "",
   })
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) setAdjustments(parsed)
+      }
+    } catch {}
+  }, [])
+
+  const saveAdjustments = (newList: Adjustment[]) => {
+    setAdjustments(newList)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newList))
+    } catch {}
+  }
+
+  const handleOpenCreate = () => {
+    setEditingItem(null)
+    setFormData({ item_name: "", item_type: "Xomashyo", adjustment_type: "IN", quantity: "", unit: "kg", reason: "" })
+    setIsOpen(true)
+  }
+
+  const handleOpenEdit = (adj: Adjustment) => {
+    setEditingItem(adj)
+    setFormData({
+      item_name: adj.item_name,
+      item_type: adj.item_type,
+      adjustment_type: adj.adjustment_type,
+      quantity: String(adj.quantity),
+      unit: adj.unit,
+      reason: adj.reason,
+    })
+    setIsOpen(true)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.item_name.trim() || !formData.quantity) return
+
+    if (editingItem) {
+      const updated = adjustments.map((a) =>
+        a.id === editingItem.id
+          ? {
+              ...a,
+              item_name: formData.item_name,
+              item_type: formData.item_type,
+              adjustment_type: formData.adjustment_type,
+              quantity: Number(formData.quantity),
+              unit: formData.unit,
+              reason: formData.reason || "Inventarizatsiya natijasi",
+            }
+          : a
+      )
+      saveAdjustments(updated)
+      toast.success("Ombor amali tahrirlandi")
+    } else {
+      const newAdj: Adjustment = {
+        id: `adj-${Date.now()}`,
+        item_name: formData.item_name,
+        item_type: formData.item_type,
+        adjustment_type: formData.adjustment_type,
+        quantity: Number(formData.quantity),
+        unit: formData.unit,
+        reason: formData.reason || "Inventarizatsiya natijasi",
+        created_at: new Date().toLocaleString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      }
+      saveAdjustments([newAdj, ...adjustments])
+      toast.success("Ombor qoldig'i moslashtirildi va qayd etildi")
+    }
+
+    setIsOpen(false)
+  }
+
+  const handleDelete = (id: string) => {
+    const filteredList = adjustments.filter((a) => a.id !== id)
+    saveAdjustments(filteredList)
+    toast.success("Ombor amali o'chirildi")
+  }
+
   const filtered = adjustments.filter((a) =>
     a.item_name.toLowerCase().includes(search.toLowerCase()) ||
     a.reason.toLowerCase().includes(search.toLowerCase())
   )
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.item_name.trim() || !formData.quantity) return
-
-    const newAdj: Adjustment = {
-      id: `adj-${Date.now()}`,
-      item_name: formData.item_name,
-      item_type: formData.item_type,
-      adjustment_type: formData.adjustment_type,
-      quantity: Number(formData.quantity),
-      unit: formData.unit,
-      reason: formData.reason || "Inventarizatsiya natijasi",
-      created_at: new Date().toLocaleString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    }
-
-    setAdjustments([newAdj, ...adjustments])
-    setFormData({ item_name: "", item_type: "Xomashyo", adjustment_type: "IN", quantity: "", unit: "kg", reason: "" })
-    setIsOpen(false)
-    toast.success("Ombor qoldig'i moslashtirildi va qayd etildi")
-  }
 
   const getTypeBadge = (type: Adjustment["adjustment_type"]) => {
     switch (type) {
@@ -127,7 +153,7 @@ export default function StockAdjustmentsPage() {
             Qoldiqlarni to&apos;g&apos;rilash, brak va spetsifikatsiyalarni rasmiylashtirish
           </p>
         </div>
-        <Button onClick={() => setIsOpen(true)} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl gap-2">
+        <Button onClick={handleOpenCreate} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl gap-2">
           <Plus className="h-4 w-4" /> Yangi moslash
         </Button>
       </div>
@@ -155,21 +181,46 @@ export default function StockAdjustmentsPage() {
                 <th className="px-5 py-3.5 font-semibold">Amal</th>
                 <th className="px-5 py-3.5 font-semibold">Miqdor</th>
                 <th className="px-5 py-3.5 font-semibold">Sabab / Izoh</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filtered.map((adj) => (
-                <tr key={adj.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                  <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{adj.created_at}</td>
-                  <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">{adj.item_name}</td>
-                  <td className="px-5 py-4 text-xs text-gray-500">{adj.item_type}</td>
-                  <td className="px-5 py-4">{getTypeBadge(adj.adjustment_type)}</td>
-                  <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">
-                    {formatNumber(adj.quantity)} {adj.unit}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-gray-400 text-sm">
+                    Hech qanday ombor moslashuvi kiritilmagan
                   </td>
-                  <td className="px-5 py-4 text-xs text-gray-500">{adj.reason}</td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((adj) => (
+                  <tr key={adj.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{adj.created_at}</td>
+                    <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">{adj.item_name}</td>
+                    <td className="px-5 py-4 text-xs text-gray-500">{adj.item_type}</td>
+                    <td className="px-5 py-4">{getTypeBadge(adj.adjustment_type)}</td>
+                    <td className="px-5 py-4 font-bold text-gray-900 dark:text-white">
+                      {formatNumber(adj.quantity)} {adj.unit}
+                    </td>
+                    <td className="px-5 py-4 text-xs text-gray-500">{adj.reason}</td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleOpenEdit(adj)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(adj.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -178,9 +229,9 @@ export default function StockAdjustmentsPage() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Yangi ombor amali</DialogTitle>
+            <DialogTitle>{editingItem ? "Ombor amalini tahrirlash" : "Yangi ombor amali"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAdd} className="space-y-3.5 mt-2">
+          <form onSubmit={handleSubmit} className="space-y-3.5 mt-2">
             <div className="space-y-1">
               <label className="text-xs font-medium">Tovar yoki xomashyo nomi *</label>
               <Input
@@ -253,7 +304,7 @@ export default function StockAdjustmentsPage() {
                 Bekor qilish
               </Button>
               <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
-                Tasdiqlash
+                {editingItem ? "Saqlash" : "Tasdiqlash"}
               </Button>
             </div>
           </form>

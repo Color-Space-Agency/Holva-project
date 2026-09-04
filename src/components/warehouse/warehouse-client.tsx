@@ -30,7 +30,7 @@ export function WarehouseClient() {
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["inventory", warehouseFilter],
     queryFn: async () => {
-      const { isRealSupabaseConfigured, INITIAL_PRODUCTS, INITIAL_RAW_MATERIALS } = await import("@/lib/mock-data");
+      const { isRealSupabaseConfigured, getStoredProducts } = await import("@/lib/mock-data");
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -48,33 +48,21 @@ export function WarehouseClient() {
         }
       }
 
-      const productItems = INITIAL_PRODUCTS.map((p) => ({
+      const storedProducts = getStoredProducts();
+      const productItems = storedProducts.map((p) => ({
         id: `inv-${p.id}`,
         product_id: p.id,
         raw_material_id: null,
         current_stock: p.stock,
         minimum_stock: p.min_stock,
-        reserved_stock: 15,
+        reserved_stock: 0,
         warehouse: { name: "Tayyor Mahsulotlar Ombori" },
         product: { name: p.name },
         raw_material: null,
         unit: { short_name: p.unit },
       }));
 
-      const materialItems = INITIAL_RAW_MATERIALS.map((rm) => ({
-        id: `inv-${rm.id}`,
-        product_id: null,
-        raw_material_id: rm.id,
-        current_stock: rm.current_stock,
-        minimum_stock: rm.minimum_stock,
-        reserved_stock: 50,
-        warehouse: { name: "Asosiy Xomashyo Ombori" },
-        product: null,
-        raw_material: { name: rm.name },
-        unit: { short_name: rm.unit },
-      }));
-
-      return [...productItems, ...materialItems];
+      return productItems;
     }
   });
 
