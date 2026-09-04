@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -30,7 +31,8 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
-import { createAuditLog } from "@/lib/audit"
+import { Building2, Store, Phone, MapPin, User, Send, CreditCard, ShieldCheck, FileText, CheckCircle2 } from "lucide-react"
+import { createStoredStore, updateStoredStore, isRealSupabaseConfigured, MockStore } from "@/lib/mock-data"
 
 const formSchema = z.object({
   name: z.string().min(1, "Nomi kiritilishi shart"),
@@ -50,9 +52,6 @@ interface StoreFormDialogProps {
   initialData?: any
   onSuccess: () => void
 }
-
-import { useEffect } from "react"
-import { createStoredStore, updateStoredStore, isRealSupabaseConfigured, MockStore } from "@/lib/mock-data"
 
 export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: StoreFormDialogProps) {
   const supabase = createClient()
@@ -145,60 +144,109 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{initialData ? "Do'konni tahrirlash" : "Yangi do'kon qo'shish"}</DialogTitle>
+      <DialogContent className="w-[96vw] sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 dark:border-emerald-800 shadow-2xl space-y-6 bg-white dark:bg-gray-950">
+        <DialogHeader className="pb-3 border-b border-emerald-100 dark:border-emerald-950">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-emerald-600/30">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-emerald-950 dark:text-emerald-300">
+                {initialData ? "Do'kon Ma'lumotlarini Tahrirlash" : "Yangi Do'kon Yaratish (Yashil Frame)"}
+              </DialogTitle>
+              <p className="text-xs sm:text-sm text-emerald-700/70 dark:text-emerald-400/70 mt-0.5 font-medium">
+                Mijoz do'koningiz atributlari va aloqa ma'lumotlarini kiritish oynasi
+              </p>
+            </div>
+          </div>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* Essential Main Fields Block */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/60 space-y-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nomi *</FormLabel>
+                    <FormLabel className="text-xs font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Store className="w-4 h-4 text-emerald-600" />
+                      Do&apos;kon Nomi (Mijoz) *
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Do'kon nomi" {...field} />
+                      <Input
+                        placeholder="Masalan: Korzinka Chilonzor yoki Fayz Supermarket"
+                        {...field}
+                        className="h-13 rounded-2xl bg-white dark:bg-gray-900 text-base font-bold border-emerald-200 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500 px-4 shadow-xs"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefon</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+998..." {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Manzil</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Manzil" {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-emerald-600" /> Telefon raqami
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+998 90 123 45 67"
+                          {...field}
+                          value={field.value || ""}
+                          className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold border-gray-200"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Manzil (Hudud)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Chilonzor 19-mavze, 44-uy"
+                          {...field}
+                          value={field.value || ""}
+                          className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold border-gray-200"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Additional Contact & Credit Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="contact_person"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mas'ul shaxs</FormLabel>
+                    <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-emerald-600" /> Mas&apos;ul Shaxs (Mudir)
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Ism familiya" {...field} value={field.value || ""} />
+                      <Input
+                        placeholder="Masalan: Sardor aka"
+                        {...field}
+                        value={field.value || ""}
+                        className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-medium"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,22 +257,16 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
                 name="telegram"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telegram</FormLabel>
+                    <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5 text-emerald-600" /> Telegram Username
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="@username" {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="payment_terms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>To'lov shartlari</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masalan: 3 kun" {...field} value={field.value || ""} />
+                      <Input
+                        placeholder="@username"
+                        {...field}
+                        value={field.value || ""}
+                        className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-medium"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,9 +277,16 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
                 name="credit_limit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Qarz limiti (so'm)</FormLabel>
+                    <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Qarz Limiti (so&apos;m)
+                    </FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="50000000"
+                        {...field}
+                        className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-bold"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -248,17 +297,19 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Holat</FormLabel>
+                    <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Ishlash Holati
+                    </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold">
                           <SelectValue placeholder="Holatni tanlang" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ACTIVE">Faol</SelectItem>
-                        <SelectItem value="INACTIVE">Nofaol</SelectItem>
-                        <SelectItem value="BLOCKED">Bloklangan</SelectItem>
+                      <SelectContent className="rounded-2xl">
+                        <SelectItem value="ACTIVE" className="font-semibold text-emerald-600">Faol (Active)</SelectItem>
+                        <SelectItem value="INACTIVE">Nofaol (Inactive)</SelectItem>
+                        <SelectItem value="BLOCKED" className="text-red-600">Bloklangan (Blocked)</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -266,25 +317,44 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Eslatma</FormLabel>
+                  <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-emerald-600" /> Qo&apos;shimcha Izoh
+                  </FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Qo'shimcha ma'lumotlar" {...field} value={field.value || ""} />
+                    <Textarea
+                      placeholder="Do'kon haqida qo'shimcha ma'lumotlar..."
+                      {...field}
+                      value={field.value || ""}
+                      className="rounded-2xl bg-white dark:bg-gray-900 text-sm p-3 min-h-[70px]"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="h-13 rounded-2xl px-6 text-sm font-bold cursor-pointer"
+              >
                 Bekor qilish
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                Saqlash
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-base rounded-2xl px-8 shadow-xl shadow-emerald-600/30 cursor-pointer gap-2"
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                {form.formState.isSubmitting ? "Saqlanmoqda..." : "Do'konni Saqlash"}
               </Button>
             </div>
           </form>

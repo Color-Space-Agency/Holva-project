@@ -147,12 +147,15 @@ export function StoresClient() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => {
-          setEditingStore(null)
-          setIsFormOpen(true)
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Do'kon qo'shish
+        <Button
+          onClick={() => {
+            setEditingStore(null)
+            setIsFormOpen(true)
+          }}
+          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold h-11 rounded-2xl px-5 shadow-lg shadow-emerald-600/30 gap-2 cursor-pointer"
+        >
+          <Plus className="h-5 w-5" />
+          Do'kon qo'shish (Yangi)
         </Button>
       </div>
 
