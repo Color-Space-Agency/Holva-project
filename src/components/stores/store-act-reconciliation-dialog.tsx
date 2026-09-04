@@ -48,8 +48,11 @@ export function StoreActReconciliationDialog({
   onOpenChange,
   store,
 }: StoreActReconciliationDialogProps) {
-  const [startDate, setStartDate] = useState<string>("2026-08-01")
-  const [endDate, setEndDate] = useState<string>("2026-08-30")
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0]
+  const lastDay = new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0]
+  const [startDate, setStartDate] = useState<string>(firstDay)
+  const [endDate, setEndDate] = useState<string>(lastDay)
 
   // Do'konning Sotuvlari va to'lovlari
   const { entries, totalDebit, totalCredit, initialBalance, finalBalance } = useMemo(() => {
@@ -57,7 +60,7 @@ export function StoreActReconciliationDialog({
       (o) => o.store_name.toLowerCase().includes(store.name.toLowerCase()) || store.name.toLowerCase().includes(o.store_name.toLowerCase())
     )
 
-    // Boshlang'ich qoldiq (simulyatsiya)
+    // Boshlang'ich qoldiq
     const initBal = 0
     let runningBalance = initBal
 
@@ -105,63 +108,17 @@ export function StoreActReconciliationDialog({
       }
     }
 
-    // Agar ro'yxat bo'sh bo'lsa default demo operatsiyalar
-    if (list.length === 0) {
-      list.push(
-        {
-          id: "demo-1",
-          date: "2026-08-10",
-          docNumber: "HLV-2026-00104",
-          docType: "Sotuv",
-          description: "Kunjutli va Yong'oqli premium holvalar partiyasi",
-          debit: 14800000,
-          credit: 0,
-          balance: 14800000,
-        },
-        {
-          id: "demo-2",
-          date: "2026-08-12",
-          docNumber: "TO'L-00104",
-          docType: "TOLOV",
-          description: "Bank orqali to'lov (kvitansiya #8921)",
-          debit: 0,
-          credit: 10000000,
-          balance: 4800000,
-        },
-        {
-          id: "demo-3",
-          date: "2026-08-20",
-          docNumber: "HLV-2026-00108",
-          docType: "Sotuv",
-          description: "Shokoladli va Samarqand holvalari",
-          debit: 8200000,
-          credit: 0,
-          balance: 13000000,
-        },
-        {
-          id: "demo-4",
-          date: "2026-08-25",
-          docNumber: "TO'L-00108",
-          docType: "TOLOV",
-          description: "Naqd pul to'lovi (kassa orderi #44)",
-          debit: 0,
-          credit: 8200000,
-          balance: 4800000,
-        }
-      )
-    }
-
     const filtered = list.filter((item) => item.date >= startDate && item.date <= endDate)
     const tDeb = filtered.reduce((sum, i) => sum + i.debit, 0)
     const tCred = filtered.reduce((sum, i) => sum + i.credit, 0)
-    const finBal = (filtered.length > 0 ? filtered[filtered.length - 1].balance : 0)
+    const finBal = filtered.length > 0 ? filtered[filtered.length - 1].balance : 0
 
     return {
-      entries: filtered.length > 0 ? filtered : list,
-      totalDebit: tDeb || 23000000,
-      totalCredit: tCred || 18200000,
+      entries: filtered,
+      totalDebit: tDeb,
+      totalCredit: tCred,
       initialBalance: initBal,
-      finalBalance: finBal || 4800000,
+      finalBalance: finBal,
     }
   }, [store.name, startDate, endDate])
 
@@ -244,8 +201,9 @@ export function StoreActReconciliationDialog({
               size="sm"
               className="h-8 text-xs cursor-pointer"
               onClick={() => {
-                setStartDate("2026-08-01")
-                setEndDate("2026-08-30")
+                const now = new Date()
+                setStartDate(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0])
+                setEndDate(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0])
               }}
             >
               Shu oy
@@ -255,8 +213,9 @@ export function StoreActReconciliationDialog({
               size="sm"
               className="h-8 text-xs cursor-pointer"
               onClick={() => {
-                setStartDate("2026-01-01")
-                setEndDate("2026-12-31")
+                const now = new Date()
+                setStartDate(new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0])
+                setEndDate(new Date(now.getFullYear(), 11, 31).toISOString().split("T")[0])
               }}
             >
               Yillik

@@ -1,11 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { isRealSupabaseConfigured, INITIAL_STORES, INITIAL_PRODUCTS, createStoredOrder, updateStoredOrder, MockOrder } from "@/lib/mock-data"
+import {
+  isRealSupabaseConfigured,
+  getStoredStores,
+  getStoredProducts,
+  getStoredEmployees,
+  createStoredOrder,
+  updateStoredOrder,
+  MockOrder,
+  createStoredStore,
+} from "@/lib/mock-data"
 import { toast } from "sonner"
-import { useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -22,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatCurrency } from "@/lib/utils"
-import { Trash, Plus, ChevronRight } from "lucide-react"
+import { Trash, Plus, ChevronRight, Store, UserCheck, ShoppingBag, CreditCard, Building2 } from "lucide-react"
 
 interface OrderFormDialogProps {
   open: boolean
@@ -34,29 +42,57 @@ interface OrderFormDialogProps {
 export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: OrderFormDialogProps) {
   const supabase = createClient()
   const [step, setStep] = useState(1)
-  const [storeId, setStoreId] = useState("")
-  const [agentId, setAgentId] = useState("agent-1")
-  const [items, setItems] = useState<any[]>([
-    { product_id: "p-1", quantity: 5, unit_price: 38000, discount_amount: 0 },
-  ])
+  const [selectedStoreName, setSelectedStoreName] = useState("")
+  const [customStoreInput, setCustomStoreInput] = useState("")
+  const [agentName, setAgentName] = useState("Sardor Rahimov")
+  const [items, setItems] = useState<any[]>([])
   const [paymentMethod, setPaymentMethod] = useState("CASH")
   const [paidAmount, setPaidAmount] = useState(0)
   const [notes, setNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Local state for stores and products
+  const [availableStores, setAvailableStores] = useState<any[]>([])
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
+
   useEffect(() => {
     if (open) {
+      const storedStores = getStoredStores()
+      const storedProds = getStoredProducts()
+      const storedEmps = getStoredEmployees()
+
+      setAvailableStores(storedStores)
+      setAvailableProducts(storedProds)
+
       if (initialData) {
-        setStoreId(initialData.stores?.name ? INITIAL_STORES.find(s => s.name === initialData.stores.name)?.id || "" : (initialData.store_name ? INITIAL_STORES.find(s => s.name === initialData.store_name)?.id || "" : ""))
+        setSelectedStoreName(initialData.stores?.name || initialData.store_name || "")
+        setAgentName(initialData.agent_name || "Sardor Rahimov")
         setPaidAmount(initialData.paid_amount || 0)
         setNotes(initialData.notes || "")
-        // Mock items for edit if real items are not present
-        setItems(initialData.order_items?.length ? initialData.order_items : [
-          { product_id: "p-1", quantity: initialData.items_count || 1, unit_price: (initialData.total_amount || 0) / (initialData.items_count || 1), discount_amount: 0 }
-        ])
+        setItems(
+          initialData.order_items?.length
+            ? initialData.order_items
+            : [
+                {
+                  product_name: storedProds[0]?.name || "Kunjutli Premium Holva",
+                  quantity: initialData.items_count || 1,
+                  unit_price: storedProds[0]?.price || (initialData.total_amount || 0) / (initialData.items_count || 1) || 38000,
+                  discount_amount: 0,
+                },
+              ]
+        )
       } else {
-        setStoreId("")
-        setItems([{ product_id: "p-1", quantity: 5, unit_price: 38000, discount_amount: 0 }])
+        setSelectedStoreName(storedStores[0]?.name || "")
+        setCustomStoreInput("")
+        setAgentName(storedEmps.find((e) => e.department.toLowerCase().includes("sotuv"))?.full_name || "Sardor Rahimov")
+        setItems([
+          {
+            product_name: storedProds[0]?.name || "Kunjutli Premium Holva (500g)",
+            quantity: 5,
+            unit_price: storedProds[0]?.price || 38000,
+            discount_amount: 0,
+          },
+        ])
         setPaidAmount(0)
         setNotes("")
       }
@@ -64,62 +100,14 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
     }
   }, [open, initialData])
 
-  const { data: stores } = useQuery({
-    queryKey: ["stores-select"],
-    queryFn: async () => {
-      if (isRealSupabaseConfigured()) {
-        try {
-          const { data } = await supabase.from("stores").select("id, name").eq("status", "ACTIVE")
-          if (data && data.length > 0) return data
-        } catch {}
-      }
-      return INITIAL_STORES.map((s) => ({ id: s.id, name: s.name }))
-    },
-    enabled: open,
-  })
-
-  const { data: agents } = useQuery({
-    queryKey: ["agents-select"],
-    queryFn: async () => {
-      if (isRealSupabaseConfigured()) {
-        try {
-          const { data } = await supabase
-            .from("profiles")
-            .select("id, first_name, last_name")
-            .eq("role", "SALES_AGENT")
-          if (data && data.length > 0) return data
-        } catch {}
-      }
-      return [
-        { id: "agent-1", first_name: "Sardor", last_name: "Rahimov" },
-        { id: "agent-2", first_name: "Jasur", last_name: "Qodirov" },
-      ]
-    },
-    enabled: open,
-  })
-
-  const { data: products } = useQuery({
-    queryKey: ["products-select"],
-    queryFn: async () => {
-      if (isRealSupabaseConfigured()) {
-        try {
-          const { data } = await supabase.from("products").select("id, name, price").eq("status", "ACTIVE")
-          if (data && data.length > 0) return data
-        } catch {}
-      }
-      return INITIAL_PRODUCTS.map((p) => ({ id: p.id, name: p.name, price: p.price }))
-    },
-    enabled: open,
-  })
-
   const handleAddItem = () => {
-    const defaultProduct = products?.[0] || { id: "p-1", price: 38000 }
+    const defaultProd = availableProducts[0] || { name: "Kunjutli Premium Holva", price: 38000 }
     setItems([
       ...items,
       {
-        product_id: defaultProduct.id,
+        product_name: defaultProd.name,
         quantity: 1,
-        unit_price: defaultProduct.price || 38000,
+        unit_price: defaultProd.price || 38000,
         discount_amount: 0,
       },
     ])
@@ -128,9 +116,9 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items]
     newItems[index] = { ...newItems[index], [field]: value }
-    if (field === "product_id") {
-      const product = products?.find((p) => p.id === value)
-      if (product) newItems[index].unit_price = product.price
+    if (field === "product_name") {
+      const match = availableProducts.find((p) => p.name === value)
+      if (match) newItems[index].unit_price = match.price
     }
     setItems(newItems)
   }
@@ -140,42 +128,50 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
   }
 
   const totalAmount = items.reduce(
-    (sum, item) => sum + item.quantity * item.unit_price - (item.discount_amount || 0),
+    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0) - (Number(item.discount_amount) || 0),
     0
   )
 
   const handleSubmit = async () => {
-    if (!storeId || items.length === 0) {
-      toast.error("Iltimos, do'kon va mahsulotlarni tanlang")
+    const finalStore = selectedStoreName === "new" || !selectedStoreName ? customStoreInput.trim() : selectedStoreName
+    if (!finalStore) {
+      toast.error("Iltimos, do'kon nomini kiriting yoki tanlang")
+      return
+    }
+    if (items.length === 0) {
+      toast.error("Iltimos, kamida bitta mahsulot qo'shing")
       return
     }
 
     setIsSubmitting(true)
     try {
       const orderNumber = initialData?.order_number || `ORD-${Date.now().toString().slice(-6)}`
-      const selectedStore = stores?.find((s) => s.id === storeId)
-      const selectedAgent = agents?.find((a) => a.id === agentId)
-      const agentName = selectedAgent ? `${selectedAgent.first_name} ${selectedAgent.last_name || ""}`.trim() : "Sardor Rahimov"
-      const storeName = selectedStore?.name || "Do'kon"
+
+      // If new store was typed, save it to stored stores list too
+      if (!availableStores.some((s) => s.name.toLowerCase() === finalStore.toLowerCase())) {
+        createStoredStore({
+          id: `s-${Date.now()}`,
+          name: finalStore,
+          phone: "+998 90 000 00 00",
+          address: "Toshkent shahri",
+          contact_person: "Mijoz",
+          credit_limit: 50000000,
+          current_balance: 0,
+          status: "ACTIVE",
+        })
+      }
 
       if (isRealSupabaseConfigured()) {
         try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser()
-
+          const { data: { user } } = await supabase.auth.getUser()
           if (initialData) {
             await supabase.from("orders").update({
-              store_id: storeId,
-              agent_id: agentId,
               total_amount: totalAmount,
               notes,
               payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
             }).eq("id", initialData.id)
           } else {
             await supabase.from("orders").insert({
-              store_id: storeId,
-              agent_id: agentId,
               order_number: orderNumber,
               total_amount: totalAmount,
               notes,
@@ -184,37 +180,34 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
               created_by: user?.id,
             })
           }
-        } catch {
-          // Fallback
-        }
+        } catch {}
       }
 
-      // Synchronize in local/shared state so Sales Agent sees it immediately
       if (initialData) {
         updateStoredOrder(initialData.id, {
-          store_name: storeName,
+          store_name: finalStore,
           agent_name: agentName,
           total_amount: totalAmount,
           paid_amount: paidAmount || 0,
           payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
-          items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+          items_count: items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0),
         })
-        toast.success("Sotuv muvaffaqiyatli tahrirlandi!")
+        toast.success("Sotuv tahrirlandi!")
       } else {
         const newMockOrder: MockOrder = {
           id: `ord-${Date.now()}`,
           order_number: orderNumber,
-          store_name: storeName,
+          store_name: finalStore,
           agent_name: agentName,
           total_amount: totalAmount,
           paid_amount: paidAmount || 0,
           status: "CONFIRMED",
           payment_status: paidAmount > 0 ? (paidAmount >= totalAmount ? "PAID" : "PARTIAL") : "PENDING",
           created_at: new Date().toISOString(),
-          items_count: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+          items_count: items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0),
         }
         createStoredOrder(newMockOrder)
-        toast.success("Yangi sotuv muvaffaqiyatli rasmiylashtirildi!")
+        toast.success("Yangi sotuv rasmiylashtirildi!")
       }
 
       onSuccess()
@@ -228,158 +221,211 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto rounded-3xl p-6">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-            Yangi Sotuv Rasmiylashtirish (1C Faktura)
-          </DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 border-2 border-violet-100 dark:border-violet-950 shadow-2xl">
+        <DialogHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-violet-600 text-white flex items-center justify-center font-bold text-lg">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                {initialData ? "Sotuvni Tahrirlash" : "Yangi Sotuv Rasmiylashtirish (Frame)"}
+              </DialogTitle>
+              <p className="text-xs text-gray-500 mt-0.5">Do'kon va agentga biriktirilgan sotuv hujjati</p>
+            </div>
+          </div>
         </DialogHeader>
 
-        {/* Steps indicator */}
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                step >= 1 ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-400"
-              }`}
-            >
-              1
-            </span>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Do&apos;kon & Agent
-            </span>
-          </div>
-          <ChevronRight size={16} className="text-gray-300" />
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                step >= 2 ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-400"
-              }`}
-            >
-              2
-            </span>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Mahsulotlar
-            </span>
-          </div>
-          <ChevronRight size={16} className="text-gray-300" />
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                step >= 3 ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-400"
-              }`}
-            >
-              3
-            </span>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">To&apos;lov</span>
-          </div>
+        {/* Structured Step Progress Bar */}
+        <div className="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-900 p-2 rounded-2xl border border-gray-100 dark:border-gray-800 my-2">
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              step === 1
+                ? "bg-violet-600 text-white shadow-md"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" /> 1. Do'kon
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              step === 2
+                ? "bg-violet-600 text-white shadow-md"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" /> 2. Mahsulotlar
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep(3)}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              step === 3
+                ? "bg-violet-600 text-white shadow-md"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5" /> 3. To'lov
+          </button>
         </div>
 
+        {/* STEP 1: STORE & AGENT */}
         {step === 1 && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                Do&apos;kon (Mijoz) *
-              </label>
-              <Select value={storeId} onValueChange={setStoreId}>
-                <SelectTrigger className="h-11 rounded-2xl">
-                  <SelectValue placeholder="Do'konni tanlang" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  {stores?.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 pt-2">
+            <div className="bg-violet-50/50 dark:bg-violet-950/20 p-4 rounded-2xl border border-violet-100 dark:border-violet-900/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-violet-900 dark:text-violet-300 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Building2 className="w-4 h-4 text-violet-600" />
+                  Do&apos;kon (Mijoz) *
+                </label>
+                <span className="text-[11px] text-gray-500">Mavjud: {availableStores.length} ta do'kon</span>
+              </div>
+
+              {availableStores.length > 0 ? (
+                <div className="space-y-2">
+                  <Select value={selectedStoreName} onValueChange={setSelectedStoreName}>
+                    <SelectTrigger className="h-12 rounded-xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm font-semibold">
+                      <SelectValue placeholder="Do'konni ro'yxatdan tanlang..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl max-h-56">
+                      {availableStores.map((s) => (
+                        <SelectItem key={s.id} value={s.name} className="py-2 text-sm font-medium">
+                          {s.name} ({s.address || "Manzil ko'rsatilmadi"})
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new" className="text-violet-600 font-bold border-t">
+                        + Yangi do'kon nomi yozish...
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {selectedStoreName === "new" && (
+                    <Input
+                      value={customStoreInput}
+                      onChange={(e) => setCustomStoreInput(e.target.value)}
+                      placeholder="Do'kon nomini kiriting (masalan: Korzinka Chilonzor)"
+                      className="h-11 rounded-xl bg-white dark:bg-gray-900 text-sm"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Input
+                    value={customStoreInput}
+                    onChange={(e) => setCustomStoreInput(e.target.value)}
+                    placeholder="Do'kon nomini kiriting (masalan: Korzinka Chilonzor)"
+                    className="h-12 rounded-xl bg-white dark:bg-gray-900 text-sm"
+                  />
+                  <p className="text-[11px] text-amber-600 font-medium">
+                    Hozircha do'konlar bazasi bo'sh. Yuqorida nomini kiriting, avtomatik biriktiriladi.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                Mas&apos;ul Sotuv Agenti *
+            <div className="bg-gray-50 dark:bg-gray-900/60 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 uppercase tracking-wider">
+                <UserCheck className="w-4 h-4 text-violet-600" />
+                Mas&apos;ul Sotuv Agenti
               </label>
-              <Select value={agentId} onValueChange={setAgentId}>
-                <SelectTrigger className="h-11 rounded-2xl">
-                  <SelectValue placeholder="Agentni tanlang" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  {agents?.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.first_name} {a.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={agentName}
+                onChange={(e) => setAgentName(e.target.value)}
+                placeholder="Agent ismi familiyasi"
+                className="h-11 rounded-xl bg-white dark:bg-gray-900 text-sm"
+              />
             </div>
 
             <div className="flex justify-end pt-3">
               <Button
-                onClick={() => setStep(2)}
-                disabled={!storeId}
-                className="h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-6 text-xs font-bold"
+                type="button"
+                onClick={() => {
+                  const finalStore = selectedStoreName === "new" || !selectedStoreName ? customStoreInput.trim() : selectedStoreName
+                  if (!finalStore) {
+                    toast.error("Iltimos, do'kon nomini tanlang yoki kiriting")
+                    return
+                  }
+                  setStep(2)
+                }}
+                className="h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-6 text-sm font-bold shadow-md cursor-pointer gap-2"
               >
-                Keyingisi: Mahsulotlar
+                Keyingisi: Mahsulotlar <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         )}
 
+        {/* STEP 2: PRODUCTS */}
         {step === 2 && (
-          <div className="space-y-4">
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          <div className="space-y-4 pt-2">
+            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
               {items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-gray-50 dark:bg-gray-800/40 p-3.5 rounded-2xl border border-gray-100 dark:border-gray-800"
+                  className="flex flex-col sm:flex-row gap-2.5 items-start sm:items-center bg-gray-50 dark:bg-gray-900 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs"
                 >
                   <div className="flex-1 w-full space-y-1">
-                    <label className="text-[11px] font-semibold text-gray-500">Mahsulot</label>
-                    <Select
-                      value={item.product_id}
-                      onValueChange={(val) => updateItem(index, "product_id", val)}
-                    >
-                      <SelectTrigger className="h-10 rounded-xl">
-                        <SelectValue placeholder="Tanlang" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl">
-                        {products?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} — {formatCurrency(p.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-[11px] font-bold text-gray-500">Mahsulot Nomi</label>
+                    {availableProducts.length > 0 ? (
+                      <Select
+                        value={item.product_name}
+                        onValueChange={(val) => updateItem(index, "product_name", val)}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-semibold">
+                          <SelectValue placeholder="Mahsulotni tanlang" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl max-h-48">
+                          {availableProducts.map((p) => (
+                            <SelectItem key={p.id} value={p.name} className="text-sm font-medium">
+                              {p.name} — {formatCurrency(p.price)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={item.product_name}
+                        onChange={(e) => updateItem(index, "product_name", e.target.value)}
+                        placeholder="Mahsulot nomi"
+                        className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-semibold"
+                      />
+                    )}
                   </div>
 
-                  <div className="w-full sm:w-24 space-y-1">
-                    <label className="text-[11px] font-semibold text-gray-500">Soni (dona)</label>
+                  <div className="w-full sm:w-28 space-y-1">
+                    <label className="text-[11px] font-bold text-gray-500">Soni (dona)</label>
                     <Input
                       type="number"
                       min="1"
-                      className="h-10 rounded-xl"
+                      className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-bold text-center"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
                     />
                   </div>
 
-                  <div className="w-full sm:w-32 space-y-1">
-                    <label className="text-[11px] font-semibold text-gray-500">Narx</label>
+                  <div className="w-full sm:w-36 space-y-1">
+                    <label className="text-[11px] font-bold text-gray-500">Dona narxi (so'm)</label>
                     <Input
                       type="number"
-                      className="h-10 rounded-xl bg-gray-100 dark:bg-gray-800"
+                      step="500"
+                      className="h-11 rounded-xl bg-white dark:bg-gray-800 text-sm font-bold"
                       value={item.unit_price}
-                      readOnly
+                      onChange={(e) => updateItem(index, "unit_price", Number(e.target.value))}
                     />
                   </div>
 
                   <div className="self-end sm:self-center mt-2 sm:mt-5">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                      className="h-11 w-11 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl cursor-pointer"
                       onClick={() => removeItem(index)}
-                      aria-label="Mahsulotni buyurtmadan o'chirish"
+                      aria-label="O'chirish"
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -389,49 +435,53 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
             </div>
 
             <Button
+              type="button"
               variant="outline"
               onClick={handleAddItem}
-              className="w-full h-11 rounded-2xl border-dashed gap-2 text-xs font-bold"
+              className="w-full h-11 rounded-2xl border-dashed border-gray-300 dark:border-gray-700 gap-2 text-xs font-bold cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/30"
             >
-              <Plus className="h-4 w-4" /> Mahsulot qo&apos;shish
+              <Plus className="h-4 w-4 text-violet-600" /> Mahsulot qatori qo&apos;shish
             </Button>
 
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+            <div className="flex items-center justify-between p-4 bg-violet-50/60 dark:bg-violet-950/40 rounded-2xl border border-violet-100 dark:border-violet-900/60">
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Jami Hisoblangan Summa:
               </span>
-              <span className="text-xl font-bold text-violet-600 dark:text-violet-400">
+              <span className="text-2xl font-bold text-violet-700 dark:text-violet-300">
                 {formatCurrency(totalAmount)}
               </span>
             </div>
 
             <div className="flex justify-between pt-2">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setStep(1)}
-                className="h-11 rounded-2xl text-xs"
+                className="h-12 rounded-2xl px-6 text-sm font-bold cursor-pointer"
               >
                 Ortga
               </Button>
               <Button
+                type="button"
                 onClick={() => setStep(3)}
                 disabled={items.length === 0}
-                className="h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-bold"
+                className="h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl px-6 text-sm font-bold shadow-md cursor-pointer gap-2"
               >
-                Keyingisi: To&apos;lov
+                Keyingisi: To&apos;lov <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         )}
 
+        {/* STEP 3: PAYMENT & CONFIRM */}
         {step === 3 && (
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 To&apos;lov Usuli
               </label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger className="h-11 rounded-2xl">
+                <SelectTrigger className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm font-semibold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
@@ -443,46 +493,51 @@ export function OrderFormDialog({ open, onOpenChange, onSuccess, initialData }: 
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Oldindan To&apos;langan Summa (so&apos;m)
               </label>
               <Input
                 type="number"
                 step="10000"
-                className="h-11 rounded-2xl"
+                className="h-12 rounded-2xl text-base font-bold bg-white dark:bg-gray-900"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(Number(e.target.value))}
                 placeholder="0"
               />
-              <span className="text-[11px] text-gray-400">
-                Jami summa: {formatCurrency(totalAmount)}
-              </span>
+              <div className="flex justify-between text-xs text-gray-500 font-medium px-1">
+                <span>Jami sotuv summasi: <strong>{formatCurrency(totalAmount)}</strong></span>
+                <span className={totalAmount - paidAmount > 0 ? "text-red-500 font-bold" : "text-emerald-600 font-bold"}>
+                  {totalAmount - paidAmount > 0 ? `Qarz: ${formatCurrency(totalAmount - paidAmount)}` : "To'liq to'langan"}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Qo&apos;shimcha Izoh
               </label>
               <Input
-                className="h-11 rounded-2xl"
+                className="h-12 rounded-2xl bg-white dark:bg-gray-900 text-sm"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Yetkazish vaqti yoki maxsus talablar..."
+                placeholder="Yetkazish vaqti yoki maxsus ko'rsatmalar..."
               />
             </div>
 
-            <div className="flex justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setStep(2)}
-                className="h-11 rounded-2xl text-xs"
+                className="h-12 rounded-2xl px-6 text-sm font-bold cursor-pointer"
               >
                 Ortga
               </Button>
               <Button
+                type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="h-11 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-bold"
+                className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 text-sm font-bold shadow-lg cursor-pointer"
               >
                 {isSubmitting ? "Saqlanmoqda..." : "Sotuvni Tasdiqlash"}
               </Button>

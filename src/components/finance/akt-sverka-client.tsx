@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { INITIAL_STORES, getStoredOrders } from "@/lib/mock-data"
+import { getStoredStores, getStoredOrders, MockStore } from "@/lib/mock-data"
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2,
@@ -31,26 +31,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner"
 
 export function AktSverkaClient() {
-  const stores = useMemo(() => INITIAL_STORES, [])
+  const [stores, setStores] = useState<MockStore[]>(() => getStoredStores())
   
   const today = new Date()
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const firstDay = new Date(today.getFullYear(), 0, 1) // Start of year
+  const lastDay = new Date(today.getFullYear(), 11, 31) // End of year
   
   const [selectedStoreId, setSelectedStoreId] = useState<string>("all")
   const [startDate, setStartDate] = useState(firstDay.toISOString().split("T")[0])
   const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0])
   
-  // To simulate the "Generate" button from 1C
-  const [isGenerated, setIsGenerated] = useState(false)
+  const [isGenerated, setIsGenerated] = useState(true)
   const [editItem, setEditItem] = useState<any>(null)
 
   const { data: entries, isLoading, refetch } = useQuery({
     queryKey: ["akt-sverka-report", selectedStoreId, startDate, endDate],
     queryFn: () => {
+      const currentStores = getStoredStores()
       const orders = getStoredOrders().filter((o: any) => {
         if (selectedStoreId === "all") return true
-        const selectedStore = stores.find(s => s.id === selectedStoreId)
+        const selectedStore = currentStores.find(s => s.id === selectedStoreId)
         return selectedStore && (o.stores?.name === selectedStore.name || o.store_name === selectedStore.name)
       })
       
@@ -156,6 +156,19 @@ export function AktSverkaClient() {
       }
     }
   })
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setStores(getStoredStores())
+      refetch()
+    }
+    window.addEventListener("stores-updated", handleUpdate)
+    window.addEventListener("orders-updated", handleUpdate)
+    return () => {
+      window.removeEventListener("stores-updated", handleUpdate)
+      window.removeEventListener("orders-updated", handleUpdate)
+    }
+  }, [refetch])
 
   const handlePrint = () => window.print()
 
