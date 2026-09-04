@@ -84,14 +84,6 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Ishlab chiqarish",
-    icon: Factory,
-    children: [
-      { label: "Partiyalar", href: "/production", icon: Factory },
-      { label: "Rejalashtirish", href: "/production/planning", icon: ClipboardList },
-    ],
-  },
-  {
     label: "Sotuv bo'limi",
     icon: ShoppingCart,
     children: [

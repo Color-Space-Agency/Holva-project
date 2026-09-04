@@ -6,8 +6,6 @@ import { formatCurrency } from "@/lib/utils"
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,94 +13,155 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { isRealSupabaseConfigured, getStoredOrders } from "@/lib/mock-data"
 
 type DateRange = "today" | "week" | "month" | "year"
 
-function getDateRange(range: DateRange) {
-  const now = new Date()
-  const end = now.toISOString().split("T")[0]
-  let start: string
-
-  switch (range) {
-    case "today":
-      start = end
-      break
-    case "week": {
-      const d = new Date()
-      d.setDate(d.getDate() - 7)
-      start = d.toISOString().split("T")[0]
-      break
-    }
-    case "month": {
-      const d = new Date()
-      d.setDate(1)
-      start = d.toISOString().split("T")[0]
-      break
-    }
-    case "year": {
-      start = `${now.getFullYear()}-01-01`
-      break
-    }
-  }
-  return { start, end }
+interface BucketData {
+  date: string
+  Tushum: number
+  Sotuvlar: number
 }
 
-import { isRealSupabaseConfigured, getStoredOrders } from "@/lib/mock-data"
-
-async function fetchChartData(range: DateRange) {
-  const { start, end } = getDateRange(range)
-
+async function fetchOrdersForCharts() {
   if (isRealSupabaseConfigured()) {
     try {
       const supabase = createClient()
       const { data: orders } = await supabase
         .from("orders")
         .select("created_at, total_amount, status")
-        .gte("created_at", `${start}T00:00:00`)
-        .lte("created_at", `${end}T23:59:59`)
         .neq("status", "CANCELLED")
         .order("created_at")
 
       if (orders && orders.length > 0) {
-        const byDate: Record<string, { revenue: number; orders: number }> = {}
-        orders.forEach((o) => {
-          const date = o.created_at.split("T")[0]
-          if (!byDate[date]) byDate[date] = { revenue: 0, orders: 0 }
-          byDate[date].revenue += o.total_amount ?? 0
-          byDate[date].orders += 1
-        })
-
-        return Object.entries(byDate)
-          .map(([date, data]) => ({
-            date: new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
-            Tushum: data.revenue,
-            Sotuvlar: data.orders,
-          }))
-          .sort((a, b) => a.date.localeCompare(b.date))
+        return orders
       }
     } catch {
-      // Ignore
+      // Fallback
     }
   }
 
-  const storedOrders = getStoredOrders()
-  if (storedOrders.length > 0) {
-    const byDate: Record<string, { revenue: number; orders: number }> = {}
-    storedOrders.forEach((o) => {
-      const date = (o.created_at || new Date().toISOString()).split("T")[0]
-      if (!byDate[date]) byDate[date] = { revenue: 0, orders: 0 }
-      byDate[date].revenue += o.total_amount ?? 0
-      byDate[date].orders += 1
+  return getStoredOrders()
+}
+
+function processChartBuckets(range: DateRange, orders: any[]): BucketData[] {
+  const now = new Date()
+
+  if (range === "today") {
+    const todayStr = now.toISOString().split("T")[0]
+    const hours = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
+    const buckets: Record<string, { revenue: number; orders: number }> = {}
+    hours.forEach((h) => (buckets[h] = { revenue: 0, orders: 0 }))
+
+    orders.forEach((o) => {
+      const oDate = o.created_at || new Date().toISOString()
+      if (oDate.startsWith(todayStr)) {
+        const d = new Date(oDate)
+        const hour = d.getHours()
+        let bKey = "20:00"
+        if (hour < 9) bKey = "08:00"
+        else if (hour < 11) bKey = "10:00"
+        else if (hour < 13) bKey = "12:00"
+        else if (hour < 15) bKey = "14:00"
+        else if (hour < 17) bKey = "16:00"
+        else if (hour < 19) bKey = "18:00"
+
+        buckets[bKey].revenue += o.total_amount || 0
+        buckets[bKey].orders += 1
+      }
     })
 
-    return Object.entries(byDate)
-      .map(([date, data]) => ({
-        date: new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
-        Tushum: data.revenue,
-        Sotuvlar: data.orders,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date))
+    return hours.map((h) => ({
+      date: h,
+      Tushum: buckets[h].revenue,
+      Sotuvlar: buckets[h].orders,
+    }))
+  }
+
+  if (range === "week") {
+    const weekDaysUz = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"]
+    const result: BucketData[] = []
+    const dayMap: Record<string, { revenue: number; orders: number; label: string }> = {}
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(now.getDate() - i)
+      const dateStr = d.toISOString().split("T")[0]
+      const label = `${weekDaysUz[d.getDay()]} (${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")})`
+      dayMap[dateStr] = { revenue: 0, orders: 0, label }
+    }
+
+    orders.forEach((o) => {
+      const dateStr = (o.created_at || new Date().toISOString()).split("T")[0]
+      if (dayMap[dateStr]) {
+        dayMap[dateStr].revenue += o.total_amount || 0
+        dayMap[dateStr].orders += 1
+      }
+    })
+
+    Object.values(dayMap).forEach((val) => {
+      result.push({
+        date: val.label,
+        Tushum: val.revenue,
+        Sotuvlar: val.orders,
+      })
+    })
+
+    return result
+  }
+
+  if (range === "month") {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+    const dayMap: Record<string, { revenue: number; orders: number; label: string }> = {}
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      const label = `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}`
+      dayMap[dateStr] = { revenue: 0, orders: 0, label }
+    }
+
+    orders.forEach((o) => {
+      const dateStr = (o.created_at || new Date().toISOString()).split("T")[0]
+      if (dayMap[dateStr]) {
+        dayMap[dateStr].revenue += o.total_amount || 0
+        dayMap[dateStr].orders += 1
+      }
+    })
+
+    return Object.values(dayMap).map((val) => ({
+      date: val.label,
+      Tushum: val.revenue,
+      Sotuvlar: val.orders,
+    }))
+  }
+
+  if (range === "year") {
+    const monthNamesUz = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"]
+    const year = now.getFullYear()
+    const monthMap: Record<number, { revenue: number; orders: number }> = {}
+
+    for (let m = 0; m < 12; m++) {
+      monthMap[m] = { revenue: 0, orders: 0 }
+    }
+
+    orders.forEach((o) => {
+      const d = new Date(o.created_at || new Date().toISOString())
+      if (d.getFullYear() === year) {
+        const m = d.getMonth()
+        monthMap[m].revenue += o.total_amount || 0
+        monthMap[m].orders += 1
+      }
+    })
+
+    return monthNamesUz.map((name, index) => ({
+      date: name,
+      Tushum: monthMap[index].revenue,
+      Sotuvlar: monthMap[index].orders,
+    }))
   }
 
   return []
@@ -117,10 +176,19 @@ function ChartSkeleton() {
 export function DashboardCharts() {
   const [range, setRange] = useState<DateRange>("month")
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["dashboard-charts", range],
-    queryFn: () => fetchChartData(range),
+  const { data: allOrders = [], isLoading, refetch } = useQuery({
+    queryKey: ["dashboard-orders-raw"],
+    queryFn: fetchOrdersForCharts,
+    refetchInterval: 5000,
   })
+
+  useEffect(() => {
+    const handleUpdate = () => refetch()
+    window.addEventListener("orders-updated", handleUpdate)
+    return () => window.removeEventListener("orders-updated", handleUpdate)
+  }, [refetch])
+
+  const chartData = processChartBuckets(range, allOrders)
 
   const ranges: { key: DateRange; label: string }[] = [
     { key: "today", label: "Bugun" },
@@ -143,7 +211,7 @@ export function DashboardCharts() {
               onClick={() => setRange(r.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 range === r.key
-                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm font-semibold"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               }`}
             >
@@ -155,13 +223,13 @@ export function DashboardCharts() {
 
       {isLoading ? (
         <ChartSkeleton />
-      ) : data.length === 0 ? (
+      ) : chartData.length === 0 ? (
         <div className="h-[280px] flex items-center justify-center text-gray-400 text-sm">
           Bu davr uchun ma'lumot yo'q
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-100 dark:text-gray-800" />
             <XAxis
               dataKey="date"
