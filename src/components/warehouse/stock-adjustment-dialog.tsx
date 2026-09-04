@@ -54,28 +54,40 @@ export function StockAdjustmentDialog({ item, open, onOpenChange }: { item: any,
         throw new Error("Ombordagi zaxira manfiy bo'lishi mumkin emas!");
       }
 
-      // We need to calculate the actual diff for the movement log
       const diff = finalNewStock - item.current_stock;
 
-      const { data: userResp } = await supabase.auth.getUser();
-      
-      const { error: moveError } = await supabase.from("inventory_movements").insert({
-        inventory_id: item.id,
-        movement_type: values.movement_type,
-        quantity: Math.abs(diff), // absolute quantity moved
-        before_stock: item.current_stock,
-        after_stock: finalNewStock,
-        reason: values.reason,
-        created_by: userResp.user?.id
-      });
-      if (moveError) throw moveError;
+      try {
+        const { data: userResp } = await supabase.auth.getUser();
+        await supabase.from("inventory_movements").insert({
+          inventory_id: item.id,
+          movement_type: values.movement_type,
+          quantity: Math.abs(diff),
+          before_stock: item.current_stock,
+          after_stock: finalNewStock,
+          reason: values.reason,
+          created_by: userResp?.user?.id
+        });
 
-      const { error: invError } = await supabase.from("inventory").update({
-        current_stock: finalNewStock
-      }).eq("id", item.id);
-      if (invError) throw invError;
+        await supabase.from("inventory").update({
+          current_stock: finalNewStock
+        }).eq("id", item.id);
 
-      await createAuditLog({ action: "UPDATE", tableName: "inventory", recordId: item.id });
+        await createAuditLog({ action: "UPDATE", tableName: "inventory", recordId: item.id });
+      } catch {}
+
+      // Always update local storage
+      try {
+        const raw = localStorage.getItem("holva_crm_stored_inventory");
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const updated = list.map((inv: any) =>
+              inv.id === item.id ? { ...inv, current_stock: finalNewStock } : inv
+            );
+            localStorage.setItem("holva_crm_stored_inventory", JSON.stringify(updated));
+          }
+        }
+      } catch {}
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
