@@ -860,3 +860,88 @@ export function sendStoredChatMessage(
 
   return updated
 }
+
+export interface MockCategory {
+  id: string
+  name: string
+  description?: string
+  product_count?: number
+}
+
+export interface MockRecipe {
+  id: string
+  name: string
+  product_id: string
+  version: string
+  yield_quantity: number
+  yield_unit_id: string
+  status: string
+  is_active: boolean
+  instructions?: string
+  product?: { name: string }
+  items?: Array<{
+    raw_material_id: string
+    quantity: number
+    unit_id: string
+    notes?: string
+  }>
+}
+
+const STORAGE_KEY_CATEGORIES = "holva_crm_stored_categories"
+const STORAGE_KEY_RECIPES = "holva_crm_stored_recipes"
+
+export function getStoredProductCategories(): MockCategory[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_CATEGORIES)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
+export function saveStoredProductCategories(items: MockCategory[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(items))
+  } catch {}
+}
+
+export function getStoredRecipes(): MockRecipe[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_RECIPES)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
+export function saveStoredRecipes(items: MockRecipe[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY_RECIPES, JSON.stringify(items))
+  } catch {}
+}
+
+export function createStoredRecipe(recipe: Omit<MockRecipe, "id">): MockRecipe {
+  const list = getStoredRecipes()
+  const newRec: MockRecipe = {
+    ...recipe,
+    id: `rec-${Date.now()}`,
+  }
+  const updated = [newRec, ...list]
+  saveStoredRecipes(updated)
+  return newRec
+}
+
+export function deleteStoredRecipe(id: string) {
+  const list = getStoredRecipes()
+  const updated = list.filter(r => r.id !== id)
+  saveStoredRecipes(updated)
+}
+

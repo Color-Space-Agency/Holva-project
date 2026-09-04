@@ -28,7 +28,7 @@ export function RecipesClient() {
   const { data: recipes, isLoading } = useQuery({
     queryKey: ["recipes", search, statusFilter],
     queryFn: async () => {
-      const { isRealSupabaseConfigured } = await import("@/lib/mock-data");
+      const { isRealSupabaseConfigured, getStoredRecipes } = await import("@/lib/mock-data");
       if (isRealSupabaseConfigured()) {
         try {
           let query = supabase
@@ -55,50 +55,15 @@ export function RecipesClient() {
         }
       }
 
-      const defaultRecipes = [
-        {
-          id: "rec-1",
-          name: "Kunjutli Premium Holva Retsepti (100kg partiya)",
-          product_id: "p-1",
-          version: "v1.2",
-          yield_quantity: 100,
-          yield_unit_id: "kg",
-          status: "ACTIVE",
-          is_active: true,
-          product: { name: "Kunjutli Premium Holva (500g)" },
-        },
-        {
-          id: "rec-2",
-          name: "Shokoladli Yong'oqli Holva Standart Retsepti",
-          product_id: "p-2",
-          version: "v1.0",
-          yield_quantity: 80,
-          yield_unit_id: "kg",
-          status: "ACTIVE",
-          is_active: true,
-          product: { name: "Shokoladli Yong'oqli Holva (400g)" },
-        },
-        {
-          id: "rec-3",
-          name: "Samarqand Xandon Pistali Holva",
-          product_id: "p-3",
-          version: "v2.1",
-          yield_quantity: 50,
-          yield_unit_id: "kg",
-          status: "ACTIVE",
-          is_active: true,
-          product: { name: "Pista Mag'izli Samarqand Holvasi (1kg)" },
-        },
-      ];
-
-      let res = defaultRecipes;
+      const storedRecipes = getStoredRecipes();
+      let res = storedRecipes;
       if (statusFilter !== "all") {
         res = res.filter(r => statusFilter === "active" ? r.is_active : !r.is_active);
       }
       if (search) {
         res = res.filter(r => 
           r.name.toLowerCase().includes(search.toLowerCase()) || 
-          r.product.name.toLowerCase().includes(search.toLowerCase())
+          r.product?.name?.toLowerCase().includes(search.toLowerCase())
         );
       }
       return res;
@@ -107,14 +72,23 @@ export function RecipesClient() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active, product_id }: { id: string, is_active: boolean, product_id: string }) => {
-      // If setting to active, we might need to deactivate others for same product, but let's just toggle this one
-      // based on instructions: "Setting is_active=true deactivates all other versions for same product" is handled in form, but for toggle:
-      if (is_active) {
-        await supabase.from("recipes").update({ is_active: false }).eq("product_id", product_id);
+      const { isRealSupabaseConfigured, getStoredRecipes, saveStoredRecipes } = await import("@/lib/mock-data");
+      if (isRealSupabaseConfigured()) {
+        try {
+          if (is_active) {
+            await supabase.from("recipes").update({ is_active: false }).eq("product_id", product_id);
+          }
+          await supabase.from("recipes").update({ is_active }).eq("id", id);
+          await createAuditLog({ action: "UPDATE", tableName: "recipes", recordId: id, newValues: { is_active } });
+        } catch {}
       }
-      const { error } = await supabase.from("recipes").update({ is_active }).eq("id", id);
-      if (error) throw error;
-      await createAuditLog({ action: "UPDATE", tableName: "recipes", recordId: id, newValues: { is_active } });
+      const list = getStoredRecipes();
+      const updated = list.map(r => {
+        if (r.id === id) return { ...r, is_active };
+        if (is_active && r.product_id === product_id) return { ...r, is_active: false };
+        return r;
+      });
+      saveStoredRecipes(updated);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
@@ -127,9 +101,14 @@ export function RecipesClient() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("recipes").delete().eq("id", id);
-      if (error) throw error;
-      await createAuditLog({ action: "DELETE", tableName: "recipes", recordId: id });
+      const { isRealSupabaseConfigured, deleteStoredRecipe } = await import("@/lib/mock-data");
+      if (isRealSupabaseConfigured()) {
+        try {
+          await supabase.from("recipes").delete().eq("id", id);
+          await createAuditLog({ action: "DELETE", tableName: "recipes", recordId: id });
+        } catch {}
+      }
+      deleteStoredRecipe(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });

@@ -111,6 +111,22 @@ export function RecipeFormDialog({ open, onOpenChange }: { open: boolean; onOpen
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
+      const selectedProduct = products.find((p) => p.id === values.product_id);
+      const { createStoredRecipe, isRealSupabaseConfigured } = await import("@/lib/mock-data");
+
+      createStoredRecipe({
+        name: values.name,
+        product_id: values.product_id,
+        version: "v1.0",
+        yield_quantity: values.yield_quantity,
+        yield_unit_id: values.yield_unit_id,
+        status: "ACTIVE",
+        is_active: values.is_active,
+        instructions: values.instructions,
+        product: { name: selectedProduct?.name || "Mahsulot" },
+        items: values.items,
+      });
+
       if (isRealSupabaseConfigured()) {
         try {
           const { data: recipe } = await supabase
@@ -144,6 +160,7 @@ export function RecipeFormDialog({ open, onOpenChange }: { open: boolean; onOpen
 
       toast.success("Retsept muvaffaqiyatli saqlandi!");
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      form.reset();
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || "Xatolik yuz berdi");

@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { isRealSupabaseConfigured } from "@/lib/mock-data"
+import { isRealSupabaseConfigured, getStoredProductCategories } from "@/lib/mock-data"
 import { formatCurrency } from "@/lib/utils"
 import type { Database } from "@/types/database"
 
@@ -72,6 +72,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         } catch {
           // Fallback
         }
+      }
+      const localCats = getStoredProductCategories()
+      if (localCats && localCats.length > 0) {
+        return localCats
       }
       return [
         { id: "cat-1", name: "Klassik Holvalar" },
