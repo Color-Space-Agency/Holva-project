@@ -371,11 +371,17 @@ export function saveStoredStores(stores: MockStore[]): void {
 
 export async function syncStoresFromServer(): Promise<MockStore[]> {
   if (typeof window === "undefined") return INITIAL_STORES
+  const localStores = getStoredStores()
   try {
-    const res = await fetch("/api/sync/stores", { cache: "no-store" })
+    const res = await fetch("/api/sync/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", stores: localStores }),
+      cache: "no-store",
+    })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.stores)) {
+      if (data.success && Array.isArray(data.stores) && data.stores.length > 0) {
         localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
         window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
         return data.stores
@@ -384,7 +390,7 @@ export async function syncStoresFromServer(): Promise<MockStore[]> {
   } catch (e) {
     console.error("syncStoresFromServer error:", e)
   }
-  return getStoredStores()
+  return localStores
 }
 
 export function createStoredStore(newStore: MockStore): MockStore[] {
@@ -402,17 +408,7 @@ export function createStoredStore(newStore: MockStore): MockStore[] {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "create", store: newStore }),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success && Array.isArray(data.stores)) {
-            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
-            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
-          }
-        }
-      })
-      .catch(() => {})
+    }).catch(() => {})
   } catch {}
 
   return updatedList
@@ -429,17 +425,7 @@ export function updateStoredStore(id: string, updates: Partial<MockStore>): Mock
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update", storeId: id, updates }),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success && Array.isArray(data.stores)) {
-            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
-            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
-          }
-        }
-      })
-      .catch(() => {})
+    }).catch(() => {})
   } catch {}
 
   return updatedList
@@ -456,17 +442,7 @@ export function deleteStoredStore(id: string): MockStore[] {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", storeId: id }),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success && Array.isArray(data.stores)) {
-            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
-            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
-          }
-        }
-      })
-      .catch(() => {})
+    }).catch(() => {})
   } catch {}
 
   return updatedList
@@ -501,11 +477,17 @@ export function saveStoredOrders(orders: MockOrder[]): void {
 
 export async function syncOrdersFromServer(): Promise<MockOrder[]> {
   if (typeof window === "undefined") return INITIAL_ORDERS
+  const localOrders = getStoredOrders()
   try {
-    const res = await fetch("/api/sync/orders", { cache: "no-store" })
+    const res = await fetch("/api/sync/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync", orders: localOrders }),
+      cache: "no-store",
+    })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.orders)) {
+      if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
         localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(data.orders))
         window.dispatchEvent(new CustomEvent("orders-updated", { detail: { orders: data.orders } }))
         return data.orders
@@ -514,7 +496,7 @@ export async function syncOrdersFromServer(): Promise<MockOrder[]> {
   } catch (e) {
     console.error("syncOrdersFromServer error:", e)
   }
-  return getStoredOrders()
+  return localOrders
 }
 
 export function recordStoredOrderPayment(orderId: string, amount: number): { orders: MockOrder[]; updatedOrder: MockOrder | null } {
