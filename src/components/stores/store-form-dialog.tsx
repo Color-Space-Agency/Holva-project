@@ -51,6 +51,7 @@ interface StoreFormDialogProps {
   onSuccess: () => void
 }
 
+import { useEffect } from "react"
 import { createStoredStore, updateStoredStore, isRealSupabaseConfigured, MockStore } from "@/lib/mock-data"
 
 export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: StoreFormDialogProps) {
@@ -60,7 +61,7 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema) as any,
-    defaultValues: initialData || {
+    defaultValues: {
       name: "",
       phone: "",
       address: "",
@@ -69,9 +70,39 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
       notes: "",
       payment_terms: "",
       credit_limit: 0,
-      status: "ACTIVE" as const,
+      status: "ACTIVE",
     },
   })
+
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        form.reset({
+          name: initialData.name || "",
+          phone: initialData.phone || "",
+          address: initialData.address || "",
+          contact_person: initialData.contact_person || "",
+          telegram: initialData.telegram || "",
+          notes: initialData.notes || "",
+          payment_terms: initialData.payment_terms || "",
+          credit_limit: initialData.credit_limit || 0,
+          status: initialData.status || "ACTIVE",
+        })
+      } else {
+        form.reset({
+          name: "",
+          phone: "",
+          address: "",
+          contact_person: "",
+          telegram: "",
+          notes: "",
+          payment_terms: "",
+          credit_limit: 0,
+          status: "ACTIVE",
+        })
+      }
+    }
+  }, [open, initialData, form])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -82,11 +113,11 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
           } catch {}
         }
         updateStoredStore(initialData.id, values)
-        toast.success("Do'kon yangilandi")
+        toast.success("Do'kon ma'lumotlari yangilandi!")
       } else {
         const newStore: MockStore = {
           id: `s-${Date.now()}`,
-          name: values.name,
+          name: values.name.trim(),
           phone: values.phone || "",
           address: values.address || "",
           contact_person: values.contact_person || "",
@@ -101,7 +132,7 @@ export function StoreFormDialog({ open, onOpenChange, initialData, onSuccess }: 
           } catch {}
         }
         createStoredStore(newStore)
-        toast.success("Do'kon qo'shildi")
+        toast.success("Yangi do'kon muvaffaqiyatli qo'shildi!")
       }
 
       onSuccess()

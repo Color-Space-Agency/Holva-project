@@ -390,7 +390,11 @@ export async function syncStoresFromServer(): Promise<MockStore[]> {
 export function createStoredStore(newStore: MockStore): MockStore[] {
   if (typeof window === "undefined") return INITIAL_STORES
   const list = getStoredStores()
-  const updatedList = [newStore, ...list]
+  const exists = list.some((s) => s.id === newStore.id || s.name.toLowerCase().trim() === newStore.name.toLowerCase().trim())
+  const updatedList = exists
+    ? list.map((s) => (s.id === newStore.id || s.name.toLowerCase().trim() === newStore.name.toLowerCase().trim() ? { ...s, ...newStore } : s))
+    : [newStore, ...list]
+
   saveStoredStores(updatedList)
 
   try {
@@ -398,7 +402,17 @@ export function createStoredStore(newStore: MockStore): MockStore[] {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "create", store: newStore }),
-    }).catch(() => {})
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.stores)) {
+            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
+            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
+          }
+        }
+      })
+      .catch(() => {})
   } catch {}
 
   return updatedList
@@ -415,7 +429,17 @@ export function updateStoredStore(id: string, updates: Partial<MockStore>): Mock
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update", storeId: id, updates }),
-    }).catch(() => {})
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.stores)) {
+            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
+            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
+          }
+        }
+      })
+      .catch(() => {})
   } catch {}
 
   return updatedList
@@ -432,7 +456,17 @@ export function deleteStoredStore(id: string): MockStore[] {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", storeId: id }),
-    }).catch(() => {})
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.stores)) {
+            localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
+            window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
+          }
+        }
+      })
+      .catch(() => {})
   } catch {}
 
   return updatedList
