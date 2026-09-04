@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { getStoredStores, getStoredOrders, MockStore } from "@/lib/mock-data"
+import { getStoredStores, getStoredOrders, deleteStoredOrder, updateStoredOrder, updateStoredStore, deleteStoredStore, MockStore } from "@/lib/mock-data"
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 import { 
   Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2,
-  Clock, Edit, FileCheck2, Filter
+  Clock, Edit, FileCheck2, Filter, Trash
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
 import { toast } from "sonner"
 
 export function AktSverkaClient() {
@@ -43,6 +44,10 @@ export function AktSverkaClient() {
   
   const [isGenerated, setIsGenerated] = useState(true)
   const [editItem, setEditItem] = useState<any>(null)
+  const [deletingItem, setDeletingItem] = useState<any>(null)
+  const [editDebitVal, setEditDebitVal] = useState<number>(0)
+  const [editCreditVal, setEditCreditVal] = useState<number>(0)
+  const [editDescVal, setEditDescVal] = useState<string>("")
 
   const { data: entries, isLoading, refetch } = useQuery({
     queryKey: ["akt-sverka-report", selectedStoreId, startDate, endDate],
@@ -108,6 +113,7 @@ export function AktSverkaClient() {
             if (itemTotal > 0) {
               list.push({
                 id: `ord-${ord.id}-item-${idx}`,
+                rawOrdId: ord.id,
                 date: ordDate,
                 fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
                 timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + idx,
@@ -126,6 +132,7 @@ export function AktSverkaClient() {
         } else if (ord.total_amount > 0) {
           list.push({
             id: `ord-${ord.id}`,
+            rawOrdId: ord.id,
             date: ordDate,
             fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
             timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()),
@@ -145,10 +152,11 @@ export function AktSverkaClient() {
         if (ord.paid_amount > 0) {
           list.push({
             id: `pay-${ord.id}`,
+            rawOrdId: ord.id,
             date: ordDate,
             fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
             timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + 1000,
-            docNumber: `TOL-${ord.order_number.split("-").pop()}`,
+            docNumber: `TOL-${ord.order_number.replace("HLV-", "").replace("ORD-", "")}`,
             storeName: ord.stores?.name || ord.store_name,
             docType: "To'lov qabuli",
             description: "Mijoz tomonidan to'lov amalga oshirildi",
@@ -225,10 +233,65 @@ export function AktSverkaClient() {
     document.body.removeChild(link)
   }
 
+  const openEdit = (item: any) => {
+    setEditItem(item)
+    setEditDebitVal(item.debit || 0)
+    setEditCreditVal(item.credit || 0)
+    setEditDescVal(item.description || "")
+  }
+
   const handleSaveEdit = () => {
-    toast.success("O'zgarishlar muvaffaqiyatli saqlandi!")
-    setEditItem(null)
-    refetch()
+    if (!editItem) return
+    try {
+      if (editItem.id.startsWith("ord-")) {
+        const ordId = editItem.rawOrdId || editItem.id.replace("ord-", "").split("-item-")[0]
+        updateStoredOrder(ordId, { total_amount: Number(editDebitVal) || 0, updated_at: new Date().toISOString() })
+      } else if (editItem.id.startsWith("pay-")) {
+        const ordId = editItem.rawOrdId || editItem.id.replace("pay-", "")
+        const newCred = Number(editCreditVal) || 0
+        const ords = getStoredOrders()
+        const targetOrd = ords.find(o => o.id === ordId || o.order_number === ordId)
+        const total = targetOrd?.total_amount || 0
+        updateStoredOrder(ordId, {
+          paid_amount: newCred,
+          payment_status: newCred >= total && total > 0 ? "PAID" : newCred > 0 ? "PARTIAL" : "PENDING",
+          updated_at: new Date().toISOString(),
+        })
+      } else if (editItem.id.startsWith("init-")) {
+        const storeId = editItem.id.replace("init-", "")
+        updateStoredStore(storeId, { initial_balance: Number(editDebitVal) || 0 })
+      }
+      toast.success("O'zgarishlar muvaffaqiyatli saqlandi!")
+      setEditItem(null)
+      refetch()
+    } catch {
+      toast.error("Xatolik yuz berdi")
+    }
+  }
+
+  const handleDeleteItem = () => {
+    if (!deletingItem) return
+    try {
+      if (deletingItem.id.startsWith("ord-")) {
+        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("ord-", "").split("-item-")[0]
+        deleteStoredOrder(ordId)
+        if (deletingItem.docNumber) deleteStoredOrder(deletingItem.docNumber)
+        toast.success("Sotuv yozuvi muvaffaqiyatli o'chirildi")
+      } else if (deletingItem.id.startsWith("pay-")) {
+        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("pay-", "")
+        updateStoredOrder(ordId, { paid_amount: 0, payment_status: "PENDING", updated_at: new Date().toISOString() })
+        toast.success("To'lov yozuvi o'chirildi")
+      } else if (deletingItem.id.startsWith("init-")) {
+        const storeId = deletingItem.id.replace("init-", "")
+        updateStoredStore(storeId, { initial_balance: 0 })
+        toast.success("Boshlang'ich qoldiq o'chirildi")
+      }
+      refetch()
+    } catch {
+      toast.error("Xatolik yuz berdi")
+    } finally {
+      setDeletingItem(null)
+    }
   }
 
   const handleGenerate = () => {
@@ -354,7 +417,7 @@ export function AktSverkaClient() {
                     <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">Xarid (Qarzga)</TableHead>
                     <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">To'lov qildi</TableHead>
                     <TableHead className="text-right font-bold whitespace-nowrap">Joriy qoldiq</TableHead>
-                    <TableHead className="w-[50px] print:hidden"></TableHead>
+                    <TableHead className="w-[80px] print:hidden text-right">Amallar</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -402,15 +465,26 @@ export function AktSverkaClient() {
                           </Badge>
                         </TableCell>
                         <TableCell className="print:hidden text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-amber-600"
-                            onClick={() => setEditItem(item)}
-                            title="Tahrirlash"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600"
+                              onClick={() => openEdit(item)}
+                              title="Tahrirlash"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
+                              onClick={() => setDeletingItem(item)}
+                              title="O'chirish"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -432,16 +506,16 @@ export function AktSverkaClient() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Harakat (Izoh)</Label>
-                <Input defaultValue={editItem.description} />
+                <Input value={editDescVal} onChange={(e) => setEditDescVal(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Xarid Summasi</Label>
-                  <Input type="number" defaultValue={editItem.debit} disabled={editItem.debit === 0} />
+                  <Label>Xarid Summasi (Debet)</Label>
+                  <Input type="number" value={editDebitVal} onChange={(e) => setEditDebitVal(Number(e.target.value))} disabled={editItem.debit === 0 && !editItem.id.startsWith("init-")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>To'lov Summasi</Label>
-                  <Input type="number" defaultValue={editItem.credit} disabled={editItem.credit === 0} />
+                  <Label>To'lov Summasi (Kredit)</Label>
+                  <Input type="number" value={editCreditVal} onChange={(e) => setEditCreditVal(Number(e.target.value))} disabled={editItem.credit === 0} />
                 </div>
               </div>
             </div>
@@ -454,6 +528,14 @@ export function AktSverkaClient() {
           </DialogContent>
         </Dialog>
       )}
+
+      <DeleteConfirmDialog
+        open={!!deletingItem}
+        onOpenChange={(open) => !open && setDeletingItem(null)}
+        onConfirm={handleDeleteItem}
+        title="Yozuvni o'chirish"
+        description="Haqiqatan ham Akt Sverka dagi ushbu yozuvni o'chirmoqchimisiz?"
+      />
     </div>
   )
 }

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
+  DialogTrigger,
+  DialogFooter
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,10 +25,14 @@ import {
   ArrowDownLeft, 
   FileText,
   FileCheck2,
-  X
+  X,
+  Edit,
+  Trash
 } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
-import { getStoredOrders, getStoredStores, MockOrder } from "@/lib/mock-data"
+import { getStoredOrders, getStoredStores, deleteStoredOrder, updateStoredOrder, updateStoredStore, MockOrder } from "@/lib/mock-data"
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
+import { toast } from "sonner"
 
 interface StoreActReconciliationDialogProps {
   open: boolean
@@ -54,6 +59,13 @@ export function StoreActReconciliationDialog({
   const lastDay = new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0]
   const [startDate, setStartDate] = useState<string>(firstDay)
   const [endDate, setEndDate] = useState<string>(lastDay)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const [editItem, setEditItem] = useState<any>(null)
+  const [deletingItem, setDeletingItem] = useState<any>(null)
+  const [editDebitVal, setEditDebitVal] = useState<number>(0)
+  const [editCreditVal, setEditCreditVal] = useState<number>(0)
+  const [editDescVal, setEditDescVal] = useState<string>("")
 
   // Do'konning Sotuvlari va to'lovlari
   const { entries, totalDebit, totalCredit, initialBalance, finalBalance } = useMemo(() => {
@@ -71,23 +83,23 @@ export function StoreActReconciliationDialog({
 
     const list: Array<{
       id: string
+      rawOrdId: string
       date: string
       docNumber: string
       docType: "Sotuv" | "TOLOV"
       description: string
-      debit: number // Berilgan tovar summasi
-      credit: number // To'langan summa
-      balance: number // Shu kungi qoldiq
+      debit: number
+      credit: number
+      balance: number
     }> = []
 
-    // Sotuvlarni vaqti bo'yicha tartiblash
     const sorted = [...orders].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     for (const ord of sorted) {
-      // 1. Tovar berilishi (Debet)
       runningBalance += ord.total_amount
       list.push({
         id: `ord-${ord.id}`,
+        rawOrdId: ord.id,
         date: ord.created_at.split("T")[0] || "2026-08-15",
         docNumber: ord.order_number,
         docType: "Sotuv",
@@ -97,11 +109,11 @@ export function StoreActReconciliationDialog({
         balance: runningBalance,
       })
 
-      // 2. To'lov amalga oshirilgan bo'lsa (Kredit)
       if (ord.paid_amount && ord.paid_amount > 0) {
         runningBalance -= ord.paid_amount
         list.push({
           id: `pay-${ord.id}`,
+          rawOrdId: ord.id,
           date: ord.created_at.split("T")[0] || "2026-08-15",
           docNumber: `TO'L-${ord.order_number.replace("HLV-", "").replace("ORD-", "")}`,
           docType: "TOLOV",
@@ -125,7 +137,17 @@ export function StoreActReconciliationDialog({
       initialBalance: initBal,
       finalBalance: finBal,
     }
-  }, [store, startDate, endDate])
+  }, [store, startDate, endDate, refreshKey])
+
+  useEffect(() => {
+    const handleUpdate = () => setRefreshKey((prev) => prev + 1)
+    window.addEventListener("orders-updated", handleUpdate)
+    window.addEventListener("stores-updated", handleUpdate)
+    return () => {
+      window.removeEventListener("orders-updated", handleUpdate)
+      window.removeEventListener("stores-updated", handleUpdate)
+    }
+  }, [])
 
   const handlePrint = () => {
     window.print()
@@ -153,6 +175,60 @@ export function StoreActReconciliationDialog({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const openEdit = (item: any) => {
+    setEditItem(item)
+    setEditDebitVal(item.debit || 0)
+    setEditCreditVal(item.credit || 0)
+    setEditDescVal(item.description || "")
+  }
+
+  const handleSaveEdit = () => {
+    if (!editItem) return
+    try {
+      if (editItem.id.startsWith("ord-")) {
+        const ordId = editItem.rawOrdId || editItem.id.replace("ord-", "")
+        updateStoredOrder(ordId, { total_amount: Number(editDebitVal) || 0, updated_at: new Date().toISOString() })
+      } else if (editItem.id.startsWith("pay-")) {
+        const ordId = editItem.rawOrdId || editItem.id.replace("pay-", "")
+        const newCred = Number(editCreditVal) || 0
+        const ords = getStoredOrders()
+        const targetOrd = ords.find(o => o.id === ordId || o.order_number === ordId)
+        const total = targetOrd?.total_amount || 0
+        updateStoredOrder(ordId, {
+          paid_amount: newCred,
+          payment_status: newCred >= total && total > 0 ? "PAID" : newCred > 0 ? "PARTIAL" : "PENDING",
+          updated_at: new Date().toISOString(),
+        })
+      }
+      toast.success("O'zgarishlar muvaffaqiyatli saqlandi!")
+      setEditItem(null)
+      setRefreshKey((prev) => prev + 1)
+    } catch {
+      toast.error("Xatolik yuz berdi")
+    }
+  }
+
+  const handleDeleteItem = () => {
+    if (!deletingItem) return
+    try {
+      if (deletingItem.id.startsWith("ord-")) {
+        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("ord-", "")
+        deleteStoredOrder(ordId)
+        if (deletingItem.docNumber) deleteStoredOrder(deletingItem.docNumber)
+        toast.success("Sotuv hujjati muvaffaqiyatli o'chirildi")
+      } else if (deletingItem.id.startsWith("pay-")) {
+        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("pay-", "")
+        updateStoredOrder(ordId, { paid_amount: 0, payment_status: "PENDING", updated_at: new Date().toISOString() })
+        toast.success("To'lov yozuvi o'chirildi")
+      }
+      setRefreshKey((prev) => prev + 1)
+    } catch {
+      toast.error("Xatolik yuz berdi")
+    } finally {
+      setDeletingItem(null)
+    }
   }
 
   return (
@@ -228,12 +304,9 @@ export function StoreActReconciliationDialog({
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* AKT SVERKA ASOSIY HUJJAT BLOKI (PRINT VA PDF UCHUN TOZA FORMAT) */}
-        {/* ============================================================ */}
+        {/* AKT SVERKA ASOSIY HUJJAT BLOKI */}
         <div className="space-y-5 pt-1 text-gray-900 dark:text-gray-100 print:text-black">
           
-          {/* Hujjat bosh sarlavhasi */}
           <div className="text-center space-y-1 border-b pb-3">
             <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900 dark:text-white print:text-black">
               O&apos;ZARO HISOB-KITOBLARNI SOLISHTIRISH DALOLATNOMASI
@@ -246,7 +319,6 @@ export function StoreActReconciliationDialog({
             </p>
           </div>
 
-          {/* Tomonlar ma'lumotlari */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-amber-50/50 dark:bg-gray-800/40 border border-amber-200/60 dark:border-gray-700 text-xs sm:text-sm">
             <div className="space-y-1">
               <span className="font-bold text-amber-900 dark:text-amber-400 block text-[11px] uppercase tracking-wider">
@@ -269,7 +341,6 @@ export function StoreActReconciliationDialog({
             </div>
           </div>
 
-          {/* Qisqacha Xulosa Kartochkalari */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/80 rounded-xl border">
               <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium block">Boshlang&apos;ich Qoldiq</span>
@@ -297,7 +368,6 @@ export function StoreActReconciliationDialog({
             </div>
           </div>
 
-          {/* Solishtirma Amallari Jadvali */}
           <div className="border rounded-2xl overflow-x-auto shadow-xs bg-white dark:bg-gray-900">
             <table className="w-full text-xs sm:text-sm text-left border-collapse min-w-full">
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b">
@@ -308,10 +378,10 @@ export function StoreActReconciliationDialog({
                   <th className="p-2 sm:p-3 text-right whitespace-nowrap">Tovar berildi (Debet)</th>
                   <th className="p-2 sm:p-3 text-right whitespace-nowrap">To&apos;lov qilindi (Kredit)</th>
                   <th className="p-2 sm:p-3 text-right whitespace-nowrap">Qoldiq (Qarz)</th>
+                  <th className="p-2 sm:p-3 text-right w-16 print:hidden">Amallar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {/* Boshlang'ich qator */}
                 <tr className="bg-gray-50/50 dark:bg-gray-800/30 italic text-gray-500 font-medium">
                   <td className="p-2.5 sm:p-3 text-center">-</td>
                   <td className="p-2.5 sm:p-3">{startDate}</td>
@@ -319,10 +389,11 @@ export function StoreActReconciliationDialog({
                   <td className="p-2.5 sm:p-3 text-right">-</td>
                   <td className="p-2.5 sm:p-3 text-right">-</td>
                   <td className="p-2.5 sm:p-3 text-right font-semibold">{formatCurrency(initialBalance)}</td>
+                  <td className="p-2.5 sm:p-3 print:hidden"></td>
                 </tr>
 
                 {entries.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-amber-50/30 dark:hover:bg-gray-800/50 transition">
+                  <tr key={item.id} className="group hover:bg-amber-50/30 dark:hover:bg-gray-800/50 transition">
                     <td className="p-2.5 sm:p-3 text-center text-gray-400">{idx + 1}</td>
                     <td className="p-2.5 sm:p-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{item.date}</td>
                     <td className="p-2.5 sm:p-3">
@@ -345,10 +416,31 @@ export function StoreActReconciliationDialog({
                     <td className="p-2.5 sm:p-3 text-right font-bold text-gray-900 dark:text-white">
                       {formatCurrency(item.balance)}
                     </td>
+                    <td className="p-2.5 sm:p-3 print:hidden text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
+                          onClick={() => openEdit(item)}
+                          title="Tahrirlash"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 cursor-pointer"
+                          onClick={() => setDeletingItem(item)}
+                          title="O'chirish"
+                        >
+                          <Trash className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
 
-                {/* Jami va Yakuniy qator */}
                 <tr className="bg-amber-100/40 dark:bg-amber-950/30 font-bold border-t-2 border-amber-300 dark:border-amber-700">
                   <td colSpan={3} className="p-2.5 sm:p-3 text-right uppercase tracking-wider text-xs">
                     DAVR BO&apos;YICHA JAMI OBOROT VA YAKUNIY QARZ:
@@ -362,12 +454,12 @@ export function StoreActReconciliationDialog({
                   <td className={`p-2.5 sm:p-3 text-right text-base ${finalBalance > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {formatCurrency(finalBalance)}
                   </td>
+                  <td className="print:hidden"></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Yakuniy Matn Xulosasi */}
           <div className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border text-xs sm:text-sm text-gray-700 dark:text-gray-300 space-y-1">
             <p>
               <strong>{endDate}</strong> holatiga ko&apos;ra, &ldquo;HOLVA FACTORY&rdquo; MCHJ foydasiga <strong>{store.name}</strong> ning qarzdorligi <strong>{formatCurrency(finalBalance)}</strong> so&apos;mni tashkil etadi.
@@ -377,7 +469,6 @@ export function StoreActReconciliationDialog({
             </p>
           </div>
 
-          {/* Imzolar va Muhr qismi */}
           <div className="grid grid-cols-2 gap-8 pt-6 pb-2 text-xs sm:text-sm">
             <div className="space-y-8">
               <div>
@@ -405,6 +496,47 @@ export function StoreActReconciliationDialog({
           </div>
 
         </div>
+
+        {/* Edit Dialog */}
+        {editItem && (
+          <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Yozuvni tahrirlash</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Harakat (Izoh)</Label>
+                  <Input value={editDescVal} onChange={(e) => setEditDescVal(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Xarid Summasi (Debet)</Label>
+                    <Input type="number" value={editDebitVal} onChange={(e) => setEditDebitVal(Number(e.target.value))} disabled={editItem.debit === 0} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>To'lov Summasi (Kredit)</Label>
+                    <Input type="number" value={editCreditVal} onChange={(e) => setEditCreditVal(Number(e.target.value))} disabled={editItem.credit === 0} />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditItem(null)}>Bekor qilish</Button>
+                <Button onClick={handleSaveEdit} className="bg-amber-600 hover:bg-amber-700 text-white cursor-pointer">
+                  Saqlash
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        <DeleteConfirmDialog
+          open={!!deletingItem}
+          onOpenChange={(open) => !open && setDeletingItem(null)}
+          onConfirm={handleDeleteItem}
+          title="Yozuvni o'chirish"
+          description="Haqiqatan ham ushbu solishtirma dalolatnoma yozuvini o'chirmoqchimisiz?"
+        />
       </DialogContent>
     </Dialog>
   )

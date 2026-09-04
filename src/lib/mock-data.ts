@@ -50,6 +50,7 @@ export interface MockOrder {
   status: "DRAFT" | "CONFIRMED" | "PREPARING" | "READY" | "DELIVERING" | "DELIVERED" | "CANCELLED"
   payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE"
   created_at: string
+  updated_at?: string
   items_count?: number
 }
 
@@ -418,6 +419,16 @@ export function setStoredCompletedVisitsCount(count: number): void {
 // Do'konlar (STORES) LOCALSTORAGE PERSISTENCE
 // ==========================================
 const STORAGE_KEY_STORES = "holva_crm_stored_stores"
+const STORAGE_KEY_DELETED_STORES = "holva_crm_deleted_stores"
+
+export function getDeletedStoreIds(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_STORES)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
 
 export function getStoredStores(): MockStore[] {
   if (typeof window === "undefined") return INITIAL_STORES
@@ -425,7 +436,10 @@ export function getStoredStores(): MockStore[] {
     const raw = localStorage.getItem(STORAGE_KEY_STORES)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        const deletedSet = new Set(getDeletedStoreIds())
+        return parsed.filter((s) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim()))
+      }
     }
   } catch (e) {
     console.error("Error reading stored stores:", e)
@@ -436,27 +450,38 @@ export function getStoredStores(): MockStore[] {
 export function saveStoredStores(stores: MockStore[]): void {
   if (typeof window === "undefined") return
   try {
-    localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(stores))
-    window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores } }))
+    const deletedSet = new Set(getDeletedStoreIds())
+    const filtered = stores.filter((s) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim()))
+    localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(filtered))
+    window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: filtered } }))
   } catch {}
 }
 
 export async function syncStoresFromServer(): Promise<MockStore[]> {
   if (typeof window === "undefined") return INITIAL_STORES
   const localStores = getStoredStores()
+  const deletedIds = getDeletedStoreIds()
   try {
     const res = await fetch("/api/sync/stores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "sync", stores: localStores }),
+      body: JSON.stringify({ action: "sync", stores: localStores, deletedStoreIds: deletedIds }),
       cache: "no-store",
     })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.stores) && data.stores.length > 0) {
-        localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(data.stores))
-        window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: data.stores } }))
-        return data.stores
+      if (data.success && Array.isArray(data.stores)) {
+        const deletedSet = new Set(deletedIds)
+        if (Array.isArray(data.deletedStoreIds)) {
+          data.deletedStoreIds.forEach((id: string) => deletedSet.add(id))
+          try {
+            localStorage.setItem(STORAGE_KEY_DELETED_STORES, JSON.stringify(Array.from(deletedSet)))
+          } catch {}
+        }
+        const filtered = data.stores.filter((s: MockStore) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim()))
+        localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(filtered))
+        window.dispatchEvent(new CustomEvent("stores-updated", { detail: { stores: filtered } }))
+        return filtered
       }
     }
   } catch (e) {
@@ -505,15 +530,30 @@ export function updateStoredStore(id: string, updates: Partial<MockStore>): Mock
 
 export function deleteStoredStore(id: string): MockStore[] {
   if (typeof window === "undefined") return INITIAL_STORES
+  const deletedIds = getDeletedStoreIds()
+  const set = new Set(deletedIds)
+  set.add(id)
+
   const list = getStoredStores()
-  const updatedList = list.filter((s) => s.id !== id)
+  const matched = list.find((s) => s.id === id || s.name === id)
+  if (matched) {
+    set.add(matched.id)
+    set.add(matched.name.toLowerCase().trim())
+  }
+
+  const updatedDeleted = Array.from(set)
+  try {
+    localStorage.setItem(STORAGE_KEY_DELETED_STORES, JSON.stringify(updatedDeleted))
+  } catch {}
+
+  const updatedList = list.filter((s) => !set.has(s.id) && !set.has(s.name.toLowerCase().trim()))
   saveStoredStores(updatedList)
 
   try {
     fetch("/api/sync/stores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", storeId: id }),
+      body: JSON.stringify({ action: "delete", storeId: id, deletedStoreIds: updatedDeleted }),
     }).catch(() => {})
   } catch {}
 
