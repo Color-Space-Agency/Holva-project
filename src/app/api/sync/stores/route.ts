@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { MockStore } from "@/lib/mock-data"
+import { INITIAL_STORES, MockStore } from "@/lib/mock-data"
 
 declare global {
   var __HOLVA_SERVER_STORES: MockStore[] | undefined
   var __HOLVA_DELETED_STORES: Set<string> | undefined
 }
 
-if (!globalThis.__HOLVA_SERVER_STORES) {
-  globalThis.__HOLVA_SERVER_STORES = []
+if (!globalThis.__HOLVA_SERVER_STORES || globalThis.__HOLVA_SERVER_STORES.length === 0) {
+  globalThis.__HOLVA_SERVER_STORES = [...INITIAL_STORES]
 }
 if (!globalThis.__HOLVA_DELETED_STORES) {
   globalThis.__HOLVA_DELETED_STORES = new Set<string>()
@@ -17,9 +17,13 @@ if (!globalThis.__HOLVA_DELETED_STORES) {
 export async function GET() {
   try {
     const deletedSet = globalThis.__HOLVA_DELETED_STORES || new Set<string>()
-    const stores = (globalThis.__HOLVA_SERVER_STORES || []).filter(
+    let stores = (globalThis.__HOLVA_SERVER_STORES || []).filter(
       (s) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim())
     )
+    if (stores.length === 0 && deletedSet.size === 0) {
+      stores = [...INITIAL_STORES]
+      globalThis.__HOLVA_SERVER_STORES = [...INITIAL_STORES]
+    }
     return NextResponse.json({
       success: true,
       stores,

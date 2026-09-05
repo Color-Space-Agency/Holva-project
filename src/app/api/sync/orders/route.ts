@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { MockOrder } from "@/lib/mock-data"
+import { INITIAL_ORDERS, MockOrder } from "@/lib/mock-data"
 
 declare global {
-  var __HOLVA_SERVER_ORDERS: MockOrder[] | undefined
+  var __HOLVA_SERVER_ORDERS: (MockOrder & { order_items?: any[] })[] | undefined
   var __HOLVA_DELETED_ORDERS: Set<string> | undefined
 }
 
-if (!globalThis.__HOLVA_SERVER_ORDERS) {
-  globalThis.__HOLVA_SERVER_ORDERS = []
+if (!globalThis.__HOLVA_SERVER_ORDERS || globalThis.__HOLVA_SERVER_ORDERS.length === 0) {
+  globalThis.__HOLVA_SERVER_ORDERS = [...INITIAL_ORDERS]
 }
 if (!globalThis.__HOLVA_DELETED_ORDERS) {
   globalThis.__HOLVA_DELETED_ORDERS = new Set<string>()
@@ -17,9 +17,13 @@ if (!globalThis.__HOLVA_DELETED_ORDERS) {
 export async function GET() {
   try {
     const deletedSet = globalThis.__HOLVA_DELETED_ORDERS || new Set<string>()
-    const orders = (globalThis.__HOLVA_SERVER_ORDERS || []).filter(
+    let orders = (globalThis.__HOLVA_SERVER_ORDERS || []).filter(
       (o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number)
     )
+    if (orders.length === 0 && deletedSet.size === 0) {
+      orders = [...INITIAL_ORDERS]
+      globalThis.__HOLVA_SERVER_ORDERS = [...INITIAL_ORDERS]
+    }
     return NextResponse.json({
       success: true,
       orders,

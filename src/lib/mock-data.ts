@@ -66,13 +66,192 @@ export interface MockEmployee {
   photo_url: string
 }
 
-export const INITIAL_PRODUCTS: MockProduct[] = []
+export const INITIAL_PRODUCTS: MockProduct[] = [
+  {
+    id: "p-1",
+    name: "Rulet 400 Gr",
+    sku: "HLV-841",
+    category: "Ruletlar",
+    price: 25000,
+    cost_price: 15000,
+    unit: "dona",
+    stock: 100,
+    min_stock: 20,
+    status: "ACTIVE",
+    image_url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?w=500&q=80",
+    description: "Yumshoq va shirin qaymoqli rulet holva",
+  },
+  {
+    id: "p-2",
+    name: "Klassik Holva",
+    sku: "HLV-842",
+    category: "Klassik",
+    price: 25000,
+    cost_price: 14000,
+    unit: "dona",
+    stock: 150,
+    min_stock: 30,
+    status: "ACTIVE",
+    image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=500&q=80",
+    description: "An'anaviy usulda tayyorlangan qadimiy klassik holva",
+  },
+  {
+    id: "p-3",
+    name: "Yong'oqli Holva",
+    sku: "HLV-843",
+    category: "Premium",
+    price: 35000,
+    cost_price: 20000,
+    unit: "dona",
+    stock: 80,
+    min_stock: 15,
+    status: "ACTIVE",
+    image_url: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=500&q=80",
+    description: "Yong'oq mag'zi bilan boyitilgan mayin holva",
+  },
+  {
+    id: "p-4",
+    name: "Shokoladli Holva",
+    sku: "HLV-844",
+    category: "Premium",
+    price: 30000,
+    cost_price: 18000,
+    unit: "dona",
+    stock: 90,
+    min_stock: 15,
+    status: "ACTIVE",
+    image_url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500&q=80",
+    description: "Haqiqiy shokolad qoplamali desert holva",
+  },
+]
 
 export const INITIAL_RAW_MATERIALS: MockRawMaterial[] = []
 
-export const INITIAL_STORES: MockStore[] = []
+export const INITIAL_STORES: MockStore[] = [
+  {
+    id: "st-1",
+    name: "Al-Baraka Do'koni",
+    phone: "+998 90 123 45 67",
+    address: "Toshkent sh., Chilonzor tumani, 9-mavze",
+    contact_person: "Otabek Qodirov",
+    credit_limit: 10000000,
+    current_balance: -2150000,
+    initial_balance: -500000,
+    status: "ACTIVE",
+    created_at: "2026-08-01T08:00:00.000Z",
+  },
+  {
+    id: "st-2",
+    name: "Saxovat Savdo Markazi",
+    phone: "+998 93 555 44 33",
+    address: "Toshkent sh., Yunusobod tumani, 4-mavze",
+    contact_person: "Dilshod Karimov",
+    credit_limit: 15000000,
+    current_balance: -2200000,
+    initial_balance: -800000,
+    status: "ACTIVE",
+    created_at: "2026-08-05T09:30:00.000Z",
+  },
+  {
+    id: "st-3",
+    name: "Shirinliklar Dunyosi",
+    phone: "+998 97 777 88 99",
+    address: "Toshkent sh., Mirobod tumani, Nukus ko'chasi",
+    contact_person: "Bobur Rahmonov",
+    credit_limit: 8000000,
+    current_balance: -1300000,
+    initial_balance: -300000,
+    status: "ACTIVE",
+    created_at: "2026-08-10T10:00:00.000Z",
+  },
+]
 
-export const INITIAL_ORDERS: MockOrder[] = []
+export const INITIAL_ORDERS: (MockOrder & { order_items?: any[] })[] = [
+  {
+    id: "ord-101",
+    order_number: "HLV-8401",
+    store_name: "Al-Baraka Do'koni",
+    agent_name: "Sardor Rahimov",
+    total_amount: 1250000,
+    paid_amount: 500000,
+    status: "DELIVERED",
+    payment_status: "PARTIAL",
+    created_at: "2026-08-25T10:30:00.000Z",
+    order_items: [
+      {
+        id: "oi-1",
+        product_name: "Rulet 400 Gr",
+        quantity: 50,
+        unit_price: 25000,
+        price: 25000,
+        products: { name: "Rulet 400 Gr", unit: "dona" },
+      },
+    ],
+  },
+  {
+    id: "ord-102",
+    order_number: "HLV-8402",
+    store_name: "Saxovat Savdo Markazi",
+    agent_name: "Sardor Rahimov",
+    total_amount: 2000000,
+    paid_amount: 600000,
+    status: "DELIVERED",
+    payment_status: "PARTIAL",
+    created_at: "2026-09-02T14:15:00.000Z",
+    order_items: [
+      {
+        id: "oi-2",
+        product_name: "Klassik Holva",
+        quantity: 80,
+        unit_price: 25000,
+        price: 25000,
+        products: { name: "Klassik Holva", unit: "dona" },
+      },
+    ],
+  },
+  {
+    id: "ord-103",
+    order_number: "HLV-8403",
+    store_name: "Shirinliklar Dunyosi",
+    agent_name: "Sardor Rahimov",
+    total_amount: 1400000,
+    paid_amount: 400000,
+    status: "CONFIRMED",
+    payment_status: "PARTIAL",
+    created_at: "2026-09-04T11:00:00.000Z",
+    order_items: [
+      {
+        id: "oi-3",
+        product_name: "Yong'oqli Holva",
+        quantity: 40,
+        unit_price: 35000,
+        price: 35000,
+        products: { name: "Yong'oqli Holva", unit: "dona" },
+      },
+    ],
+  },
+  {
+    id: "ord-104",
+    order_number: "HLV-8404",
+    store_name: "Al-Baraka Do'koni",
+    agent_name: "Sardor Rahimov",
+    total_amount: 900000,
+    paid_amount: 0,
+    status: "CONFIRMED",
+    payment_status: "PENDING",
+    created_at: "2026-09-05T09:45:00.000Z",
+    order_items: [
+      {
+        id: "oi-4",
+        product_name: "Shokoladli Holva",
+        quantity: 30,
+        unit_price: 30000,
+        price: 30000,
+        products: { name: "Shokoladli Holva", unit: "dona" },
+      },
+    ],
+  },
+]
 
 export const INITIAL_EMPLOYEES: MockEmployee[] = []
 
@@ -530,9 +709,10 @@ export function getStoredStores(): MockStore[] {
     const raw = localStorage.getItem(STORAGE_KEY_STORES)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         const deletedSet = new Set(getDeletedStoreIds())
-        return parsed.filter((s) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim()))
+        const filtered = parsed.filter((s) => !deletedSet.has(s.id) && !deletedSet.has(s.name.toLowerCase().trim()))
+        if (filtered.length > 0) return filtered
       }
     }
   } catch (e) {
@@ -675,9 +855,10 @@ export function getStoredOrders(): MockOrder[] {
     const raw = localStorage.getItem(STORAGE_KEY_ORDERS)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         const deletedSet = new Set(getDeletedOrderIds())
-        return parsed.filter((o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number))
+        const filtered = parsed.filter((o) => !deletedSet.has(o.id) && !deletedSet.has(o.order_number))
+        if (filtered.length > 0) return filtered
       }
     }
   } catch (e) {

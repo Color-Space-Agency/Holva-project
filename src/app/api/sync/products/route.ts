@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MockProduct } from "@/lib/mock-data";
+import { INITIAL_PRODUCTS, MockProduct } from "@/lib/mock-data";
 
 // Global server in-memory store across requests and devices
 declare global {
@@ -7,8 +7,8 @@ declare global {
   var __HOLVA_DELETED_PRODUCTS: Set<string> | undefined;
 }
 
-if (!globalThis.__HOLVA_SERVER_PRODUCTS) {
-  globalThis.__HOLVA_SERVER_PRODUCTS = [];
+if (!globalThis.__HOLVA_SERVER_PRODUCTS || globalThis.__HOLVA_SERVER_PRODUCTS.length === 0) {
+  globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
 }
 if (!globalThis.__HOLVA_DELETED_PRODUCTS) {
   globalThis.__HOLVA_DELETED_PRODUCTS = new Set<string>();
@@ -18,9 +18,13 @@ if (!globalThis.__HOLVA_DELETED_PRODUCTS) {
 export async function GET(request: NextRequest) {
   try {
     const deletedSet = globalThis.__HOLVA_DELETED_PRODUCTS || new Set<string>();
-    const products = (globalThis.__HOLVA_SERVER_PRODUCTS || []).filter(
+    let products = (globalThis.__HOLVA_SERVER_PRODUCTS || []).filter(
       (p) => !deletedSet.has(p.id) && !deletedSet.has(p.name.toLowerCase().trim())
     );
+    if (products.length === 0 && deletedSet.size === 0) {
+      products = [...INITIAL_PRODUCTS];
+      globalThis.__HOLVA_SERVER_PRODUCTS = [...INITIAL_PRODUCTS];
+    }
 
     return NextResponse.json({
       success: true,
