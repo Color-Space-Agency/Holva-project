@@ -1,14 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { getStoredOrders, deleteStoredOrder, updateStoredOrder, updateStoredStore, getStoredStores, MockStore } from "@/lib/mock-data"
-import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
-import { 
-  Download, Printer, ArrowUpRight, ArrowDownLeft, AlertCircle, Calendar as CalendarIcon, CheckCircle2, 
-  Clock, Edit, FileCheck2, Trash, Eye
+import {
+  buildStoreTransactions,
+  getStoreSummary,
+  TransactionEntry,
+} from "@/lib/store-financials"
+import { getStoredStores } from "@/lib/mock-data"
+import { formatCurrency, formatDateTime } from "@/lib/utils"
+import {
+  Download,
+  Printer,
+  ArrowUpRight,
+  ArrowDownLeft,
+  AlertCircle,
+  CheckCircle2,
+  FileCheck2,
+  Wallet,
+  ShoppingCart,
 } from "lucide-react"
-import { OrderViewDialog } from "@/components/orders/order-view-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,16 +32,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
-import { toast } from "sonner"
 
+// ─────────────────────────────────────────────────────
+// DocType badge
+// ─────────────────────────────────────────────────────
+function DocTypeBadge({ type }: { type: string }) {
+  if (type === "Mahsulot xaridi")
+    return (
+      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+        {type}
+      </span>
+    )
+  if (type === "To'lov qabuli")
+    return (
+      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+        {type}
+      </span>
+    )
+  return (
+    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+      {type}
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────
+// Props
+// ─────────────────────────────────────────────────────
 interface Props {
-  store?: MockStore | any
+  store?: any
   storeId?: string
 }
 
+// ─────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────
 export function AktSverkaDetailClient({ store, storeId }: Props) {
+  // Resolve active store from prop or storeId
   const [activeStore, setActiveStore] = useState<any>(store || null)
 
   useEffect(() => {
@@ -42,225 +80,196 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
     }
   }, [store, storeId])
 
+  // Date range defaults: current month
   const today = new Date()
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
   const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  
+
   const [startDate, setStartDate] = useState(firstDay.toISOString().split("T")[0])
   const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0])
 
-  const [viewingOrder, setViewingOrder] = useState<any>(null)
-  const [editItem, setEditItem] = useState<any>(null)
-  const [deletingItem, setDeletingItem] = useState<any>(null)
-  const [editDebitVal, setEditDebitVal] = useState<number>(0)
-  const [editCreditVal, setEditCreditVal] = useState<number>(0)
-  const [editDescVal, setEditDescVal] = useState<string>("")
+  // Summary (all-time, no date filter) for top cards
+  const summary = useMemo(() => {
+    if (!activeStore) return { initialDebt: 0, totalDebit: 0, totalCredit: 0, currentDebt: 0 }
+    return getStoreSummary(activeStore.id)
+  }, [activeStore])
 
-  const { data: entries, isLoading, refetch } = useQuery({
+  // Filtered entries for the table
+  const { data: entries = [], isLoading, refetch } = useQuery<TransactionEntry[]>({
     queryKey: ["akt-sverka-detail", activeStore?.id, startDate, endDate],
     enabled: !!activeStore,
-    queryFn: () => {
-      const orders = getStoredOrders().filter((o: any) => o.stores?.name === activeStore.name || o.store_name === activeStore.name || o.store_id === activeStore.id)
-      
-      const list: any[] = []
-      
-      orders.forEach((ord: any) => {
-        const ordDate = ord.created_at ? ord.created_at.split("T")[0] : "2026-08-29"
-        const agentName = ord.agent_name || (ord.profiles?.first_name ? `${ord.profiles.first_name} ${ord.profiles.last_name || ''}`.trim() : null) || "Sardor Rahimov"
-        
-        let editedAtStr: string | null = null
-        if (ord.updated_at && ord.created_at && ord.updated_at !== ord.created_at) {
-          try {
-            const cTime = new Date(ord.created_at).getTime()
-            const uTime = new Date(ord.updated_at).getTime()
-            if (!isNaN(cTime) && !isNaN(uTime) && uTime > cTime) {
-              const formatted = formatDateTime(ord.updated_at)
-              if (formatted && !formatted.toLowerCase().includes("invalid") && formatted !== "—") {
-                editedAtStr = formatted
-              }
-            }
-          } catch {}
-        }
-        
-        // Debit
-        if (ord.order_items && ord.order_items.length > 0) {
-          ord.order_items.forEach((item: any, idx: number) => {
-            const itemTotal = (item.quantity || 0) * (item.price || 0)
-            if (itemTotal > 0) {
-              list.push({
-                id: `ord-${ord.id}-item-${idx}`,
-                rawOrdId: ord.id,
-                date: ordDate,
-                fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
-                timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + idx,
-                docNumber: ord.order_number,
-                docType: "Mahsulot xaridi",
-                description: `${item.products?.name || 'Mahsulot'} - ${formatNumber(item.quantity || 0)} ${item.products?.unit || 'dona'} x ${formatCurrency(item.price || 0)}`,
-                receiver: agentName,
-                debit: itemTotal,
-                credit: 0,
-                editedAt: editedAtStr,
-                editedBy: editedAtStr ? "Super Admin" : null,
-              })
-            }
-          })
-        } else if (ord.total_amount > 0) {
-          list.push({
-            id: `ord-${ord.id}`,
-            rawOrdId: ord.id,
-            date: ordDate,
-            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
-            timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()),
-            docNumber: ord.order_number,
-            docType: "Umumiy xarid",
-            description: "Mahsulotlar xaridi (qisqacha)",
-            receiver: agentName,
-            debit: ord.total_amount,
-            credit: 0,
-            editedAt: editedAtStr,
-            editedBy: editedAtStr ? "Super Admin" : null,
-          })
-        }
-        
-        // Credit
-        if (ord.paid_amount > 0) {
-          list.push({
-            id: `pay-${ord.id}`,
-            rawOrdId: ord.id,
-            date: ordDate,
-            fullDate: ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? formatDateTime(ord.created_at) : ordDate,
-            timestamp: (ord.created_at && !isNaN(new Date(ord.created_at).getTime()) ? new Date(ord.created_at).getTime() : Date.now()) + 1000,
-            docNumber: `TOL-${ord.order_number.replace("HLV-", "").replace("ORD-", "")}`,
-            docType: "To'lov qabuli",
-            description: "Mijoz tomonidan to'lov amalga oshirildi",
-            receiver: agentName,
-            debit: 0,
-            credit: ord.paid_amount,
-            editedAt: null,
-            editedBy: null,
-          })
-        }
-      })
-      
-      list.sort((a, b) => a.timestamp - b.timestamp)
-      const inRange = list.filter(item => item.date >= startDate && item.date <= endDate)
-      
-      let runningBalance = 0
-      const processed = inRange.map(item => {
-        runningBalance += (item.debit - item.credit)
-        return { ...item, balance: runningBalance }
-      })
-
-      const totalDebit = processed.reduce((sum, i) => sum + i.debit, 0)
-      const totalCredit = processed.reduce((sum, i) => sum + i.credit, 0)
-      const finalBalance = processed.length > 0 ? processed[processed.length - 1].balance : 0
-
-      return { entries: processed, totalDebit, totalCredit, finalBalance }
-    }
+    queryFn: () => buildStoreTransactions(activeStore!.id, startDate, endDate),
+    staleTime: 0,
   })
 
+  // Listen for store / order updates
   useEffect(() => {
-    const handleUpdate = () => refetch()
-    window.addEventListener("orders-updated", handleUpdate)
-    window.addEventListener("stores-updated", handleUpdate)
+    const handle = () => refetch()
+    window.addEventListener("orders-updated", handle)
+    window.addEventListener("stores-updated", handle)
     return () => {
-      window.removeEventListener("orders-updated", handleUpdate)
-      window.removeEventListener("stores-updated", handleUpdate)
+      window.removeEventListener("orders-updated", handle)
+      window.removeEventListener("stores-updated", handle)
     }
   }, [refetch])
 
+  // Totals for the filtered period
+  const totalDebit = entries.reduce((s, e) => s + e.debit, 0)
+  const totalCredit = entries.reduce((s, e) => s + e.credit, 0)
+  const finalBalance = entries.length > 0 ? entries[entries.length - 1].balance : 0
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePrint = () => window.print()
 
   const handleExportCSV = () => {
-    if (!entries) return
-    const headers = ["Sana", "Hujjat", "Operatsiya", "Batafsil / Mahsulot", "Qabul qildi", "Qarz (Debet)", "To'lov (Kredit)", "Qoldiq"]
-    const rows = entries.entries.map((e) => [
-      e.fullDate, e.docNumber, e.docType, `"${e.description}"`, e.receiver, e.debit, e.credit, e.balance
+    if (!entries.length) return
+    const headers = [
+      "Sana",
+      "Hujjat №",
+      "Operatsiya turi",
+      "Batafsil",
+      "Agent",
+      "Qarz (Debet)",
+      "To'lov (Kredit)",
+      "Qoldiq",
+    ]
+    const rows = entries.map((e) => [
+      e.fullDate,
+      e.docNumber,
+      e.docType,
+      `"${e.description.replace(/"/g, "'")}"`,
+      e.agentName,
+      e.debit,
+      e.credit,
+      e.balance,
     ])
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const csv =
+      "\uFEFF" +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `Akt_Sverka_Batafsil_${store?.name}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `Akt_Sverka_${activeStore?.name || "do'kon"}_${startDate}_${endDate}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
-  const openEdit = (item: any) => {
-    setEditItem(item)
-    setEditDebitVal(item.debit || 0)
-    setEditCreditVal(item.credit || 0)
-    setEditDescVal(item.description || "")
+  // Guard: no store yet
+  if (!activeStore) {
+    return (
+      <div className="flex flex-col items-center justify-center p-16 text-gray-400 gap-4">
+        <FileCheck2 className="w-14 h-14 opacity-30" />
+        <p className="text-sm font-medium">Do'kon ma'lumotlari yuklanmoqda...</p>
+      </div>
+    )
   }
-
-  const handleSaveEdit = () => {
-    if (!editItem) return
-    try {
-      if (editItem.id.startsWith("ord-")) {
-        const ordId = editItem.rawOrdId || editItem.id.replace("ord-", "").split("-item-")[0]
-        updateStoredOrder(ordId, { total_amount: Number(editDebitVal) || 0, updated_at: new Date().toISOString() })
-      } else if (editItem.id.startsWith("pay-")) {
-        const ordId = editItem.rawOrdId || editItem.id.replace("pay-", "")
-        const newCred = Number(editCreditVal) || 0
-        const ords = getStoredOrders()
-        const targetOrd = ords.find(o => o.id === ordId || o.order_number === ordId)
-        const total = targetOrd?.total_amount || 0
-        updateStoredOrder(ordId, {
-          paid_amount: newCred,
-          payment_status: newCred >= total && total > 0 ? "PAID" : newCred > 0 ? "PARTIAL" : "PENDING",
-          updated_at: new Date().toISOString(),
-        })
-      }
-      toast.success("O'zgarishlar muvaffaqiyatli saqlandi!")
-      setEditItem(null)
-      refetch()
-    } catch {
-      toast.error("Xatolik yuz berdi")
-    }
-  }
-
-  const handleDeleteItem = () => {
-    if (!deletingItem) return
-    try {
-      if (deletingItem.id.startsWith("ord-")) {
-        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("ord-", "").split("-item-")[0]
-        deleteStoredOrder(ordId)
-        if (deletingItem.docNumber) deleteStoredOrder(deletingItem.docNumber)
-        toast.success("Sotuv hujjati o'chirildi")
-      } else if (deletingItem.id.startsWith("pay-")) {
-        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("pay-", "")
-        updateStoredOrder(ordId, { paid_amount: 0, payment_status: "PENDING", updated_at: new Date().toISOString() })
-        toast.success("To'lov yozuvi o'chirildi")
-      }
-      refetch()
-    } catch {
-      toast.error("Xatolik yuz berdi")
-    } finally {
-      setDeletingItem(null)
-    }
-  }
-
-  if (!store) return null
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-wrap items-end gap-4 print:hidden shadow-sm">
+      {/* ── Summary Cards 2x2 ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* Initial debt */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">Boshlang'ich qoldiq</p>
+            <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400">
+              {formatCurrency(summary.initialDebt)}
+            </h3>
+          </div>
+          <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-full">
+            <Wallet className="w-5 h-5 text-amber-500" />
+          </div>
+        </div>
+
+        {/* Total purchases */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">Jami xaridlar</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              {formatCurrency(summary.totalDebit)}
+            </h3>
+          </div>
+          <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+            <ShoppingCart className="w-5 h-5 text-gray-500" />
+          </div>
+        </div>
+
+        {/* Total payments */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800/50 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">Jami to'lovlar</p>
+            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(summary.totalCredit)}
+            </h3>
+          </div>
+          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+            <ArrowDownLeft className="w-5 h-5 text-emerald-500" />
+          </div>
+        </div>
+
+        {/* Current debt — RED & prominent */}
+        <div
+          className={`rounded-xl p-4 border shadow-sm flex items-center justify-between ${
+            summary.currentDebt > 0
+              ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800"
+              : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
+          }`}
+        >
+          <div>
+            <p className="text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">
+              Joriy qarzdorlik
+            </p>
+            <h3
+              className={`text-2xl font-extrabold ${
+                summary.currentDebt > 0
+                  ? "text-red-700 dark:text-red-400"
+                  : "text-emerald-700 dark:text-emerald-400"
+              }`}
+            >
+              {formatCurrency(Math.abs(summary.currentDebt))}
+            </h3>
+            {summary.currentDebt > 0 && (
+              <p className="text-xs text-red-500 font-semibold mt-0.5">Qarz bor</p>
+            )}
+          </div>
+          <div
+            className={`p-2 rounded-full ${
+              summary.currentDebt > 0
+                ? "bg-red-100 dark:bg-red-900/40"
+                : "bg-emerald-100 dark:bg-emerald-900/40"
+            }`}
+          >
+            {summary.currentDebt > 0 ? (
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            ) : (
+              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Date Range Filter + Actions ──────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-wrap items-end gap-4 print:hidden">
         <div className="space-y-1.5">
           <Label className="font-semibold text-gray-600 dark:text-gray-400">Dan (Sana)</Label>
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-            <Input type="date" className="pl-9 bg-gray-50 dark:bg-gray-950" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </div>
+          <Input
+            type="date"
+            className="bg-gray-50 dark:bg-gray-950"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label className="font-semibold text-gray-600 dark:text-gray-400">Gacha (Sana)</Label>
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-            <Input type="date" className="pl-9 bg-gray-50 dark:bg-gray-950" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </div>
+          <Input
+            type="date"
+            className="bg-gray-50 dark:bg-gray-950"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <Button variant="outline" onClick={handleExportCSV} className="gap-2 bg-white">
@@ -272,116 +281,101 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      {entries && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-sm text-gray-500 font-medium mb-1">Jami xarid (Debet)</p>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(entries.totalDebit)}</h3>
-            </div>
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-full">
-              <ArrowUpRight className="w-6 h-6 text-red-500" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-sm text-gray-500 font-medium mb-1">Qabul qilingan to'lov</p>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(entries.totalCredit)}</h3>
-            </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
-              <ArrowDownLeft className="w-6 h-6 text-emerald-500" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-sm text-gray-500 font-medium mb-1">Qarzdorlik qoldig'i</p>
-              <h3 className={`text-xl sm:text-2xl font-bold ${entries.finalBalance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                {formatCurrency(Math.abs(entries.finalBalance))}
-              </h3>
-            </div>
-            <div className={`p-3 rounded-full ${entries.finalBalance > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
-              {entries.finalBalance > 0 ? <AlertCircle className="w-6 h-6 text-red-500" /> : <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+      {/* ── Transaction Table ────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className="min-w-[900px]">
+          <Table className="min-w-[820px]">
             <TableHeader className="bg-gray-50/50 dark:bg-gray-800/80">
               <TableRow>
-                <TableHead className="whitespace-nowrap">Sana va vaqt</TableHead>
-                <TableHead className="whitespace-nowrap">Hujjat / Qabul qildi</TableHead>
-                <TableHead className="whitespace-nowrap">Mahsulot / Harakat batafsil</TableHead>
-                <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">Xarid (Qarz)</TableHead>
-                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">To'lov qildi</TableHead>
-                <TableHead className="text-right font-bold whitespace-nowrap">Joriy qoldiq</TableHead>
-                <TableHead className="w-[80px] print:hidden text-right">Amallar</TableHead>
+                <TableHead className="whitespace-nowrap">Sana</TableHead>
+                <TableHead className="whitespace-nowrap">Hujjat №</TableHead>
+                <TableHead className="whitespace-nowrap">Operatsiya turi</TableHead>
+                <TableHead>Batafsil</TableHead>
+                <TableHead className="whitespace-nowrap">Agent</TableHead>
+                <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">
+                  Qarz (Debet)
+                </TableHead>
+                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  To'lov (Kredit)
+                </TableHead>
+                <TableHead className="text-right font-bold whitespace-nowrap">Qoldiq</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="h-32 text-center text-gray-500">Yuklanmoqda...</TableCell></TableRow>
-              ) : entries?.entries.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="h-32 text-center text-gray-500">Bu davrda oldi-berdi topilmadi.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8} className="h-32 text-center text-gray-500">
+                    Yuklanmoqda...
+                  </TableCell>
+                </TableRow>
+              ) : entries.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-40 text-center">
+                    <div className="flex flex-col items-center gap-3 text-gray-400">
+                      <FileCheck2 className="w-12 h-12 opacity-30" />
+                      <p className="text-sm font-medium">Bu davrda oldi-berdi topilmadi.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : (
-                entries?.entries.map((item) => (
-                  <TableRow key={item.id} className="group hover:bg-gray-50/80 dark:hover:bg-gray-800/50">
-                    <TableCell className="whitespace-nowrap">
-                      <div className="font-medium text-[13px]">{item.fullDate}</div>
-                      {item.editedAt && (
-                        <div className="flex items-center text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium" title={`O'zgartirgan: ${item.editedBy}`}>
-                          <Clock className="w-3 h-3 mr-1" />
-                          Tahrirlangan: {item.editedAt}
-                        </div>
-                      )}
+                entries.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    className="hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors"
+                  >
+                    {/* Date */}
+                    <TableCell className="whitespace-nowrap text-[13px] font-medium">
+                      {item.fullDate}
                     </TableCell>
+
+                    {/* Doc number */}
                     <TableCell className="whitespace-nowrap">
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">{item.docNumber}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Agent: {item.receiver}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">{item.description}</div>
-                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
-                        {item.docType || "Harakat"}
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-[13px]">
+                        {item.docNumber}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right font-medium text-red-600 dark:text-red-400 whitespace-nowrap">
-                      {item.debit > 0 ? formatCurrency(item.debit) : "-"}
+
+                    {/* Doc type badge */}
+                    <TableCell className="whitespace-nowrap">
+                      <DocTypeBadge type={item.docType} />
                     </TableCell>
-                    <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                      {item.credit > 0 ? formatCurrency(item.credit) : "-"}
+
+                    {/* Description */}
+                    <TableCell className="max-w-xs">
+                      <p className="text-[13px] text-gray-800 dark:text-gray-200 line-clamp-2">
+                        {item.description}
+                      </p>
                     </TableCell>
-                    <TableCell className="text-right font-bold whitespace-nowrap">
-                      <Badge variant="outline" className={item.balance > 0 ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900" : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"}>
+
+                    {/* Agent */}
+                    <TableCell className="whitespace-nowrap text-xs text-gray-500">
+                      {item.agentName}
+                    </TableCell>
+
+                    {/* Debit */}
+                    <TableCell className="text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+                      {item.debit > 0 ? formatCurrency(item.debit) : "—"}
+                    </TableCell>
+
+                    {/* Credit */}
+                    <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      {item.credit > 0 ? formatCurrency(item.credit) : "—"}
+                    </TableCell>
+
+                    {/* Balance */}
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Badge
+                        variant="outline"
+                        className={
+                          item.balance > 0
+                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"
+                        }
+                      >
                         {formatCurrency(Math.abs(item.balance))}
                         {item.balance > 0 ? " (Qarz)" : ""}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="print:hidden text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setViewingOrder(item)
-                          }}
-                          title="Hujjatni to'liq ko'rish"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600" onClick={() => openEdit(item)} title="Tahrirlash">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-red-600" onClick={() => setDeletingItem(item)} title="O'chirish">
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -389,50 +383,22 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
             </TableBody>
           </Table>
         </div>
+
+        {/* Footer summary row */}
+        {entries.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-3 flex flex-wrap gap-6 justify-end text-sm font-semibold">
+            <span className="text-red-600">
+              Jami debet: {formatCurrency(totalDebit)}
+            </span>
+            <span className="text-emerald-600">
+              Jami kredit: {formatCurrency(totalCredit)}
+            </span>
+            <span className={finalBalance > 0 ? "text-red-700" : "text-emerald-700"}>
+              Yakuniy qoldiq: {formatCurrency(Math.abs(finalBalance))}{finalBalance > 0 ? " (Qarz)" : ""}
+            </span>
+          </div>
+        )}
       </div>
-
-      {editItem && (
-        <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Yozuvni tahrirlash</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Harakat (Izoh)</Label>
-                <Input value={editDescVal} onChange={(e) => setEditDescVal(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Xarid Summasi (Debet)</Label>
-                  <Input type="number" value={editDebitVal} onChange={(e) => setEditDebitVal(Number(e.target.value))} disabled={editItem.debit === 0} />
-                </div>
-                <div className="space-y-2">
-                  <Label>To'lov Summasi (Kredit)</Label>
-                  <Input type="number" value={editCreditVal} onChange={(e) => setEditCreditVal(Number(e.target.value))} disabled={editItem.credit === 0} />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditItem(null)}>Bekor qilish</Button>
-              <Button onClick={handleSaveEdit} className="bg-amber-600 hover:bg-amber-700 text-white">Saqlash</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <DeleteConfirmDialog
-        open={!!deletingItem}
-        onOpenChange={(open) => !open && setDeletingItem(null)}
-        onConfirm={handleDeleteItem}
-        title="Yozuvni o'chirish"
-        description="Haqiqatan ham solishtirma dalolatnomadagi ushbu yozuvni o'chirmoqchimisiz?"
-      />
-
-      <OrderViewDialog
-        open={!!viewingOrder}
-        onOpenChange={(open) => !open && setViewingOrder(null)}
-        orderId={viewingOrder?.rawOrdId}
-        orderData={viewingOrder}
-      />
     </div>
   )
 }
