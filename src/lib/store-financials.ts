@@ -1,4 +1,4 @@
-﻿import { getStoredStores, getStoredOrders, isRealSupabaseConfigured } from "@/lib/mock-data"
+﻿import { getStoredStores, getStoredOrders } from "@/lib/mock-data"
 import { formatCurrency, formatNumber, formatDateTime } from "@/lib/utils"
 
 export type DocType = "Boshlang'ich qoldiq" | "Mahsulot xaridi" | "To'lov qabuli"
@@ -32,10 +32,10 @@ export interface StoreFinancials {
 }
 
 /**
- * Proper accounting reconciliation ledger (Akt Sverka) engine:
- * 1. Computes all historical transactions for each store.
- * 2. Rolls all transactions prior to startDate into an accurate "Davr boshiga qoldiq qarz" (Opening Balance).
- * 3. Tracks independent per-store running balances.
+ * Bulletproof accounting ledger for Akt Sverka:
+ * - Accurately accounts for store.initial_balance AND store.current_balance
+ * - Captures all orders and payments
+ * - Always shows opening balance row if any prior debt exists
  */
 function buildEntries(storeId: string, startDate?: string, endDate?: string): TransactionEntry[] {
   const stores = getStoredStores()
@@ -45,28 +45,27 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
   const matchingStores =
     storeId === "all"
       ? stores
-      : stores.filter((s) => s.id === storeId || s.name === storeId)
-
-  // Map to track running balance per store
-  const storeBalanceMap = new Map<string, number>()
+      : stores.filter((s) => s.id === storeId || s.name.toLowerCase().trim() === storeId.toLowerCase().trim())
 
   for (const store of matchingStores) {
     const sId = store.id
     const sName = (store.name || "").toLowerCase().trim()
-    const initialBalance = Math.abs(store.initial_balance || 0)
+    const initialDebt = Math.max(
+      Math.abs(store.initial_balance || 0),
+      store.current_balance && store.current_balance < 0 ? Math.abs(store.current_balance) : 0
+    )
 
     // Find all orders for this store
     const storeOrders = (allOrders as any[]).filter((o: any) => {
       const oStoreName = (o.stores?.name || o.store_name || "").toLowerCase().trim()
       const oStoreId = o.store_id || o.stores?.id
       return (
-        oStoreId === sId ||
-        oStoreName === sName ||
+        (sId && oStoreId === sId) ||
+        (sName && oStoreName === sName) ||
         (sName && oStoreName && (sName.includes(oStoreName) || oStoreName.includes(sName)))
       )
     })
 
-    // Build complete chronological timeline of events for this store
     const allStoreEvents: Array<{
       date: string
       fullDate: string
@@ -103,13 +102,12 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
         desc = "Mahsulotlar xaridi"
       }
 
-      // Debit event: Order total purchase
       if ((ord.total_amount || 0) > 0) {
         allStoreEvents.push({
           date: ordDate,
           fullDate,
           timestamp: ts,
-          docNumber: ord.order_number || `ORD-${ord.id.slice(-6)}`,
+          docNumber: ord.order_number || `ORD-${String(ord.id).slice(-6)}`,
           docType: "Mahsulot xaridi",
           description: desc,
           agentName,
@@ -120,13 +118,12 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
         })
       }
 
-      // Credit event: Payment received
       if ((ord.paid_amount || 0) > 0) {
         allStoreEvents.push({
           date: ordDate,
           fullDate,
           timestamp: ts + 1000,
-          docNumber: `TOL-${(ord.order_number || ord.id).replace("HLV-", "").replace("ORD-", "")}`,
+          docNumber: `TOL-${String(ord.order_number || ord.id).replace("HLV-", "").replace("ORD-", "")}`,
           docType: "To'lov qabuli",
           description: "Mijoz tomonidan to'lov amalga oshirildi",
           agentName,
@@ -137,11 +134,9 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
       }
     }
 
-    // Sort this store's events by timestamp
     allStoreEvents.sort((a, b) => a.timestamp - b.timestamp)
 
-    // Calculate opening balance before startDate
-    let openingBalance = initialBalance
+    let openingBalance = initialDebt
     const inRangeEvents: typeof allStoreEvents = []
 
     for (const ev of allStoreEvents) {
@@ -152,31 +147,26 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
       }
     }
 
-    // Set initial running balance for this store
     let currentStoreBalance = openingBalance
 
-    // Add opening balance entry if > 0 or if single store view
-    if (openingBalance > 0 || (storeId !== "all" && initialBalance > 0)) {
+    if (openingBalance > 0 || initialDebt > 0 || (storeId !== "all" && inRangeEvents.length === 0)) {
       result.push({
         id: `init-${store.id}`,
         date: startDate || "2026-01-01",
-        fullDate: startDate ? `${startDate} (Davr boshi)` : "2026-01-01",
+        fullDate: startDate ? `${startDate} (Boshlang'ich qoldiq)` : "2026-01-01",
         timestamp: 0,
         docNumber: "BOSH-001",
         storeName: store.name,
         storeId: store.id,
         docType: "Boshlang'ich qoldiq",
-        description: startDate 
-          ? `Davr boshiga qoldiq qarz (${startDate} holatiga)` 
-          : "Oldingi davrdan o'tgan boshlang'ich qarz",
+        description: `Boshlang'ich qoldiq qarz summasi (${formatCurrency(openingBalance || initialDebt)})`,
         agentName: "Tizim",
-        debit: openingBalance > 0 ? openingBalance : 0,
-        credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-        balance: currentStoreBalance,
+        debit: openingBalance > 0 ? openingBalance : initialDebt,
+        credit: 0,
+        balance: currentStoreBalance || initialDebt,
       })
     }
 
-    // Add all events in the selected date range
     for (const ev of inRangeEvents) {
       currentStoreBalance += (ev.debit - ev.credit)
       result.push({
@@ -197,16 +187,9 @@ function buildEntries(storeId: string, startDate?: string, endDate?: string): Tr
         orderItems: ev.orderItems,
       })
     }
-
-    storeBalanceMap.set(store.id, currentStoreBalance)
   }
 
-  // Sort final output entries by timestamp
-  result.sort((a, b) => {
-    if (a.timestamp === b.timestamp) return 0
-    return a.timestamp - b.timestamp
-  })
-
+  result.sort((a, b) => a.timestamp - b.timestamp)
   return result
 }
 
@@ -221,14 +204,17 @@ export function buildAllStoresFinancials(): StoreFinancials[] {
   return stores.map((store) => {
     const sId = store.id
     const sName = (store.name || "").toLowerCase().trim()
-    const initialDebt = Math.abs(store.initial_balance || 0)
+    const initialDebt = Math.max(
+      Math.abs(store.initial_balance || 0),
+      store.current_balance && store.current_balance < 0 ? Math.abs(store.current_balance) : 0
+    )
 
     const storeOrders = (allOrders as any[]).filter((o: any) => {
       const oStoreName = (o.stores?.name || o.store_name || "").toLowerCase().trim()
       const oStoreId = o.store_id || o.stores?.id
       return (
-        oStoreId === sId ||
-        oStoreName === sName ||
+        (sId && oStoreId === sId) ||
+        (sName && oStoreName === sName) ||
         (sName && oStoreName && (sName.includes(oStoreName) || oStoreName.includes(sName)))
       )
     })
@@ -258,19 +244,22 @@ export function getStoreSummary(storeId: string): {
 } {
   const stores = getStoredStores()
   const allOrders = getStoredOrders()
-  const store = stores.find((s) => s.id === storeId || s.name === storeId)
+  const store = stores.find((s) => s.id === storeId || s.name.toLowerCase().trim() === storeId.toLowerCase().trim())
   if (!store) return { initialDebt: 0, totalDebit: 0, totalCredit: 0, currentDebt: 0 }
 
   const sId = store.id
   const sName = (store.name || "").toLowerCase().trim()
-  const initialDebt = Math.abs(store.initial_balance || 0)
+  const initialDebt = Math.max(
+    Math.abs(store.initial_balance || 0),
+    store.current_balance && store.current_balance < 0 ? Math.abs(store.current_balance) : 0
+  )
 
   const storeOrders = (allOrders as any[]).filter((o: any) => {
     const oStoreName = (o.stores?.name || o.store_name || "").toLowerCase().trim()
     const oStoreId = o.store_id || o.stores?.id
     return (
-      oStoreId === sId ||
-      oStoreName === sName ||
+      (sId && oStoreId === sId) ||
+      (sName && oStoreName === sName) ||
       (sName && oStoreName && (sName.includes(oStoreName) || oStoreName.includes(sName)))
     )
   })
