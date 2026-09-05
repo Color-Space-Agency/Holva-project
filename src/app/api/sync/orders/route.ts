@@ -9,8 +9,11 @@ declare global {
 if (!globalThis.__HOLVA_SERVER_ORDERS || globalThis.__HOLVA_SERVER_ORDERS.length === 0) {
   globalThis.__HOLVA_SERVER_ORDERS = [...INITIAL_ORDERS]
 }
+const DUMMY_ORDERS_PURGED = ["ord-101", "ord-102", "ord-103", "ord-104", "hlv-8401", "hlv-8402", "hlv-8403", "hlv-8404"]
 if (!globalThis.__HOLVA_DELETED_ORDERS) {
-  globalThis.__HOLVA_DELETED_ORDERS = new Set<string>()
+  globalThis.__HOLVA_DELETED_ORDERS = new Set<string>(DUMMY_ORDERS_PURGED)
+} else {
+  DUMMY_ORDERS_PURGED.forEach((id) => globalThis.__HOLVA_DELETED_ORDERS!.add(id))
 }
 
 // GET /api/sync/orders — Get all orders

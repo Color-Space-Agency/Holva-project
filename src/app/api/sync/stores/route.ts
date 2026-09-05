@@ -9,8 +9,11 @@ declare global {
 if (!globalThis.__HOLVA_SERVER_STORES || globalThis.__HOLVA_SERVER_STORES.length === 0) {
   globalThis.__HOLVA_SERVER_STORES = [...INITIAL_STORES]
 }
+const DUMMY_STORES_PURGED = ["st-2", "st-3", "al-baraka do'koni", "saxovat savdo markazi", "shirinliklar dunyosi"]
 if (!globalThis.__HOLVA_DELETED_STORES) {
-  globalThis.__HOLVA_DELETED_STORES = new Set<string>()
+  globalThis.__HOLVA_DELETED_STORES = new Set<string>(DUMMY_STORES_PURGED)
+} else {
+  DUMMY_STORES_PURGED.forEach((id) => globalThis.__HOLVA_DELETED_STORES!.add(id))
 }
 
 // GET /api/sync/stores — Get all stores

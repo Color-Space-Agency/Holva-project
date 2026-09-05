@@ -607,13 +607,16 @@ export function setStoredCompletedVisitsCount(count: number): void {
 const STORAGE_KEY_STORES = "holva_crm_stored_stores"
 const STORAGE_KEY_DELETED_STORES = "holva_crm_deleted_stores"
 
+const DUMMY_STORES_TO_PURGE = ["al-baraka do'koni", "saxovat savdo markazi", "shirinliklar dunyosi"]
+
 export function getDeletedStoreIds(): string[] {
-  if (typeof window === "undefined") return []
+  const base = [...DUMMY_STORES_TO_PURGE]
+  if (typeof window === "undefined") return base
   try {
     const raw = localStorage.getItem(STORAGE_KEY_DELETED_STORES)
-    if (raw) return JSON.parse(raw)
+    if (raw) return Array.from(new Set([...base, ...JSON.parse(raw)]))
   } catch {}
-  return []
+  return base
 }
 
 export function getStoredStores(): MockStore[] {
@@ -753,13 +756,16 @@ export function deleteStoredStore(id: string): MockStore[] {
 const STORAGE_KEY_ORDERS = "holva_crm_stored_orders"
 const STORAGE_KEY_DELETED_ORDERS = "holva_crm_deleted_orders"
 
+const DUMMY_ORDERS_TO_PURGE = ["ord-101", "ord-102", "ord-103", "ord-104", "hlv-8401", "hlv-8402", "hlv-8403", "hlv-8404"]
+
 export function getDeletedOrderIds(): string[] {
-  if (typeof window === "undefined") return []
+  const base = [...DUMMY_ORDERS_TO_PURGE]
+  if (typeof window === "undefined") return base
   try {
     const raw = localStorage.getItem(STORAGE_KEY_DELETED_ORDERS)
-    if (raw) return JSON.parse(raw)
+    if (raw) return Array.from(new Set([...base, ...JSON.parse(raw)]))
   } catch {}
-  return []
+  return base
 }
 
 export function getStoredOrders(): MockOrder[] {
