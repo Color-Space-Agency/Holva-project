@@ -164,6 +164,18 @@ export const INITIAL_STORES: MockStore[] = [
     status: "ACTIVE",
     created_at: "2026-08-10T10:00:00.000Z",
   },
+  {
+    id: "st-4",
+    name: "Ayrilish",
+    phone: "+998 90 567 76 45",
+    address: "Ayrilish Qo'qon",
+    contact_person: "Mijoz",
+    credit_limit: 10000000,
+    current_balance: -25000,
+    initial_balance: 0,
+    status: "ACTIVE",
+    created_at: "2026-09-05T08:00:00.000Z",
+  },
 ]
 
 export const INITIAL_ORDERS: (MockOrder & { order_items?: any[] })[] = [
@@ -248,6 +260,27 @@ export const INITIAL_ORDERS: (MockOrder & { order_items?: any[] })[] = [
         unit_price: 30000,
         price: 30000,
         products: { name: "Shokoladli Holva", unit: "dona" },
+      },
+    ],
+  },
+  {
+    id: "ord-105",
+    order_number: "HLV-8405",
+    store_name: "Ayrilish",
+    agent_name: "Sardor Rahimov",
+    total_amount: 25000,
+    paid_amount: 0,
+    status: "CONFIRMED",
+    payment_status: "PENDING",
+    created_at: "2026-09-05T14:30:00.000Z",
+    order_items: [
+      {
+        id: "oi-5",
+        product_name: "Rulet 400 Gr",
+        quantity: 1,
+        unit_price: 25000,
+        price: 25000,
+        products: { name: "Rulet 400 Gr", unit: "dona" },
       },
     ],
   },

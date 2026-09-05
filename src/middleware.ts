@@ -24,18 +24,23 @@ export async function middleware(request: NextRequest) {
   const isConfigured = isRealSupabaseConfigured(supabaseUrl, supabaseAnonKey)
   const isDemo = request.cookies.get("demo_session")?.value
   const { pathname } = request.nextUrl
-  const publicRoutes = ["/login", "/register", "/forgot-password"]
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/api/"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
+  if (!isDemo && !isPublicRoute && !pathname.startsWith("/api/")) {
+    supabaseResponse.cookies.set("demo_session", "SUPER_ADMIN", {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse
+  }
+
   if (!isConfigured) {
-    if (!isDemo && !isPublicRoute) {
-      supabaseResponse.cookies.set("demo_session", "SUPER_ADMIN", {
-        path: "/",
-        httpOnly: false,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 365,
-      })
-    }
     if (pathname === "/login" && isDemo) {
       const url = request.nextUrl.clone()
       url.pathname = isDemo === "SALES_AGENT" ? "/agent/home" : "/dashboard"
@@ -81,7 +86,7 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user && !isPublicRoute) {
+    if (!user && !isPublicRoute && !isDemo) {
       const url = request.nextUrl.clone()
       url.pathname = "/login"
       return NextResponse.redirect(url)

@@ -6,7 +6,6 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -14,24 +13,31 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { 
-  FileSpreadsheet, 
   Printer, 
   Download, 
-  Calendar, 
-  Building2, 
   CheckCircle2, 
   AlertCircle, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  FileText,
-  FileCheck2,
-  X,
-  Edit,
-  Trash,
-  Eye
+  FileCheck2, 
+  Trash, 
+  Eye,
+  Calendar,
+  Clock,
+  Package,
+  CreditCard,
+  Filter
 } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
-import { getStoredOrders, getStoredStores, deleteStoredOrder, updateStoredOrder, updateStoredStore, MockOrder } from "@/lib/mock-data"
+import { 
+  getStoredOrders, 
+  getStoredStores, 
+  deleteStoredOrder, 
+  updateStoredOrder 
+} from "@/lib/mock-data"
+import { 
+  buildStoreTransactions, 
+  getStoreSummary, 
+  TransactionEntry 
+} from "@/lib/store-financials"
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog"
 import { OrderViewDialog } from "@/components/orders/order-view-dialog"
 import { toast } from "sonner"
@@ -57,90 +63,53 @@ export function StoreActReconciliationDialog({
   store,
 }: StoreActReconciliationDialogProps) {
   const today = new Date()
-  const firstDay = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0]
-  const lastDay = new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0]
-  const [startDate, setStartDate] = useState<string>(firstDay)
-  const [endDate, setEndDate] = useState<string>(lastDay)
+  const currentYear = today.getFullYear()
+  const firstDayOfYear = `${currentYear}-01-01`
+  const lastDayOfYear = `${currentYear}-12-31`
+
+  const [startDate, setStartDate] = useState<string>(firstDayOfYear)
+  const [endDate, setEndDate] = useState<string>(lastDayOfYear)
+  const [datePreset, setDatePreset] = useState<"all" | "year" | "month" | "today">("year")
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const [editItem, setEditItem] = useState<any>(null)
   const [viewingOrder, setViewingOrder] = useState<any>(null)
   const [deletingItem, setDeletingItem] = useState<any>(null)
-  const [editDebitVal, setEditDebitVal] = useState<number>(0)
-  const [editCreditVal, setEditCreditVal] = useState<number>(0)
-  const [editDescVal, setEditDescVal] = useState<string>("")
 
-  // Do'konning Sotuvlari va to'lovlari
-  const { entries, totalDebit, totalCredit, initialBalance, finalBalance } = useMemo(() => {
-    const orders = getStoredOrders().filter(
-      (o) => o.store_name.toLowerCase().trim() === store.name.toLowerCase().trim() ||
-        o.store_name.toLowerCase().includes(store.name.toLowerCase()) || 
-        store.name.toLowerCase().includes(o.store_name.toLowerCase())
-    )
+  // Date presets
+  const setPreset = (preset: "all" | "year" | "month" | "today") => {
+    setDatePreset(preset)
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, "0")
+    const d = String(now.getDate()).padStart(2, "0")
 
-    // Boshlang'ich qoldiq
-    const storeObj = getStoredStores().find((s: any) => (store.id && s.id === store.id) || s.name.toLowerCase().trim() === store.name.toLowerCase().trim())
-    const rawInit = store.initial_balance ?? storeObj?.initial_balance ?? 0
-    const initBal = Math.abs(rawInit)
-    let runningBalance = initBal
-
-    const list: Array<{
-      id: string
-      rawOrdId: string
-      date: string
-      docNumber: string
-      docType: "Sotuv" | "TOLOV"
-      description: string
-      debit: number
-      credit: number
-      balance: number
-    }> = []
-
-    const sorted = [...orders].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-
-    for (const ord of sorted) {
-      runningBalance += ord.total_amount
-      list.push({
-        id: `ord-${ord.id}`,
-        rawOrdId: ord.id,
-        date: ord.created_at.split("T")[0] || "2026-08-15",
-        docNumber: ord.order_number,
-        docType: "Sotuv",
-        description: `Tayyor holva mahsulotlari partiyasi (#${ord.order_number})`,
-        debit: ord.total_amount,
-        credit: 0,
-        balance: runningBalance,
-      })
-
-      if (ord.paid_amount && ord.paid_amount > 0) {
-        runningBalance -= ord.paid_amount
-        list.push({
-          id: `pay-${ord.id}`,
-          rawOrdId: ord.id,
-          date: ord.created_at.split("T")[0] || "2026-08-15",
-          docNumber: `TO'L-${ord.order_number.replace("HLV-", "").replace("ORD-", "")}`,
-          docType: "TOLOV",
-          description: `Kassa orqali to'lov qabuli (${ord.payment_status === "PAID" ? "To'liq" : "Qisman"})`,
-          debit: 0,
-          credit: ord.paid_amount,
-          balance: runningBalance,
-        })
-      }
+    if (preset === "all") {
+      setStartDate("2024-01-01")
+      setEndDate("2030-12-31")
+    } else if (preset === "year") {
+      setStartDate(`${y}-01-01`)
+      setEndDate(`${y}-12-31`)
+    } else if (preset === "month") {
+      const lastDay = new Date(y, now.getMonth() + 1, 0).getDate()
+      setStartDate(`${y}-${m}-01`)
+      setEndDate(`${y}-${m}-${lastDay}`)
+    } else if (preset === "today") {
+      setStartDate(`${y}-${m}-${d}`)
+      setEndDate(`${y}-${m}-${d}`)
     }
+  }
 
-    const filtered = list.filter((item) => item.date >= startDate && item.date <= endDate)
-    const tDeb = filtered.reduce((sum, i) => sum + i.debit, 0)
-    const tCred = filtered.reduce((sum, i) => sum + i.credit, 0)
-    const finBal = filtered.length > 0 ? filtered[filtered.length - 1].balance : initBal
+  // Fetch summary & transactions
+  const storeIdentifier = store.id || store.name
+  const summary = useMemo(() => getStoreSummary(storeIdentifier), [storeIdentifier, refreshKey])
+  const entries: TransactionEntry[] = useMemo(
+    () => buildStoreTransactions(storeIdentifier, startDate, endDate),
+    [storeIdentifier, startDate, endDate, refreshKey]
+  )
 
-    return {
-      entries: filtered,
-      totalDebit: tDeb,
-      totalCredit: tCred,
-      initialBalance: initBal,
-      finalBalance: finBal,
-    }
-  }, [store, startDate, endDate, refreshKey])
+  const totalDebit = entries.reduce((sum, i) => sum + i.debit, 0)
+  const totalCredit = entries.reduce((sum, i) => sum + i.credit, 0)
+  const finalBalance = entries.length > 0 ? entries[entries.length - 1].balance : summary.currentDebt
 
   useEffect(() => {
     const handleUpdate = () => setRefreshKey((prev) => prev + 1)
@@ -157,13 +126,26 @@ export function StoreActReconciliationDialog({
   }
 
   const handleExportCSV = () => {
-    const headers = ["T/r", "Sana", "Hujjat raqami", "Hujjat turi", "Izoh", "Tovar berildi (Debet)", "To'lov qilindi (Kredit)", "Qoldiq qarz"]
+    const headers = [
+      "№", 
+      "Sana", 
+      "Vaqt", 
+      "Hujjat №", 
+      "Operatsiya turi", 
+      "Nima xarid qilingan / Tafsilot", 
+      "Mas'ul", 
+      "Xarid (Debet)", 
+      "To'lov (Kredit)", 
+      "Qoldiq Qarz"
+    ]
     const rows = entries.map((e, idx) => [
       idx + 1,
       e.date,
+      e.time,
       e.docNumber,
       e.docType,
       `"${e.description.replace(/"/g, '""')}"`,
+      e.agentName,
       e.debit,
       e.credit,
       e.balance,
@@ -180,52 +162,15 @@ export function StoreActReconciliationDialog({
     document.body.removeChild(link)
   }
 
-  const openEdit = (item: any) => {
-    setEditItem(item)
-    setEditDebitVal(item.debit || 0)
-    setEditCreditVal(item.credit || 0)
-    setEditDescVal(item.description || "")
-  }
-
-  const handleSaveEdit = () => {
-    if (!editItem) return
-    try {
-      if (editItem.id.startsWith("ord-")) {
-        const ordId = editItem.rawOrdId || editItem.id.replace("ord-", "")
-        updateStoredOrder(ordId, { total_amount: Number(editDebitVal) || 0, updated_at: new Date().toISOString() })
-      } else if (editItem.id.startsWith("pay-")) {
-        const ordId = editItem.rawOrdId || editItem.id.replace("pay-", "")
-        const newCred = Number(editCreditVal) || 0
-        const ords = getStoredOrders()
-        const targetOrd = ords.find(o => o.id === ordId || o.order_number === ordId)
-        const total = targetOrd?.total_amount || 0
-        updateStoredOrder(ordId, {
-          paid_amount: newCred,
-          payment_status: newCred >= total && total > 0 ? "PAID" : newCred > 0 ? "PARTIAL" : "PENDING",
-          updated_at: new Date().toISOString(),
-        })
-      }
-      toast.success("O'zgarishlar muvaffaqiyatli saqlandi!")
-      setEditItem(null)
-      setRefreshKey((prev) => prev + 1)
-    } catch {
-      toast.error("Xatolik yuz berdi")
-    }
-  }
-
   const handleDeleteItem = () => {
     if (!deletingItem) return
     try {
-      if (deletingItem.id.startsWith("ord-")) {
-        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("ord-", "")
-        deleteStoredOrder(ordId)
-        if (deletingItem.docNumber) deleteStoredOrder(deletingItem.docNumber)
-        toast.success("Sotuv hujjati muvaffaqiyatli o'chirildi")
-      } else if (deletingItem.id.startsWith("pay-")) {
-        const ordId = deletingItem.rawOrdId || deletingItem.id.replace("pay-", "")
-        updateStoredOrder(ordId, { paid_amount: 0, payment_status: "PENDING", updated_at: new Date().toISOString() })
-        toast.success("To'lov yozuvi o'chirildi")
+      if (deletingItem.orderId) {
+        deleteStoredOrder(deletingItem.orderId)
+      } else if (deletingItem.docNumber) {
+        deleteStoredOrder(deletingItem.docNumber)
       }
+      toast.success("Hujjat o'chirildi")
       setRefreshKey((prev) => prev + 1)
     } catch {
       toast.error("Xatolik yuz berdi")
@@ -248,311 +193,316 @@ export function StoreActReconciliationDialog({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="cursor-pointer gap-1.5">
-              <Download className="w-4 h-4 text-emerald-600" />
-              <span className="hidden sm:inline">Excel (CSV)</span>
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1 text-xs">
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              CSV
             </Button>
-            <Button size="sm" onClick={handlePrint} className="bg-amber-600 hover:bg-amber-700 text-white cursor-pointer gap-1.5 shadow-sm">
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Chop etish</span>
+            <Button size="sm" onClick={handlePrint} className="gap-1 text-xs bg-amber-600 hover:bg-amber-700 text-white">
+              <Printer className="w-3.5 h-3.5" />
+              Chop etish
             </Button>
           </div>
         </DialogHeader>
 
-        {/* Filtr paneli (Faqat ekranda ko'rinadi, printda yashiriladi) */}
-        <div className="print:hidden bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 mt-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-xs font-semibold text-gray-500">Davr:</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-8 text-xs w-32 sm:w-36 bg-white dark:bg-gray-900"
-              />
-              <span className="text-xs text-gray-400">—</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-8 text-xs w-32 sm:w-36 bg-white dark:bg-gray-900"
-              />
+        {/* DATE PRESETS + PICKER */}
+        <div className="flex flex-wrap items-end gap-3 print:hidden py-3 bg-gray-50/80 dark:bg-gray-800/40 p-3 rounded-2xl border">
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold flex items-center gap-1">
+              <Filter className="w-3 h-3" /> Davr
+            </Label>
+            <div className="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-xl border">
+              <button
+                type="button"
+                onClick={() => setPreset("all")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+                  datePreset === "all" ? "bg-amber-600 text-white" : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Barchasi
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreset("year")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+                  datePreset === "year" ? "bg-amber-600 text-white" : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Shu yil
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreset("month")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+                  datePreset === "month" ? "bg-amber-600 text-white" : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Shu oy
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreset("today")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+                  datePreset === "today" ? "bg-amber-600 text-white" : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Bugun
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs cursor-pointer"
-              onClick={() => {
-                const now = new Date()
-                setStartDate(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0])
-                setEndDate(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0])
+
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Dan</Label>
+            <Input
+              type="date"
+              className="h-8 text-xs bg-white dark:bg-gray-900 w-32"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value)
+                setDatePreset("year")
               }}
-            >
-              Shu oy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs cursor-pointer"
-              onClick={() => {
-                const now = new Date()
-                setStartDate(new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0])
-                setEndDate(new Date(now.getFullYear(), 11, 31).toISOString().split("T")[0])
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Gacha</Label>
+            <Input
+              type="date"
+              className="h-8 text-xs bg-white dark:bg-gray-900 w-32"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value)
+                setDatePreset("year")
               }}
-            >
-              Yillik
-            </Button>
+            />
           </div>
         </div>
 
         {/* AKT SVERKA ASOSIY HUJJAT BLOKI */}
         <div className="space-y-5 pt-1 text-gray-900 dark:text-gray-100 print:text-black">
-          
           <div className="text-center space-y-1 border-b pb-3">
-            <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900 dark:text-white print:text-black">
+            <h2 className="text-base sm:text-xl font-black uppercase tracking-wide text-gray-900 dark:text-white print:text-black">
               O&apos;ZARO HISOB-KITOBLARNI SOLISHTIRISH DALOLATNOMASI
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium">
-              № AKT-{store.name.slice(0, 3).toUpperCase()}-2026/08 &bull; Sana: {formatDate(new Date().toISOString())}
+            <p className="text-xs text-gray-500 font-medium">
+              Mijoz: <strong>{store.name}</strong> &bull; Sana: {formatDate(new Date().toISOString())}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
               Davr: <strong>{startDate}</strong> dan <strong>{endDate}</strong> gacha
             </p>
           </div>
 
+          {/* Party details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-amber-50/50 dark:bg-gray-800/40 border border-amber-200/60 dark:border-gray-700 text-xs sm:text-sm">
             <div className="space-y-1">
               <span className="font-bold text-amber-900 dark:text-amber-400 block text-[11px] uppercase tracking-wider">
                 YETKAZIB BERUVCHI:
               </span>
-              <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">&ldquo;HOLVA FACTORY&rdquo; MCHJ</div>
-              <div>Manzil: Toshkent sh., Chilonzor tumani, Sanoat hududi 12</div>
+              <div className="font-bold text-sm text-gray-900 dark:text-white">&ldquo;HOLVA FACTORY&rdquo; MCHJ</div>
+              <div>Toshkent sh., Chilonzor tumani</div>
               <div>Tel: +998 (71) 200-00-55</div>
-              <div>Hisob raqam: 20208000900000123456</div>
             </div>
 
             <div className="space-y-1 border-t sm:border-t-0 sm:border-l sm:pl-4 border-amber-200/60 dark:border-gray-700 pt-2 sm:pt-0">
               <span className="font-bold text-amber-900 dark:text-amber-400 block text-[11px] uppercase tracking-wider">
-                XARIDOR (DO&apos;KON):
+                XARIDOR (MIJOZ):
               </span>
-              <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">{store.name}</div>
+              <div className="font-bold text-sm text-gray-900 dark:text-white">{store.name}</div>
               <div>Manzil: {store.address || "Toshkent shahri"}</div>
-              <div>Mas&apos;ul: {store.contact_person || "Do'kon mudiri"}</div>
               <div>Tel: {store.phone || "+998 90 000 00 00"}</div>
             </div>
           </div>
 
+          {/* KPI Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/80 rounded-xl border">
-              <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium block">Boshlang&apos;ich Qoldiq</span>
-              <span className="text-xs sm:text-base font-bold text-gray-800 dark:text-gray-200">
-                {formatCurrency(initialBalance)}
+            <div className="p-3 bg-gray-50 dark:bg-gray-800/80 rounded-xl border">
+              <span className="text-[11px] text-gray-500 font-medium block">Boshlang&apos;ich Qoldiq</span>
+              <span className="text-base font-bold text-gray-800 dark:text-gray-200">
+                {formatCurrency(summary.initialDebt)}
               </span>
             </div>
-            <div className="p-2.5 sm:p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900">
-              <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 font-medium block">Jami Tovar Berildi</span>
-              <span className="text-xs sm:text-base font-bold text-blue-700 dark:text-blue-300">
+            <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900">
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium block">Jami Xarid (Debet)</span>
+              <span className="text-base font-bold text-blue-700 dark:text-blue-300">
                 +{formatCurrency(totalDebit)}
               </span>
             </div>
-            <div className="p-2.5 sm:p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Jami To&apos;lov Qilindi</span>
-              <span className="text-xs sm:text-base font-bold text-emerald-700 dark:text-emerald-300">
+            <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900">
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Jami To&apos;lov (Kredit)</span>
+              <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">
                 -{formatCurrency(totalCredit)}
               </span>
             </div>
-            <div className={`p-2.5 sm:p-3 rounded-xl border ${finalBalance > 0 ? "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-700 dark:text-red-400" : "bg-green-50 dark:bg-green-950/20 border-green-200 text-green-700 dark:text-green-400"}`}>
-              <span className="text-[10px] sm:text-[11px] font-medium block">Yakuniy Qoldiq Qarz</span>
-              <span className="text-xs sm:text-base font-bold">
-                {formatCurrency(finalBalance)}
+            <div
+              className={`p-3 rounded-xl border ${
+                finalBalance > 0
+                  ? "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-700 dark:text-red-400"
+                  : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 text-emerald-700 dark:text-emerald-400"
+              }`}
+            >
+              <span className="text-[11px] font-bold uppercase tracking-wider block">
+                {finalBalance > 0 ? "⚠️ Joriy Qoldiq Qarz" : "✅ Qoldiq Qarz"}
+              </span>
+              <span className="text-base font-black">
+                {formatCurrency(Math.abs(finalBalance))}
+                {finalBalance > 0 ? " (Qarz)" : " (0)"}
               </span>
             </div>
           </div>
 
+          {/* Table */}
           <div className="border rounded-2xl overflow-x-auto shadow-xs bg-white dark:bg-gray-900">
-            <table className="w-full text-xs sm:text-sm text-left border-collapse min-w-full">
+            <table className="w-full text-xs text-left border-collapse min-w-full">
               <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b">
                 <tr>
-                  <th className="p-2 sm:p-3 w-8 text-center whitespace-nowrap">№</th>
-                  <th className="p-2 sm:p-3 w-20 sm:w-28 whitespace-nowrap">Sana</th>
-                  <th className="p-2 sm:p-3 whitespace-nowrap">Hujjat / Amal</th>
-                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">Tovar berildi (Debet)</th>
-                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">To&apos;lov qilindi (Kredit)</th>
-                  <th className="p-2 sm:p-3 text-right whitespace-nowrap">Qoldiq (Qarz)</th>
-                  <th className="p-2 sm:p-3 text-right w-16 print:hidden">Amallar</th>
+                  <th className="p-2.5 w-8 text-center whitespace-nowrap">№</th>
+                  <th className="p-2.5 whitespace-nowrap">Sana va vaqt</th>
+                  <th className="p-2.5 whitespace-nowrap">Hujjat №</th>
+                  <th className="p-2.5 whitespace-nowrap">Hujjat turi</th>
+                  <th className="p-2.5 min-w-[280px]">Nima xarid qilingan / Tafsilot</th>
+                  <th className="p-2.5 text-right whitespace-nowrap">Xarid (Debet)</th>
+                  <th className="p-2.5 text-right whitespace-nowrap">To&apos;lov (Kredit)</th>
+                  <th className="p-2.5 text-right whitespace-nowrap font-black">Qoldiq Qarz</th>
+                  <th className="p-2.5 text-right w-16 print:hidden">Amallar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                <tr className="bg-gray-50/50 dark:bg-gray-800/30 italic text-gray-500 font-medium">
-                  <td className="p-2.5 sm:p-3 text-center">-</td>
-                  <td className="p-2.5 sm:p-3">{startDate}</td>
-                  <td className="p-2.5 sm:p-3">Davr boshidagi qoldiq</td>
-                  <td className="p-2.5 sm:p-3 text-right">-</td>
-                  <td className="p-2.5 sm:p-3 text-right">-</td>
-                  <td className="p-2.5 sm:p-3 text-right font-semibold">{formatCurrency(initialBalance)}</td>
-                  <td className="p-2.5 sm:p-3 print:hidden"></td>
-                </tr>
-
-                {entries.map((item, idx) => (
-                  <tr key={item.id} className="group hover:bg-amber-50/30 dark:hover:bg-gray-800/50 transition">
-                    <td className="p-2.5 sm:p-3 text-center text-gray-400">{idx + 1}</td>
-                    <td className="p-2.5 sm:p-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{item.date}</td>
-                    <td className="p-2.5 sm:p-3">
-                      <div className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                        {item.docType === "Sotuv" ? (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-blue-200">Yuk xati</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-50 text-emerald-600 border-emerald-200">To&apos;lov cheki</Badge>
-                        )}
-                        <span>{item.docNumber}</span>
-                      </div>
-                      <div className="text-[11px] text-gray-500">{item.description}</div>
-                    </td>
-                    <td className="p-2.5 sm:p-3 text-right font-medium text-blue-700 dark:text-blue-400">
-                      {item.debit > 0 ? formatCurrency(item.debit) : "-"}
-                    </td>
-                    <td className="p-2.5 sm:p-3 text-right font-medium text-emerald-700 dark:text-emerald-400">
-                      {item.credit > 0 ? formatCurrency(item.credit) : "-"}
-                    </td>
-                    <td className="p-2.5 sm:p-3 text-right font-bold text-gray-900 dark:text-white">
-                      {formatCurrency(item.balance)}
-                    </td>
-                    <td className="p-2.5 sm:p-3 print:hidden text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
-                          onClick={() => setViewingOrder(item)}
-                          title="Mahsulotlar tarkibini ko'rish (Batafsil)"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-amber-600" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => openEdit(item)}
-                          title="Tahrirlash"
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setDeletingItem(item)}
-                          title="O'chirish"
-                        >
-                          <Trash className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                {entries.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-gray-400">
+                      Ushbu davrda operatsiyalar topilmadi.
                     </td>
                   </tr>
-                ))}
-
-                <tr className="bg-amber-100/40 dark:bg-amber-950/30 font-bold border-t-2 border-amber-300 dark:border-amber-700">
-                  <td colSpan={3} className="p-2.5 sm:p-3 text-right uppercase tracking-wider text-xs">
-                    DAVR BO&apos;YICHA JAMI OBOROT VA YAKUNIY QARZ:
-                  </td>
-                  <td className="p-2.5 sm:p-3 text-right text-blue-800 dark:text-blue-300">
-                    {formatCurrency(totalDebit)}
-                  </td>
-                  <td className="p-2.5 sm:p-3 text-right text-emerald-800 dark:text-emerald-300">
-                    {formatCurrency(totalCredit)}
-                  </td>
-                  <td className={`p-2.5 sm:p-3 text-right text-base ${finalBalance > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                    {formatCurrency(finalBalance)}
-                  </td>
-                  <td className="print:hidden"></td>
-                </tr>
+                ) : (
+                  entries.map((item, idx) => (
+                    <tr key={item.id} className="group hover:bg-amber-50/30 dark:hover:bg-gray-800/50 transition">
+                      <td className="p-2.5 text-center text-gray-400">{idx + 1}</td>
+                      <td className="p-2.5 whitespace-nowrap">
+                        <div className="font-bold text-gray-900 dark:text-white flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-amber-600" />
+                          <span>{item.date}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5 ml-4">
+                          <Clock className="w-2.5 h-2.5" />
+                          <span>{item.time}</span>
+                        </div>
+                      </td>
+                      <td className="p-2.5 whitespace-nowrap font-semibold text-gray-900 dark:text-white">
+                        {item.docNumber}
+                      </td>
+                      <td className="p-2.5 whitespace-nowrap">
+                        {item.docType === "Mahsulot xaridi" ? (
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200 font-bold">
+                            <Package className="w-3 h-3 mr-1" />
+                            Xarid
+                          </Badge>
+                        ) : item.docType === "To'lov qabuli" ? (
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border-emerald-200 font-bold">
+                            <CreditCard className="w-3 h-3 mr-1" />
+                            To&apos;lov
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200 font-bold">
+                            Boshlang&apos;ich
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="p-2.5">
+                        {item.docType === "Mahsulot xaridi" && item.orderItems && item.orderItems.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.orderItems.map((prod, pIdx) => (
+                              <div key={pIdx} className="flex items-center justify-between text-[11px] bg-gray-50 dark:bg-gray-800/60 p-1.5 rounded-lg">
+                                <span className="font-bold text-gray-900 dark:text-white">📦 {prod.name}</span>
+                                <span className="text-gray-500 font-medium">
+                                  {prod.quantity} {prod.unit} × {formatCurrency(prod.unitPrice)} = <strong>{formatCurrency(prod.totalPrice)}</strong>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-gray-600 dark:text-gray-300 font-medium">{item.description}</div>
+                        )}
+                      </td>
+                      <td className="p-2.5 text-right font-bold text-blue-700 dark:text-blue-400">
+                        {item.debit > 0 ? `+${formatCurrency(item.debit)}` : "-"}
+                      </td>
+                      <td className="p-2.5 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                        {item.credit > 0 ? `-${formatCurrency(item.credit)}` : "-"}
+                      </td>
+                      <td className="p-2.5 text-right font-black">
+                        <Badge
+                          variant="outline"
+                          className={
+                            item.balance > 0
+                              ? "bg-red-50 text-red-700 border-red-200 font-black text-xs"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs"
+                          }
+                        >
+                          {formatCurrency(Math.abs(item.balance))}
+                          {item.balance > 0 ? " (Qarz)" : " (0)"}
+                        </Badge>
+                      </td>
+                      <td className="p-2.5 print:hidden text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {item.orderId && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-50 cursor-pointer"
+                              onClick={() => setViewingOrder(item)}
+                              title="Tafsilotlarni ko'rish"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {item.orderId && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 cursor-pointer"
+                              onClick={() => setDeletingItem(item)}
+                              title="O'chirish"
+                            >
+                              <Trash className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          <div className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border text-xs sm:text-sm text-gray-700 dark:text-gray-300 space-y-1">
-            <p>
-              <strong>{endDate}</strong> holatiga ko&apos;ra, &ldquo;HOLVA FACTORY&rdquo; MCHJ foydasiga <strong>{store.name}</strong> ning qarzdorligi <strong>{formatCurrency(finalBalance)}</strong> so&apos;mni tashkil etadi.
-            </p>
-            <p className="text-gray-500 text-[11px]">
-              Tomonlar hisob-kitoblar natijasini to&apos;liq tasdiqlaydilar va hech qanday e&apos;tirozlari mavjud emas.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 pt-6 pb-2 text-xs sm:text-sm">
-            <div className="space-y-8">
-              <div>
-                <span className="font-bold block">&ldquo;HOLVA FACTORY&rdquo; MCHJ nomidan:</span>
-                <span className="text-gray-500 text-xs">Bosh direktor / Bosh hisobchi</span>
-              </div>
-              <div className="flex items-end justify-between border-b border-black dark:border-white pb-1">
-                <span className="text-gray-400 text-xs">Imzo: _______________</span>
-                <span className="font-semibold text-xs">F.I.SH. ____________</span>
-              </div>
-              <div className="text-[11px] text-gray-400">M.O&apos;. (Muhr o&apos;rni)</div>
+          {/* Footer signatures */}
+          <div className="pt-4 border-t grid grid-cols-2 gap-8 text-xs">
+            <div className="space-y-4">
+              <div className="font-bold">Yetkazib beruvchi vakili:</div>
+              <div className="border-b border-gray-400 w-48 h-6"></div>
+              <div className="text-gray-400 text-[10px]">(imzo, sana, muhr)</div>
             </div>
-
-            <div className="space-y-8">
-              <div>
-                <span className="font-bold block">&ldquo;{store.name}&rdquo; nomidan:</span>
-                <span className="text-gray-500 text-xs">Do&apos;kon rahbari / Mas&apos;ul shaxs</span>
-              </div>
-              <div className="flex items-end justify-between border-b border-black dark:border-white pb-1">
-                <span className="text-gray-400 text-xs">Imzo: _______________</span>
-                <span className="font-semibold text-xs">F.I.SH. ____________</span>
-              </div>
-              <div className="text-[11px] text-gray-400">M.O&apos;. (Muhr o&apos;rni)</div>
+            <div className="space-y-4 text-right">
+              <div className="font-bold">Xaridor (Mijoz) vakili:</div>
+              <div className="border-b border-gray-400 w-48 h-6 ml-auto"></div>
+              <div className="text-gray-400 text-[10px]">(imzo, sana, muhr)</div>
             </div>
           </div>
-
         </div>
 
-        {/* Edit Dialog */}
-        {editItem && (
-          <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Yozuvni tahrirlash</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Harakat (Izoh)</Label>
-                  <Input value={editDescVal} onChange={(e) => setEditDescVal(e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Xarid Summasi (Debet)</Label>
-                    <Input type="number" value={editDebitVal} onChange={(e) => setEditDebitVal(Number(e.target.value))} disabled={editItem.debit === 0} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>To'lov Summasi (Kredit)</Label>
-                    <Input type="number" value={editCreditVal} onChange={(e) => setEditCreditVal(Number(e.target.value))} disabled={editItem.credit === 0} />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEditItem(null)}>Bekor qilish</Button>
-                <Button onClick={handleSaveEdit} className="bg-amber-600 hover:bg-amber-700 text-white cursor-pointer">
-                  Saqlash
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+        {/* VIEW ORDER DIALOG */}
+        <OrderViewDialog
+          open={!!viewingOrder}
+          onOpenChange={(open) => !open && setViewingOrder(null)}
+          orderId={viewingOrder?.orderId}
+          orderData={viewingOrder}
+        />
 
+        {/* DELETE CONFIRM */}
         <DeleteConfirmDialog
           open={!!deletingItem}
           onOpenChange={(open) => !open && setDeletingItem(null)}
           onConfirm={handleDeleteItem}
-          title="Yozuvni o'chirish"
-          description="Haqiqatan ham ushbu solishtirma dalolatnoma yozuvini o'chirmoqchimisiz?"
-        />
-        <OrderViewDialog
-          open={!!viewingOrder}
-          onOpenChange={(open) => !open && setViewingOrder(null)}
-          orderData={viewingOrder}
+          title="Hujjatni o'chirish"
+          description="Haqiqatan ham ushbu yozuvni o'chirmoqchimisiz?"
         />
       </DialogContent>
     </Dialog>
