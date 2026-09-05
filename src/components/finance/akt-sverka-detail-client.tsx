@@ -212,40 +212,40 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
 
         {/* Current debt — RED & prominent */}
         <div
-          className={`rounded-xl p-4 border shadow-sm flex items-center justify-between ${
+          className={`rounded-xl p-4 border shadow-sm flex items-center justify-between transition-all ${
             summary.currentDebt > 0
-              ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800"
-              : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
+              ? "bg-red-50/80 dark:bg-red-950/30 border-red-300 dark:border-red-800 ring-2 ring-red-400/30"
+              : "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
           }`}
         >
           <div>
-            <p className="text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">
-              Joriy qarzdorlik
+            <p className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">
+              {summary.currentDebt > 0 ? "⚠️ Joriy Qarzdorlik" : "✅ Qoldiq Qarz"}
             </p>
             <h3
-              className={`text-2xl font-extrabold ${
+              className={`text-2xl font-black ${
                 summary.currentDebt > 0
-                  ? "text-red-700 dark:text-red-400"
-                  : "text-emerald-700 dark:text-emerald-400"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-emerald-600 dark:text-emerald-400"
               }`}
             >
               {formatCurrency(Math.abs(summary.currentDebt))}
             </h3>
-            {summary.currentDebt > 0 && (
-              <p className="text-xs text-red-500 font-semibold mt-0.5">Qarz bor</p>
-            )}
+            <p className="text-[11px] font-semibold text-red-700/80 dark:text-red-300 mt-0.5">
+              {summary.currentDebt > 0 ? "To'lanishi lozim bo'lgan qarz" : "Qarz to'liq yopilgan"}
+            </p>
           </div>
           <div
-            className={`p-2 rounded-full ${
+            className={`p-2.5 rounded-full ${
               summary.currentDebt > 0
-                ? "bg-red-100 dark:bg-red-900/40"
-                : "bg-emerald-100 dark:bg-emerald-900/40"
+                ? "bg-red-100 dark:bg-red-900/40 text-red-600"
+                : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600"
             }`}
           >
             {summary.currentDebt > 0 ? (
-              <AlertCircle className="w-6 h-6 text-red-600" />
+              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
             ) : (
-              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             )}
           </div>
         </div>
@@ -284,21 +284,23 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
       {/* ── Transaction Table ────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className="min-w-[820px]">
-            <TableHeader className="bg-gray-50/50 dark:bg-gray-800/80">
+          <Table className="min-w-[850px]">
+            <TableHeader className="bg-gray-50/80 dark:bg-gray-800/80">
               <TableRow>
-                <TableHead className="whitespace-nowrap">Sana</TableHead>
+                <TableHead className="whitespace-nowrap">Sana va vaqt</TableHead>
                 <TableHead className="whitespace-nowrap">Hujjat №</TableHead>
                 <TableHead className="whitespace-nowrap">Operatsiya turi</TableHead>
-                <TableHead>Batafsil</TableHead>
-                <TableHead className="whitespace-nowrap">Agent</TableHead>
-                <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">
-                  Qarz (Debet)
+                <TableHead>Mahsulotlar va Batafsil izoh</TableHead>
+                <TableHead className="whitespace-nowrap">Mas'ul</TableHead>
+                <TableHead className="text-right text-gray-900 dark:text-white font-bold whitespace-nowrap">
+                  Xarid (Debet)
                 </TableHead>
-                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                   To'lov (Kredit)
                 </TableHead>
-                <TableHead className="text-right font-bold whitespace-nowrap">Qoldiq</TableHead>
+                <TableHead className="text-right font-black text-red-600 dark:text-red-400 whitespace-nowrap">
+                  Qoldiq Qarz
+                </TableHead>
               </TableRow>
             </TableHeader>
 
@@ -314,7 +316,7 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
                   <TableCell colSpan={8} className="h-40 text-center">
                     <div className="flex flex-col items-center gap-3 text-gray-400">
                       <FileCheck2 className="w-12 h-12 opacity-30" />
-                      <p className="text-sm font-medium">Bu davrda oldi-berdi topilmadi.</p>
+                      <p className="text-sm font-medium">Ushbu davrda oldi-berdi operatsiyalari topilmadi.</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -342,8 +344,8 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
                     </TableCell>
 
                     {/* Description */}
-                    <TableCell className="max-w-xs">
-                      <p className="text-[13px] text-gray-800 dark:text-gray-200 line-clamp-2">
+                    <TableCell className="max-w-md">
+                      <p className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">
                         {item.description}
                       </p>
                     </TableCell>
@@ -354,27 +356,27 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
                     </TableCell>
 
                     {/* Debit */}
-                    <TableCell className="text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+                    <TableCell className="text-right font-bold text-gray-900 dark:text-white whitespace-nowrap">
                       {item.debit > 0 ? formatCurrency(item.debit) : "—"}
                     </TableCell>
 
                     {/* Credit */}
-                    <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       {item.credit > 0 ? formatCurrency(item.credit) : "—"}
                     </TableCell>
 
-                    {/* Balance */}
-                    <TableCell className="text-right whitespace-nowrap">
+                    {/* Running Debt Balance */}
+                    <TableCell className="text-right whitespace-nowrap font-black">
                       <Badge
                         variant="outline"
                         className={
                           item.balance > 0
-                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"
+                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-900 text-xs px-2.5 py-1 font-bold"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900 text-xs px-2.5 py-1 font-bold"
                         }
                       >
                         {formatCurrency(Math.abs(item.balance))}
-                        {item.balance > 0 ? " (Qarz)" : ""}
+                        {item.balance > 0 ? " (Qarz)" : " (0)"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -384,17 +386,24 @@ export function AktSverkaDetailClient({ store, storeId }: Props) {
           </Table>
         </div>
 
-        {/* Footer summary row */}
+        {/* Footer totals row */}
         {entries.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-3 flex flex-wrap gap-6 justify-end text-sm font-semibold">
-            <span className="text-red-600">
-              Jami debet: {formatCurrency(totalDebit)}
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-5 py-4 flex flex-wrap gap-6 justify-end items-center text-sm font-bold print:hidden">
+            <span className="text-gray-500 font-medium">
+              Jami operatsiyalar: {entries.length} ta
             </span>
-            <span className="text-emerald-600">
-              Jami kredit: {formatCurrency(totalCredit)}
+            <span className="text-gray-900 dark:text-white">
+              Davr xaridi: {formatCurrency(totalDebit)}
             </span>
-            <span className={finalBalance > 0 ? "text-red-700" : "text-emerald-700"}>
-              Yakuniy qoldiq: {formatCurrency(Math.abs(finalBalance))}{finalBalance > 0 ? " (Qarz)" : ""}
+            <span className="text-emerald-600 dark:text-emerald-400">
+              Davr to'lovi: {formatCurrency(totalCredit)}
+            </span>
+            <span className={`text-base px-3 py-1 rounded-lg ${
+              finalBalance > 0 
+                ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800" 
+                : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+            }`}>
+              Davr oxiriga Qarz Qoldig'i: {formatCurrency(Math.abs(finalBalance))}{finalBalance > 0 ? " (Qarz)" : " (0)"}
             </span>
           </div>
         )}

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -250,10 +250,11 @@ export function AktSverkaClient() {
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-gray-500 font-medium mb-1">Jami xarid (Debet)</p>
-            <h3 className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalDebit)}</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalDebit)}</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Tovar berildi</p>
           </div>
-          <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full">
-            <ArrowUpRight className="w-5 h-5 text-red-500" />
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-full">
+            <ArrowUpRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
 
@@ -262,25 +263,35 @@ export function AktSverkaClient() {
           <div>
             <p className="text-xs text-gray-500 font-medium mb-1">Jami to'lov (Kredit)</p>
             <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalCredit)}</h3>
+            <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">Pul qabul qilindi</p>
           </div>
-          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
             <ArrowDownLeft className="w-5 h-5 text-emerald-500" />
           </div>
         </div>
 
-        {/* Net Debt */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
+        {/* Net Debt - PROMINENT HIGHLIGHT */}
+        <div className={`rounded-xl p-4 border shadow-sm flex items-center justify-between transition-all ${
+          netDebt > 0
+            ? "bg-red-50/80 dark:bg-red-950/30 border-red-200 dark:border-red-900/50 ring-2 ring-red-400/30"
+            : "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50"
+        }`}>
           <div>
-            <p className="text-xs text-gray-500 font-medium mb-1">Umumiy qarz</p>
-            <h3 className={`text-xl font-bold ${netDebt > 0 ? "text-red-600" : "text-emerald-600"}`}>
+            <p className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">
+              {netDebt > 0 ? "⚠️ Joriy Qarzdorlik" : "✅ Qoldiq Qarz"}
+            </p>
+            <h3 className={`text-2xl font-black ${netDebt > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
               {formatCurrency(Math.abs(netDebt))}
             </h3>
+            <p className="text-[11px] font-semibold text-red-700/80 dark:text-red-300 mt-0.5">
+              {netDebt > 0 ? "Mijoz to'lashi shart bo'lgan qarz" : "Qarzdorlik mavjud emas"}
+            </p>
           </div>
-          <div className={`p-2 rounded-full ${netDebt > 0 ? "bg-red-50 dark:bg-red-900/20" : "bg-emerald-50 dark:bg-emerald-900/20"}`}>
+          <div className={`p-2.5 rounded-full ${netDebt > 0 ? "bg-red-100 dark:bg-red-900/40 text-red-600" : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600"}`}>
             {netDebt > 0 ? (
-              <AlertCircle className="w-5 h-5 text-red-500" />
+              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
             ) : (
-              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             )}
           </div>
         </div>
@@ -289,9 +300,10 @@ export function AktSverkaClient() {
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-gray-500 font-medium mb-1">Operatsiyalar soni</p>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displayed.length}</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displayed.length} ta</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Sotuv va to'lovlar</p>
           </div>
-          <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+          <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full">
             <FileCheck2 className="w-5 h-5 text-gray-500" />
           </div>
         </div>
@@ -300,39 +312,41 @@ export function AktSverkaClient() {
       {/* ── Transaction Table ────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className="min-w-[900px]">
+          <Table className="min-w-[950px]">
             <TableHeader className="bg-gray-50/80 dark:bg-gray-800/80">
               <TableRow>
-                <TableHead className="whitespace-nowrap">Sana</TableHead>
+                <TableHead className="whitespace-nowrap">Sana va vaqt</TableHead>
                 {selectedStoreId === "all" && (
-                  <TableHead className="whitespace-nowrap">Mijoz nomi</TableHead>
+                  <TableHead className="whitespace-nowrap font-bold">Mijoz (Do'kon)</TableHead>
                 )}
                 <TableHead className="whitespace-nowrap">Hujjat №</TableHead>
                 <TableHead className="whitespace-nowrap">Operatsiya turi</TableHead>
-                <TableHead>Batafsil</TableHead>
-                <TableHead className="whitespace-nowrap">Agent</TableHead>
-                <TableHead className="text-right text-red-600 dark:text-red-400 whitespace-nowrap">
-                  Qarz (Debet)
+                <TableHead>Mahsulotlar va Batafsil izoh</TableHead>
+                <TableHead className="whitespace-nowrap">Mas'ul</TableHead>
+                <TableHead className="text-right text-gray-900 dark:text-white font-bold whitespace-nowrap">
+                  Xarid (Debet)
                 </TableHead>
-                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                <TableHead className="text-right text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                   To'lov (Kredit)
                 </TableHead>
-                <TableHead className="text-right font-bold whitespace-nowrap">Qoldiq</TableHead>
+                <TableHead className="text-right font-black text-red-600 dark:text-red-400 whitespace-nowrap">
+                  Qoldiq Qarz
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-gray-500">
+                  <TableCell colSpan={selectedStoreId === "all" ? 9 : 8} className="h-32 text-center text-gray-500">
                     Yuklanmoqda...
                   </TableCell>
                 </TableRow>
               ) : displayed.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-40 text-center">
+                  <TableCell colSpan={selectedStoreId === "all" ? 9 : 8} className="h-40 text-center">
                     <div className="flex flex-col items-center gap-3 text-gray-400">
                       <FileCheck2 className="w-12 h-12 opacity-30" />
-                      <p className="text-sm font-medium">Ushbu sanada oldi-berdi topilmadi.</p>
+                      <p className="text-sm font-medium">Ushbu davrda oldi-berdi operatsiyalari topilmadi.</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -349,7 +363,9 @@ export function AktSverkaClient() {
 
                     {/* Store name (all view) */}
                     {selectedStoreId === "all" && (
-                      <TableCell className="font-medium whitespace-nowrap">{item.storeName}</TableCell>
+                      <TableCell className="font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                        {item.storeName}
+                      </TableCell>
                     )}
 
                     {/* Doc number */}
@@ -365,8 +381,8 @@ export function AktSverkaClient() {
                     </TableCell>
 
                     {/* Description */}
-                    <TableCell className="max-w-xs">
-                      <p className="text-[13px] text-gray-800 dark:text-gray-200 line-clamp-2">
+                    <TableCell className="max-w-md">
+                      <p className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">
                         {item.description}
                       </p>
                     </TableCell>
@@ -377,27 +393,27 @@ export function AktSverkaClient() {
                     </TableCell>
 
                     {/* Debit */}
-                    <TableCell className="text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+                    <TableCell className="text-right font-bold text-gray-900 dark:text-white whitespace-nowrap">
                       {item.debit > 0 ? formatCurrency(item.debit) : "—"}
                     </TableCell>
 
                     {/* Credit */}
-                    <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       {item.credit > 0 ? formatCurrency(item.credit) : "—"}
                     </TableCell>
 
-                    {/* Balance */}
-                    <TableCell className="text-right whitespace-nowrap">
+                    {/* Running Debt Balance */}
+                    <TableCell className="text-right whitespace-nowrap font-black">
                       <Badge
                         variant="outline"
                         className={
                           item.balance > 0
-                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"
+                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-900 text-xs px-2.5 py-1 font-bold"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900 text-xs px-2.5 py-1 font-bold"
                         }
                       >
                         {formatCurrency(Math.abs(item.balance))}
-                        {item.balance > 0 ? " (Qarz)" : ""}
+                        {item.balance > 0 ? " (Qarz)" : " (0)"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -409,18 +425,22 @@ export function AktSverkaClient() {
 
         {/* Footer totals row */}
         {displayed.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-3 flex flex-wrap gap-4 justify-end text-sm font-semibold print:hidden">
-            <span className="text-gray-500">
-              Jami: {displayed.length} ta operatsiya
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-5 py-4 flex flex-wrap gap-6 justify-end items-center text-sm font-bold print:hidden">
+            <span className="text-gray-500 font-medium">
+              Jami operatsiyalar: {displayed.length} ta
             </span>
-            <span className="text-red-600">
-              Debet: {formatCurrency(totalDebit)}
+            <span className="text-gray-900 dark:text-white">
+              Jami Xarid: {formatCurrency(totalDebit)}
             </span>
-            <span className="text-emerald-600">
-              Kredit: {formatCurrency(totalCredit)}
+            <span className="text-emerald-600 dark:text-emerald-400">
+              Jami To'lov: {formatCurrency(totalCredit)}
             </span>
-            <span className={netDebt > 0 ? "text-red-700" : "text-emerald-700"}>
-              Qoldiq: {formatCurrency(Math.abs(netDebt))}{netDebt > 0 ? " (Qarz)" : " (Ortiqcha)"}
+            <span className={`text-base px-3 py-1 rounded-lg ${
+              netDebt > 0 
+                ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800" 
+                : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+            }`}>
+              Yakuniy Qarz Qoldig'i: {formatCurrency(Math.abs(netDebt))}{netDebt > 0 ? " (Qarz)" : " (0)"}
             </span>
           </div>
         )}
