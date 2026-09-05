@@ -36,11 +36,21 @@ async function fetchProducts(): Promise<Product[]> {
       const supabase = createClient()
       const { data, error } = await supabase
         .from("products")
-        .select(`*, product_categories(name), product_units(name, symbol)`)
+        .select(`*, product_categories(name), product_units(name, symbol), inventory(current_stock)`)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
 
-      if (data && data.length > 0) return data as Product[]
+      if (data && data.length > 0) {
+        return data.map((p: any) => {
+          const totalStock = Array.isArray(p.inventory)
+            ? p.inventory.reduce((sum: number, inv: any) => sum + (Number(inv.current_stock) || 0), 0)
+            : 0
+          return {
+            ...p,
+            stock: totalStock,
+          }
+        }) as Product[]
+      }
     } catch {
       // Fallback
     }
@@ -71,6 +81,7 @@ async function fetchProducts(): Promise<Product[]> {
     notes: null,
     image_url: p.image_url || null,
     status: p.status,
+    stock: p.stock ?? 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     created_by: null,
@@ -121,6 +132,7 @@ export function ProductsClient() {
     }
 
     window.addEventListener("products-updated", handleProductsUpdated)
+    window.addEventListener("inventory-updated", handleProductsUpdated)
     window.addEventListener("storage", handleStorage)
 
     const interval = setInterval(() => {
@@ -129,6 +141,7 @@ export function ProductsClient() {
 
     return () => {
       window.removeEventListener("products-updated", handleProductsUpdated)
+      window.removeEventListener("inventory-updated", handleProductsUpdated)
       window.removeEventListener("storage", handleStorage)
       clearInterval(interval)
     }
@@ -357,7 +370,7 @@ export function ProductsClient() {
                   Omborda qoldiq soni:
                 </span>
                 <span className="font-extrabold text-amber-700 dark:text-amber-300 text-xs sm:text-sm">
-                  {(product as any).stock ?? 100} {(product as any).product_units?.symbol || (product as any).unit || "dona"}
+                  {(product as any).stock ?? 0} {(product as any).product_units?.symbol || (product as any).unit || "dona"}
                 </span>
               </div>
 
