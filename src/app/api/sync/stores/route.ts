@@ -60,14 +60,7 @@ export async function POST(request: NextRequest) {
       globalThis.__HOLVA_DELETED_STORES!.has(s.name.toLowerCase().trim())
 
     if (action === "sync" && Array.isArray(stores)) {
-      const storeMap = new Map<string, MockStore>()
-      for (const s of globalThis.__HOLVA_SERVER_STORES) {
-        if (s && s.name && !isDeleted(s)) storeMap.set(s.name.toLowerCase().trim(), s)
-      }
-      for (const s of stores) {
-        if (s && s.name && !isDeleted(s)) storeMap.set(s.name.toLowerCase().trim(), s)
-      }
-      globalThis.__HOLVA_SERVER_STORES = Array.from(storeMap.values()).filter((s) => !isDeleted(s))
+      globalThis.__HOLVA_SERVER_STORES = stores.filter((s) => !isDeleted(s))
       return NextResponse.json({
         success: true,
         stores: globalThis.__HOLVA_SERVER_STORES,

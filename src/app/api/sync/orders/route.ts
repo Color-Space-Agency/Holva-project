@@ -59,18 +59,7 @@ export async function POST(request: NextRequest) {
     const isDeleted = (id: string) => globalThis.__HOLVA_DELETED_ORDERS!.has(id)
 
     if (action === "sync" && Array.isArray(orders)) {
-      const orderMap = new Map<string, MockOrder>()
-      for (const o of globalThis.__HOLVA_SERVER_ORDERS) {
-        if (o && o.id && !isDeleted(o.id) && !isDeleted(o.order_number)) {
-          orderMap.set(o.id, o)
-        }
-      }
-      for (const o of orders) {
-        if (o && o.id && !isDeleted(o.id) && !isDeleted(o.order_number)) {
-          orderMap.set(o.id, o)
-        }
-      }
-      globalThis.__HOLVA_SERVER_ORDERS = Array.from(orderMap.values())
+      globalThis.__HOLVA_SERVER_ORDERS = orders
         .filter((o) => !isDeleted(o.id) && !isDeleted(o.order_number))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
