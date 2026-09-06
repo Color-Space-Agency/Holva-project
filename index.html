@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holva Factory CRM — Yagona Boshqaruv Tizimi</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; color: black !important; }
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-white">
+
+  <!-- APP CONTAINER -->
+  <div id="app" class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 z-20 no-print transition-all duration-300">
+      <!-- LOGO -->
+      <div class="h-16 flex items-center px-6 gap-3 border-b border-slate-800 bg-slate-950/40">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-white shadow-lg shadow-amber-500/20 font-bold text-xl">
+          🍬
+        </div>
+        <div>
+          <h1 class="font-bold text-base tracking-tight leading-none text-white">HOLVA CRM</h1>
+          <span class="text-[10px] text-amber-400 uppercase font-semibold tracking-wider">Factory Edition</span>
+        </div>
+      </div>
+
+      <!-- NAV LINKS -->
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar" id="sidebar-nav">
+        <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 text-amber-400"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="navigate('akt-sverka')" id="nav-akt-sverka" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="file-check-2" class="w-5 h-5 text-indigo-400"></i>
+          <span class="flex-1 text-left">Akt Sverka</span>
+          <span id="sidebar-debt-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">25k</span>
+        </button>
+        <button onclick="navigate('stores')" id="nav-stores" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="store" class="w-5 h-5 text-emerald-400"></i>
+          <span>Do'konlar</span>
+        </button>
+        <button onclick="navigate('orders')" id="nav-orders" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="shopping-cart" class="w-5 h-5 text-blue-400"></i>
+          <span>Buyurtmalar</span>
+        </button>
+        <button onclick="navigate('products')" id="nav-products" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="package" class="w-5 h-5 text-purple-400"></i>
+          <span>Mahsulotlar</span>
+        </button>
+        <button onclick="navigate('finance')" id="nav-finance" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all">
+          <i data-lucide="wallet" class="w-5 h-5 text-teal-400"></i>
+          <span>Kassa & Xarajatlar</span>
+        </button>
+      </nav>
+
+      <!-- USER PROFILE FOOTER -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950/30 flex items-center justify-between">
+        <div class="flex items-center gap-3 overflow-hidden">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 text-white font-bold flex items-center justify-center text-xs shadow-md shrink-0">
+            SA
+          </div>
+          <div class="truncate">
+            <p class="text-xs font-semibold text-white truncate">SUPER ADMIN</p>
+            <p class="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Offline / Codex
+            </p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+      
+      <!-- TOP HEADER -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 no-print">
+        <div class="flex items-center gap-3">
+          <h2 id="page-title" class="text-lg font-bold text-slate-800">Akt Sverka (Mijozlar bilan o'zaro hisob-kitob)</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="window.print()" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i> Chop etish (Print)
+          </button>
+          <button onclick="openNewOrderModal()" class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm shadow-amber-600/20">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Yangi Buyurtma
+          </button>
+          <button onclick="openNewPaymentModal()" class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm shadow-emerald-600/20">
+            <i data-lucide="arrow-down-left" class="w-4 h-4"></i> To'lov Qabul Qilish
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <main class="flex-1 overflow-y-auto p-6 bg-slate-50 custom-scrollbar" id="main-content">
+        <!-- Dynamic Content rendered here by JavaScript -->
+      </main>
+    </div>
+  </div>
+
+  <!-- MODALS CONTAINER -->
+  <div id="modal-container"></div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-20 opacity-0 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 text-sm">
+    <div id="toast-icon"></div>
+    <span id="toast-message"></span>
+  </div>
+
+  <!-- INLINE DATA & LOGIC -->
+  <script>
+    // Initial Seed Data (Matches exact state: Store 'Ayrilish' & Order with 25,000 UZS debt)
+    const DEFAULT_PRODUCTS = [
+      { id: 'p-1', name: 'Rulet 400 Gr', sku: 'HLV-841', category: 'Ruletlar', price: 25000, cost_price: 15000, unit: 'dona', stock: 100 },
+      { id: 'p-2', name: 'Klassik Holva', sku: 'HLV-842', category: 'Klassik', price: 25000, cost_price: 14000, unit: 'dona', stock: 150 },
+      { id: 'p-3', name: "Yong'oqli Holva", sku: 'HLV-843', category: 'Premium', price: 35000, cost_price: 20000, unit: 'dona', stock: 80 },
+      { id: 'p-4', name: 'Shokoladli Holva', sku: 'HLV-844', category: 'Premium', price: 30000, cost_price: 18000, unit: 'dona', stock: 90 }
+    ];
+
+    const DEFAULT_STORES = [
+      {
+        id: 'st-1',
+        name: 'Ayrilish',
+        phone: '+998 90 567 76 45',
+        address: "Ayrilish Qo'qon",
+        contact_person: 'Mijoz',
+        credit_limit: 10000000,
+        initial_balance: 0,
+        current_balance: -25000,
+        created_at: '2026-09-05T08:00:00.000Z'
+      }
+    ];
+
+    const DEFAULT_ORDERS = [
+      {
+        id: 'ord-1',
+        order_number: 'HLV-8401',
+        store_id: 'st-1',
+        store_name: 'Ayrilish',
+        agent_name: 'Sardor Rahimov',
+        total_amount: 25000,
+        paid_amount: 0,
+        status: 'CONFIRMED',
+        payment_status: 'PENDING',
+        created_at: '2026-09-05T14:30:00.000Z',
+        order_items: [
+          {
+            id: 'oi-1',
+            product_name: 'Rulet 400 Gr',
+            quantity: 1,
+            unit_price: 25000,
+            unit: 'dona',
+            total_price: 25000
+          }
+        ]
+      }
+    ];
+
+    const DEFAULT_PAYMENTS = [];
+
+    // State Management
+    let state = {
+      currentPage: 'akt-sverka',
+      stores: JSON.parse(localStorage.getItem('holva_stores')) || DEFAULT_STORES,
+      orders: JSON.parse(localStorage.getItem('holva_orders')) || DEFAULT_ORDERS,
+      products: JSON.parse(localStorage.getItem('holva_products')) || DEFAULT_PRODUCTS,
+      payments: JSON.parse(localStorage.getItem('holva_payments')) || DEFAULT_PAYMENTS,
+      aktSverkaFilterStore: 'all',
+      aktSverkaSearch: ''
+    };
+
+    function saveState() {
+      localStorage.setItem('holva_stores', JSON.stringify(state.stores));
+      localStorage.setItem('holva_orders', JSON.stringify(state.orders));
+      localStorage.setItem('holva_products', JSON.stringify(state.products));
+      localStorage.setItem('holva_payments', JSON.stringify(state.payments));
+      updateBadge();
+    }
+
+    function formatCurrency(amount) {
+      return (Number(amount) || 0).toLocaleString('uz-UZ') + " so'm";
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + 
+             d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const message = document.getElementById('toast-message');
+      const icon = document.getElementById('toast-icon');
+      
+      message.textContent = msg;
+      icon.innerHTML = type === 'success' ? '✅' : '⚠️';
+      
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Accounting & Transaction Ledger (Akt Sverka Engine)
+    function buildTransactions(storeFilter = 'all') {
+      const transactions = [];
+
+      state.stores.forEach(store => {
+        if (storeFilter !== 'all' && store.id !== storeFilter && store.name !== storeFilter) {
+          return;
+        }
+
+        const storeOrders = state.orders.filter(o => 
+          o.store_id === store.id || 
+          (o.store_name && o.store_name.toLowerCase().trim() === store.name.toLowerCase().trim())
+        );
+
+        // 1. Initial balance if present
+        const initDebt = Math.abs(store.initial_balance || 0);
+        if (initDebt > 0) {
+          transactions.push({
+            id: 'init-' + store.id,
+            timestamp: new Date(store.created_at || '2026-01-01').getTime(),
+            dateStr: formatDateTime(store.created_at || '2026-01-01'),
+            storeName: store.name,
+            storeId: store.id,
+            docNumber: 'BOSH-001',
+            docType: "Boshlang'ich qoldiq",
+            description: "Tizimga kiritilgan boshlang'ich qarzdorlik",
+            agentName: '—',
+            debit: initDebt,
+            credit: 0
+          });
+        }
+
+        // 2. Orders (Debit for goods purchase)
+        storeOrders.forEach(ord => {
+          const items = ord.order_items || [];
+          let desc = '';
+          if (items.length > 0) {
+            desc = items.map(it => (it.product_name || 'Mahsulot') + ' — ' + it.quantity + ' ' + (it.unit || 'dona') + ' x ' + formatCurrency(it.unit_price || it.price)).join('; ');
+          } else {
+            desc = 'Mahsulotlar xaridi';
+          }
+
+          transactions.push({
+            id: 'ord-' + ord.id,
+            timestamp: new Date(ord.created_at).getTime(),
+            dateStr: formatDateTime(ord.created_at),
+            storeName: store.name,
+            storeId: store.id,
+            docNumber: ord.order_number || ('ORD-' + ord.id),
+            docType: 'Mahsulot xaridi',
+            description: desc,
+            agentName: ord.agent_name || 'Sardor Rahimov',
+            debit: ord.total_amount || 0,
+            credit: 0,
+            orderId: ord.id
+          });
+
+          // If partial/full payment attached to order
+          if (ord.paid_amount && ord.paid_amount > 0) {
+            transactions.push({
+              id: 'ord-pay-' + ord.id,
+              timestamp: new Date(ord.created_at).getTime() + 1000,
+              dateStr: formatDateTime(ord.created_at),
+              storeName: store.name,
+              storeId: store.id,
+              docNumber: "TO'LOV-" + (ord.order_number || ord.id),
+              docType: "To'lov qabuli",
+              description: "Buyurtma (" + ord.order_number + ") uchun to'lov",
+              agentName: ord.agent_name || 'Sardor Rahimov',
+              debit: 0,
+              credit: ord.paid_amount
+            });
+          }
+        });
+
+        // 3. Standalone payments
+        const storePayments = state.payments.filter(p => p.store_id === store.id || p.store_name === store.name);
+        storePayments.forEach(p => {
+          transactions.push({
+            id: 'pay-' + p.id,
+            timestamp: new Date(p.created_at).getTime(),
+            dateStr: formatDateTime(p.created_at),
+            storeName: store.name,
+            storeId: store.id,
+            docNumber: p.doc_number || ('PAY-' + p.id),
+            docType: "To'lov qabuli",
+            description: p.notes || ("Mijoz to'lovi (" + (p.method || 'Naqd') + ")"),
+            agentName: p.agent_name || 'Kassa',
+            debit: 0,
+            credit: p.amount || 0
+          });
+        });
+      });
+
+      // Sort chronologically
+      transactions.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Compute running balance
+      let running = 0;
+      transactions.forEach(t => {
+        running += (t.debit - t.credit);
+        t.balance = running;
+      });
+
+      return transactions;
+    }
+
+    function updateBadge() {
+      const txs = buildTransactions('all');
+      const totalDebit = txs.reduce((s, t) => s + t.debit, 0);
+      const totalCredit = txs.reduce((s, t) => s + t.credit, 0);
+      const netDebt = Math.max(0, totalDebit - totalCredit);
+      const badge = document.getElementById('sidebar-debt-badge');
+      if (badge) {
+        badge.textContent = (netDebt / 1000).toFixed(0) + 'k';
+      }
+    }
+
+    // PAGE NAVIGATION
+    function navigate(page) {
+      state.currentPage = page;
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-500/10', 'text-amber-400', 'font-bold');
+      });
+      const currentNav = document.getElementById('nav-' + page);
+      if (currentNav) {
+        currentNav.classList.add('bg-amber-500/10', 'text-amber-400', 'font-bold');
+      }
+
+      const main = document.getElementById('main-content');
+      const title = document.getElementById('page-title');
+
+      if (page === 'dashboard') {
+        title.textContent = 'Boshqaruv Paneli (Dashboard)';
+        renderDashboard(main);
+      } else if (page === 'akt-sverka') {
+        title.textContent = "Akt Sverka (Mijozlar bilan hisob-kitob daftari)";
+        renderAktSverka(main);
+      } else if (page === 'stores') {
+        title.textContent = "Do'konlar & Mijozlar bazasi";
+        renderStores(main);
+      } else if (page === 'orders') {
+        title.textContent = "Buyurtmalar Ro'yxati";
+        renderOrders(main);
+      } else if (page === 'products') {
+        title.textContent = "Tayyor Mahsulotlar & Narxlar";
+        renderProducts(main);
+      } else if (page === 'finance') {
+        title.textContent = "Kassa & Moliyaviy Hisobotlar";
+        renderFinance(main);
+      }
+      lucide.createIcons();
+    }
+
+    // 1. RENDER AKT SVERKA
+    function renderAktSverka(container) {
+      const txs = buildTransactions(state.aktSverkaFilterStore);
+      const totalDebit = txs.reduce((s, t) => s + t.debit, 0);
+      const totalCredit = txs.reduce((s, t) => s + t.credit, 0);
+      const currentDebt = totalDebit - totalCredit;
+
+      let filteredTxs = txs;
+      if (state.aktSverkaSearch.trim()) {
+        const q = state.aktSverkaSearch.toLowerCase();
+        filteredTxs = txs.filter(t => 
+          t.storeName.toLowerCase().includes(q) || 
+          t.docNumber.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q)
+        );
+      }
+
+      const storeOptions = state.stores.map(s => 
+        '<option value="' + s.id + '" ' + (state.aktSverkaFilterStore === s.id ? 'selected' : '') + '>' + s.name + '</option>'
+      ).join('');
+
+      let tableRows = '';
+      if (filteredTxs.length === 0) {
+        tableRows = '<tr><td colspan="8" class="p-12 text-center text-slate-400"><i data-lucide="folder-open" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>Hozircha hech qanday operatsiya topilmadi</td></tr>';
+      } else {
+        tableRows = filteredTxs.map(t => {
+          let badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
+          if (t.docType === 'Mahsulot xaridi') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
+          if (t.docType === "To'lov qabuli") badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+
+          return '<tr class="hover:bg-slate-50/80 transition-colors">' +
+            '<td class="p-3 pl-4 font-medium text-slate-500 whitespace-nowrap">' + t.dateStr + '</td>' +
+            '<td class="p-3 font-bold text-slate-900">' + t.storeName + '</td>' +
+            '<td class="p-3 font-mono font-semibold text-slate-600">' + t.docNumber + '</td>' +
+            '<td class="p-3 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ' + badgeClass + '">' + t.docType + '</span></td>' +
+            '<td class="p-3 text-slate-600 leading-relaxed font-medium">' + t.description + '</td>' +
+            '<td class="p-3 text-right font-bold text-red-600">' + (t.debit > 0 ? formatCurrency(t.debit) : '—') + '</td>' +
+            '<td class="p-3 text-right font-bold text-emerald-600">' + (t.credit > 0 ? formatCurrency(t.credit) : '—') + '</td>' +
+            '<td class="p-3 text-right pr-4 font-black ' + (t.balance > 0 ? 'text-red-600' : 'text-slate-900') + '">' + formatCurrency(t.balance) + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          
+          <!-- SUMMARY CARDS -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Jami Mahsulot Berildi</span>
+                <span class="p-2 rounded-xl bg-red-50 text-red-600"><i data-lucide="arrow-up-right" class="w-5 h-5"></i></span>
+              </div>
+              <p class="text-2xl font-black text-slate-900 mt-2">${formatCurrency(totalDebit)}</p>
+              <p class="text-xs text-slate-400 mt-1">Debet operatsiyalari</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Qabul Qilingan To'lov</span>
+                <span class="p-2 rounded-xl bg-emerald-50 text-emerald-600"><i data-lucide="arrow-down-left" class="w-5 h-5"></i></span>
+              </div>
+              <p class="text-2xl font-black text-emerald-600 mt-2">${formatCurrency(totalCredit)}</p>
+              <p class="text-xs text-slate-400 mt-1">Kredit operatsiyalari</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-red-200 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-red-50/40">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-red-600 uppercase tracking-wider">Joriy Qarzdorlik</span>
+                <span class="p-2 rounded-xl bg-red-600 text-white shadow-md shadow-red-500/20"><i data-lucide="alert-circle" class="w-5 h-5"></i></span>
+              </div>
+              <p class="text-2xl font-black text-red-600 mt-2">${formatCurrency(currentDebt)}</p>
+              <p class="text-xs text-red-500 font-medium mt-1">Mijozlardan undirilishi lozim</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Jami Operatsiyalar</span>
+                <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="file-text" class="w-5 h-5"></i></span>
+              </div>
+              <p class="text-2xl font-black text-slate-900 mt-2">${filteredTxs.length} ta</p>
+              <p class="text-xs text-slate-400 mt-1">Hujjatlar aylanmasi</p>
+            </div>
+          </div>
+
+          <!-- FILTERS & ACTIONS BAR -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-64">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                <input 
+                  type="text" 
+                  placeholder="Hujjat, mijoz yoki mahsulot qidirish..." 
+                  value="${state.aktSverkaSearch}"
+                  oninput="state.aktSverkaSearch = this.value; renderAktSverka(document.getElementById('main-content'));"
+                  class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition"
+                >
+              </div>
+
+              <select 
+                onchange="state.aktSverkaFilterStore = this.value; renderAktSverka(document.getElementById('main-content'));"
+                class="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="all" ${state.aktSverkaFilterStore === 'all' ? 'selected' : ''}>Barcha do'konlar</option>
+                ${storeOptions}
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="exportToCSV()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i> Excel / CSV Yuklash
+              </button>
+            </div>
+          </div>
+
+          <!-- TRANSACTION TABLE -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">Akt Sverka — Real-Vaqt O'zaro Hisob-Kitob Daftari</h3>
+                <p class="text-xs text-slate-400">Har bir xarid, mahsulot tafsilotlari va to'lovlar xronologik tartibda</p>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                    <th class="p-3 pl-4">Sana & Vaqt</th>
+                    <th class="p-3">Mijoz (Do'kon)</th>
+                    <th class="p-3">Hujjat №</th>
+                    <th class="p-3">Operatsiya Turi</th>
+                    <th class="p-3 min-w-[240px]">Mahsulot & Tafsilot</th>
+                    <th class="p-3 text-right text-red-600">Qarz (Debet)</th>
+                    <th class="p-3 text-right text-emerald-600">To'lov (Kredit)</th>
+                    <th class="p-3 text-right pr-4 font-bold">Qoldiq Qarz</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                  ${tableRows}
+                </tbody>
+                <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                  <tr>
+                    <td colspan="5" class="p-3 pl-4 text-slate-600 uppercase tracking-wider text-[11px]">Jami Ko'rsatkichlar:</td>
+                    <td class="p-3 text-right text-red-600 text-sm font-black">${formatCurrency(totalDebit)}</td>
+                    <td class="p-3 text-right text-emerald-600 text-sm font-black">${formatCurrency(totalCredit)}</td>
+                    <td class="p-3 text-right pr-4 text-red-600 text-sm font-black">${formatCurrency(currentDebt)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // 2. RENDER STORES
+    function renderStores(container) {
+      const storeCards = state.stores.map(s => {
+        const txs = buildTransactions(s.id);
+        const totalDeb = txs.reduce((sum, t) => sum + t.debit, 0);
+        const totalCred = txs.reduce((sum, t) => sum + t.credit, 0);
+        const debt = totalDeb - totalCred;
+
+        return '<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-amber-400 transition">' +
+          '<div>' +
+            '<div class="flex items-start justify-between">' +
+              '<div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">' +
+                '<i data-lucide="store" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full ' + (debt > 0 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-emerald-100 text-emerald-700') + '">' +
+                (debt > 0 ? 'Qarz: ' + formatCurrency(debt) : "Qarzi yo'q") +
+              '</span>' +
+            '</div>' +
+            '<h4 class="font-bold text-slate-900 text-base mt-3">' + s.name + '</h4>' +
+            '<p class="text-xs text-slate-500 mt-1 flex items-center gap-1">' +
+              '<i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i> ' + (s.phone || 'Telefon kiritilmagan') +
+            '</p>' +
+            '<p class="text-xs text-slate-500 mt-1 flex items-center gap-1">' +
+              '<i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i> ' + (s.address || 'Manzil kiritilmagan') +
+            '</p>' +
+          '</div>' +
+          '<div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">' +
+            '<button onclick="state.aktSverkaFilterStore = \'' + s.id + '\'; navigate(\'akt-sverka\');" class="flex-1 py-1.5 px-3 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition text-center">' +
+              'Akt Sverka' +
+            '</button>' +
+            '<button onclick="openAddPaymentForStore(\'' + s.id + '\', \'' + s.name + '\', ' + debt + ')" class="py-1.5 px-3 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition">' +
+              "To'lov" +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-800">Mijoz Do'konlar</h3>
+              <p class="text-xs text-slate-400">Holva mahsulotlari tarqatiladigan savdo nuqtalari</p>
+            </div>
+            <button onclick="openNewStoreModal()" class="px-3.5 py-2 rounded-xl bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition flex items-center gap-2 shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Yangi Do'kon Qo'shish
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${storeCards}
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. RENDER ORDERS
+    function renderOrders(container) {
+      const orderRows = state.orders.map(o => {
+        const debt = (o.total_amount || 0) - (o.paid_amount || 0);
+        const items = (o.order_items || []).map(it => it.product_name + ' (' + it.quantity + ' ta)').join(', ');
+        return '<tr class="hover:bg-slate-50/80 transition">' +
+          '<td class="p-3 pl-4 font-bold font-mono text-slate-900">' + o.order_number + '</td>' +
+          '<td class="p-3 text-slate-500 whitespace-nowrap">' + formatDate(o.created_at) + '</td>' +
+          '<td class="p-3 font-semibold text-slate-900">' + o.store_name + '</td>' +
+          '<td class="p-3 text-slate-600">' + (o.agent_name || '—') + '</td>' +
+          '<td class="p-3 text-slate-600 max-w-xs truncate">' + (items || 'Mahsulotlar') + '</td>' +
+          '<td class="p-3 text-right font-bold text-slate-900">' + formatCurrency(o.total_amount) + '</td>' +
+          '<td class="p-3 text-right font-bold text-emerald-600">' + formatCurrency(o.paid_amount || 0) + '</td>' +
+          '<td class="p-3 text-right pr-4 font-bold text-red-600">' + formatCurrency(debt) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-800">Barcha Buyurtmalar</h3>
+              <p class="text-xs text-slate-400">Do'konlarga yuborilgan yoki tasdiqlangan partiyalar</p>
+            </div>
+            <button onclick="openNewOrderModal()" class="px-3.5 py-2 rounded-xl bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition flex items-center gap-2 shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Yangi Buyurtma
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                  <th class="p-3 pl-4">Buyurtma №</th>
+                  <th class="p-3">Sana</th>
+                  <th class="p-3">Do'kon</th>
+                  <th class="p-3">Agent</th>
+                  <th class="p-3">Tarkib</th>
+                  <th class="p-3 text-right">Jami Summa</th>
+                  <th class="p-3 text-right">To'langan</th>
+                  <th class="p-3 text-right pr-4">Qoldiq Qarz</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700">
+                ${orderRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. RENDER PRODUCTS
+    function renderProducts(container) {
+      const productCards = state.products.map(p => 
+        '<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-amber-400 transition">' +
+          '<div>' +
+            '<div class="w-full h-32 bg-amber-50 rounded-xl mb-3 flex items-center justify-center text-4xl">🍬</div>' +
+            '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 uppercase">' + p.category + '</span>' +
+            '<h4 class="font-bold text-slate-900 text-sm mt-2">' + p.name + '</h4>' +
+            '<p class="text-xs text-slate-400 font-mono">Artikul: ' + p.sku + '</p>' +
+          '</div>' +
+          '<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">' +
+            '<span class="text-xs text-slate-500 font-medium">Sotuv narxi:</span>' +
+            '<span class="text-sm font-black text-amber-600">' + formatCurrency(p.price) + '</span>' +
+          '</div>' +
+        '</div>'
+      ).join('');
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-800">Tayyor Mahsulotlar Ro'yxati</h3>
+              <p class="text-xs text-slate-400">Korxona tomonidan ishlab chiqariladigan holva turlari</p>
+            </div>
+            <button onclick="openNewProductModal()" class="px-3.5 py-2 rounded-xl bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition flex items-center gap-2 shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Mahsulot Qo'shish
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            ${productCards}
+          </div>
+        </div>
+      `;
+    }
+
+    // 5. RENDER DASHBOARD
+    function renderDashboard(container) {
+      const txs = buildTransactions('all');
+      const totalDebit = txs.reduce((s, t) => s + t.debit, 0);
+      const totalCredit = txs.reduce((s, t) => s + t.credit, 0);
+      const currentDebt = totalDebit - totalCredit;
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          <div class="bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
+            <div class="relative z-10">
+              <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm mb-3">Xush kelibsiz!</span>
+              <h2 class="text-3xl font-black tracking-tight">Holva Factory CRM Boshqaruv Markazi</h2>
+              <p class="text-amber-100 text-sm mt-1 max-w-xl">Mijozlar hisob-kitoblari, akt sverka qarzdorliklari va buyurtmalarni nazorat qiling.</p>
+            </div>
+            <div class="absolute -right-10 -bottom-10 text-9xl opacity-20">🍬</div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Mijozlar</span>
+              <p class="text-3xl font-black text-slate-900 mt-2">${state.stores.length} ta</p>
+              <p class="text-xs text-slate-500 mt-1">Aktiv savdo nuqtalari</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Buyurtmalar Soni</span>
+              <p class="text-3xl font-black text-slate-900 mt-2">${state.orders.length} ta</p>
+              <p class="text-xs text-slate-500 mt-1">Barcha rasmiylashtirilgan partiyalar</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-red-200 shadow-sm bg-red-50/30">
+              <span class="text-xs font-bold text-red-500 uppercase tracking-wider">Joriy Umumiy Qarz</span>
+              <p class="text-3xl font-black text-red-600 mt-2">${formatCurrency(currentDebt)}</p>
+              <p class="text-xs text-red-400 mt-1">Undirilishi kutilayotgan mablag'</p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="font-bold text-slate-800 text-sm mb-4">Tezkor Havolalar</h3>
+            <div class="flex flex-wrap gap-3">
+              <button onclick="navigate('akt-sverka')" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition flex items-center gap-2">
+                <i data-lucide="file-check-2" class="w-4 h-4 text-amber-400"></i> Akt Sverkani Ko'rish
+              </button>
+              <button onclick="openNewOrderModal()" class="px-4 py-2.5 rounded-xl bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Yangi Buyurtma Yaratish
+              </button>
+              <button onclick="navigate('stores')" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition flex items-center gap-2">
+                <i data-lucide="store" class="w-4 h-4"></i> Do'konlar Bazasi
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. RENDER FINANCE
+    function renderFinance(container) {
+      const txs = buildTransactions('all');
+      const totalCredit = txs.reduce((s, t) => s + t.credit, 0);
+
+      container.innerHTML = `
+        <div class="space-y-6 max-w-7xl mx-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Asosiy Kassa Balansi</span>
+              <p class="text-3xl font-black text-emerald-600 mt-2">${formatCurrency(totalCredit)}</p>
+              <p class="text-xs text-slate-500 mt-1">Mijozlardan qabul qilingan naqd & o'tkazma to'lovlar</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-slate-800 text-sm">Yangi to'lov kiritish</h4>
+                <p class="text-xs text-slate-400 mt-1">Mijoz qarzini yopish uchun to'lov qabul qilish</p>
+              </div>
+              <button onclick="openNewPaymentModal()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition flex items-center gap-2">
+                <i data-lucide="arrow-down-left" class="w-4 h-4"></i> To'lov Qabul Qilish
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // MODAL DIALOGS
+    function closeModal() {
+      document.getElementById('modal-container').innerHTML = '';
+    }
+
+    // Modal: Yangi Buyurtma
+    function openNewOrderModal() {
+      const storeOptions = state.stores.map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('');
+      const productOptions = state.products.map(p => 
+        '<option value="' + p.id + '" data-price="' + p.price + '" data-name="' + p.name + '">' + p.name + ' — ' + formatCurrency(p.price) + '</option>'
+      ).join('');
+
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 class="font-bold text-slate-900 text-base">Yangi Buyurtma Rasmiylashtirish</h3>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form onsubmit="submitNewOrder(event)" class="space-y-4 mt-4 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Mijoz (Do'kon)</label>
+                <select id="order-store-select" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-medium">
+                  ${storeOptions}
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Mahsulot Tanlash</label>
+                <select id="order-product-select" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-medium">
+                  ${productOptions}
+                </select>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Miqdori (Dona)</label>
+                  <input type="number" id="order-quantity" value="1" min="1" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-bold" required>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Agent Ismi</label>
+                  <input type="text" id="order-agent" value="Sardor Rahimov" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">To'langan qismi (so'm)</label>
+                  <input type="number" id="order-paid" value="0" min="0" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-bold">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Sana & Vaqt</label>
+                  <input type="datetime-local" id="order-datetime" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white font-bold hover:bg-amber-700 transition shadow-md shadow-amber-600/20">Saqlash</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('order-datetime').value = now.toISOString().slice(0, 16);
+      lucide.createIcons();
+    }
+
+    function submitNewOrder(e) {
+      e.preventDefault();
+      const storeId = document.getElementById('order-store-select').value;
+      const store = state.stores.find(s => s.id === storeId);
+      
+      const prodSelect = document.getElementById('order-product-select');
+      const selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+      const prodName = selectedOpt.getAttribute('data-name');
+      const unitPrice = Number(selectedOpt.getAttribute('data-price')) || 0;
+      
+      const qty = Number(document.getElementById('order-quantity').value) || 1;
+      const agent = document.getElementById('order-agent').value || 'Sardor Rahimov';
+      const paid = Number(document.getElementById('order-paid').value) || 0;
+      const dtVal = document.getElementById('order-datetime').value;
+      const createdAt = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
+
+      const total = qty * unitPrice;
+      const newOrd = {
+        id: 'ord-' + Date.now(),
+        order_number: 'HLV-' + Math.floor(1000 + Math.random() * 9000),
+        store_id: store.id,
+        store_name: store.name,
+        agent_name: agent,
+        total_amount: total,
+        paid_amount: paid,
+        status: 'CONFIRMED',
+        payment_status: paid >= total ? 'PAID' : (paid > 0 ? 'PARTIAL' : 'PENDING'),
+        created_at: createdAt,
+        order_items: [
+          {
+            id: 'oi-' + Date.now(),
+            product_name: prodName,
+            quantity: qty,
+            unit_price: unitPrice,
+            unit: 'dona',
+            total_price: total
+          }
+        ]
+      };
+
+      state.orders.push(newOrd);
+      saveState();
+      closeModal();
+      showToast('Yangi buyurtma rasmiylashtirildi!');
+      navigate(state.currentPage);
+    }
+
+    // Modal: To'lov qabul qilish
+    function openNewPaymentModal() {
+      openAddPaymentForStore('', '', 0);
+    }
+
+    function openAddPaymentForStore(targetStoreId, targetStoreName, defaultAmount) {
+      const storeOptions = state.stores.map(s => 
+        '<option value="' + s.id + '" ' + (s.id === targetStoreId ? 'selected' : '') + '>' + s.name + '</option>'
+      ).join('');
+
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 class="font-bold text-slate-900 text-sm">Mijozdan To'lov Qabul Qilish</h3>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form onsubmit="submitPayment(event)" class="space-y-4 mt-4">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Mijoz (Do'kon)</label>
+                <select id="pay-store-select" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 font-medium">
+                  ${storeOptions}
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">To'lov Miqdori (so'm)</label>
+                <input type="number" id="pay-amount" value="${defaultAmount > 0 ? defaultAmount : ''}" placeholder="Masalan: 25000" min="100" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-emerald-600" required>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">To'lov Usuli</label>
+                  <select id="pay-method" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500">
+                    <option value="Naqd">Naqd pul</option>
+                    <option value="Plastik karta">Plastik karta</option>
+                    <option value="Bank o'tkazmasi">Bank o'tkazmasi</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Sana & Vaqt</label>
+                  <input type="datetime-local" id="pay-datetime" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Izoh / Eslatma</label>
+                <input type="text" id="pay-notes" placeholder="Qarz yopilishi uchun to'lov" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20">To'lovni Saqlash</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('pay-datetime').value = now.toISOString().slice(0, 16);
+      lucide.createIcons();
+    }
+
+    function submitPayment(e) {
+      e.preventDefault();
+      const storeId = document.getElementById('pay-store-select').value;
+      const store = state.stores.find(s => s.id === storeId);
+      const amount = Number(document.getElementById('pay-amount').value) || 0;
+      const method = document.getElementById('pay-method').value;
+      const notes = document.getElementById('pay-notes').value || ("To'lov (" + method + ")");
+      const dtVal = document.getElementById('pay-datetime').value;
+      const createdAt = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
+
+      const newPay = {
+        id: 'pay-' + Date.now(),
+        doc_number: "TO'LOV-" + Math.floor(1000 + Math.random() * 9000),
+        store_id: store.id,
+        store_name: store.name,
+        amount: amount,
+        method: method,
+        notes: notes,
+        agent_name: 'Kassa',
+        created_at: createdAt
+      };
+
+      state.payments.push(newPay);
+      saveState();
+      closeModal();
+      showToast("To'lov qabul qilindi va hisob-kitob yangilandi!");
+      navigate(state.currentPage);
+    }
+
+    // Modal: Do'kon Qo'shish
+    function openNewStoreModal() {
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 class="font-bold text-slate-900 text-sm">Yangi Do'kon Qo'shish</h3>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form onsubmit="submitNewStore(event)" class="space-y-3 mt-4">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Do'kon Nomi</label>
+                <input type="text" id="store-name" placeholder="Masalan: Farovon Savdo" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-bold" required>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Telefon Raqam</label>
+                <input type="text" id="store-phone" placeholder="+998 90 123 45 67" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Manzil</label>
+                <input type="text" id="store-address" placeholder="Qo'qon shahar, Markaz" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Boshlang'ich Qarzdorlik (so'm)</label>
+                <input type="number" id="store-init-debt" value="0" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white font-bold hover:bg-amber-700 transition shadow-md shadow-amber-600/20">Saqlash</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function submitNewStore(e) {
+      e.preventDefault();
+      const name = document.getElementById('store-name').value.trim();
+      const phone = document.getElementById('store-phone').value.trim();
+      const address = document.getElementById('store-address').value.trim();
+      const initDebt = Number(document.getElementById('store-init-debt').value) || 0;
+
+      const newStore = {
+        id: 'st-' + Date.now(),
+        name: name,
+        phone: phone,
+        address: address,
+        contact_person: 'Mijoz',
+        credit_limit: 10000000,
+        initial_balance: initDebt,
+        current_balance: -initDebt,
+        created_at: new Date().toISOString()
+      };
+
+      state.stores.push(newStore);
+      saveState();
+      closeModal();
+      showToast("Yangi do'kon qo'shildi!");
+      navigate(state.currentPage);
+    }
+
+    // Modal: Mahsulot Qo'shish
+    function openNewProductModal() {
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 class="font-bold text-slate-900 text-sm">Yangi Mahsulot Qo'shish</h3>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form onsubmit="submitNewProduct(event)" class="space-y-3 mt-4">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Mahsulot Nomi</label>
+                <input type="text" id="prod-name" placeholder="Masalan: Pista Holva" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-bold" required>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Kategoriya</label>
+                <input type="text" id="prod-category" placeholder="Premium / Klassik / Rulet" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500" required>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Sotuv Narxi (so'm)</label>
+                  <input type="number" id="prod-price" placeholder="30000" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 font-bold" required>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Tannarxi (so'm)</label>
+                  <input type="number" id="prod-cost" placeholder="18000" class="w-full p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+
+              <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">Bekor qilish</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white font-bold hover:bg-amber-700 transition shadow-md shadow-amber-600/20">Saqlash</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function submitNewProduct(e) {
+      e.preventDefault();
+      const name = document.getElementById('prod-name').value.trim();
+      const category = document.getElementById('prod-category').value.trim();
+      const price = Number(document.getElementById('prod-price').value) || 0;
+      const cost = Number(document.getElementById('prod-cost').value) || 0;
+
+      const newProd = {
+        id: 'p-' + Date.now(),
+        name: name,
+        sku: 'HLV-' + Math.floor(100 + Math.random() * 900),
+        category: category,
+        price: price,
+        cost_price: cost,
+        unit: 'dona',
+        stock: 100
+      };
+
+      state.products.push(newProd);
+      saveState();
+      closeModal();
+      showToast("Yangi mahsulot qo'shildi!");
+      navigate(state.currentPage);
+    }
+
+    // CSV Export
+    function exportToCSV() {
+      const txs = buildTransactions(state.aktSverkaFilterStore);
+      let csv = 'Sana,Mijoz,Hujjat_No,Operatsiya_Turi,Tafsilot,Debet_Qarz,Kredit_Tolov,Qoldiq\n';
+      txs.forEach(t => {
+        csv += '"' + t.dateStr + '","' + t.storeName + '","' + t.docNumber + '","' + t.docType + '","' + t.description.replace(/"/g, '""') + '",' + t.debit + ',' + t.credit + ',' + t.balance + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'akt_sverka_' + (new Date().toISOString().slice(0, 10)) + '.csv';
+      a.click();
+    }
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      saveState();
+      navigate('akt-sverka');
+    });
+  </script>
+</body>
+</html>
